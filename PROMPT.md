@@ -1,0 +1,142 @@
+# BotTest Development Prompt Guide
+
+**Version:** 6.1.0  
+**Purpose:** Test infrastructure for General Bots ecosystem
+
+---
+
+## Core Principle
+
+**Reuse botserver bootstrap code** - Don't duplicate installation logic. The bootstrap module already knows how to install PostgreSQL, MinIO, Redis. We wrap it with test-specific configuration (custom ports, temp directories).
+
+---
+
+## Architecture
+
+```
+TestHarness::setup()
+    │
+    ├── Allocate unique ports (15000+)
+    ├── Create ./tmp/bottest-{uuid}/
+    │
+    ├── Start services (via bootstrap)
+    │   ├── PostgreSQL on custom port
+    │   ├── MinIO on custom port  
+    │   └── Redis on custom port
+    │
+    ├── Start mock servers
+    │   ├── MockZitadel (wiremock)
+    │   ├── MockLLM (wiremock)
+    │   └── MockWhatsApp (wiremock)
+    │
+    ├── Run migrations
+    └── Return TestContext
+
+TestContext provides:
+    - db_pool() -> Database connection
+    - minio_client() -> S3 client
+    - redis_client() -> Redis client
+    - mock_*() -> Mock server controls
+
+On Drop:
+    - Stop all services
+    - Remove temp directory
+```
+
+---
+
+## Code Style
+
+Same as botserver PROMPT.md:
+- KISS, NO TALK, SECURED CODE ONLY
+- No comments, no placeholders
+- Complete, production-ready code
+- Return 0 warnings
+
+---
+
+## Test Categories
+
+### Unit Tests (no services)
+```rust
+#[test]
+fn test_pure_logic() {
+    // No TestHarness needed
+    // Test pure functions directly
+}
+```
+
+### Integration Tests (with services)
+```rust
+#[tokio::test]
+async fn test_with_database() {
+    let ctx = TestHarness::quick().await.unwrap();
+    let pool = ctx.db_pool().await.unwrap();
+    // Use real database
+}
+```
+
+### E2E Tests (with browser)
+```rust
+#[tokio::test]
+async fn test_user_flow() {
+    let ctx = TestHarness::full().await.unwrap();
+    let server = ctx.start_botserver().await.unwrap();
+    let browser = Browser::new().await.unwrap();
+    // Automate browser
+}
+```
+
+---
+
+## Mock Server Patterns
+
+### Expect specific calls
+```rust
+ctx.mock_llm().expect_completion("hello", "Hi there!");
+```
+
+### Verify calls were made
+```rust
+ctx.mock_llm().assert_called_times(2);
+```
+
+### Simulate errors
+```rust
+ctx.mock_llm().next_call_fails(500, "Internal error");
+```
+
+---
+
+## Fixture Patterns
+
+### Factory functions
+```rust
+let user = fixtures::admin_user();
+let bot = fixtures::bot_with_kb();
+let session = fixtures::active_session(&user, &bot);
+```
+
+### Insert into database
+```rust
+ctx.insert(&user).await;
+ctx.insert(&bot).await;
+```
+
+---
+
+## Cleanup
+
+Always automatic via Drop trait. But can force:
+```rust
+ctx.cleanup().await;  // Explicit cleanup
+```
+
+---
+
+## Parallel Safety
+
+- Each test gets unique ports via PortAllocator
+- Each test gets unique temp directory
+- No shared state between tests
+- Safe to run with `cargo test -j 8`
