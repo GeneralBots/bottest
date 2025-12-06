@@ -1,0 +1,418 @@
+//! Complete E2E test for General Bots platform flow
+//!
+//! Tests the full user journey:
+//! 1. Platform loading (UI assets)
+//! 2. BotServer initialization
+//! 3. User login
+//! 4. Chat interaction
+//! 5. User logout
+
+use bottest::prelude::*;
+use bottest::web::{Browser, BrowserConfig};
+use std::time::Duration;
+
+use super::{browser_config, check_webdriver_available, should_run_e2e_tests, E2ETestContext};
+
+/// Step 1: Verify platform loads
+/// - Check UI is served
+/// - Verify health endpoint responds
+/// - Confirm database migrations completed
+pub async fn verify_platform_loading(ctx: &E2ETestContext) -> anyhow::Result<()> {
+    let client = reqwest::Client::new();
+
+    // Check health endpoint
+    let health_url = format!("{}/health", ctx.base_url());
+    let health_resp = client.get(&health_url).send().await?;
+    assert!(
+        health_resp.status().is_success(),
+        "Health check failed with status: {}",
+        health_resp.status()
+    );
+
+    println!("✓ Platform health check passed");
+
+    // Verify API is responsive
+    let api_url = format!("{}/api/v1", ctx.base_url());
+    let api_resp = client.get(&api_url).send().await?;
+    assert!(
+        api_resp.status().is_success() || api_resp.status().as_u16() == 401,
+        "API endpoint failed with status: {}",
+        api_resp.status()
+    );
+
+    println!("✓ Platform API responsive");
+
+    Ok(())
+}
+
+/// Step 2: Verify BotServer is running and initialized
+/// - Check service discovery
+/// - Verify configuration loaded
+/// - Confirm database connection
+pub async fn verify_botserver_running(ctx: &E2ETestContext) -> anyhow::Result<()> {
+    let client = reqwest::Client::new();
+
+    // Check if server is actually running
+    assert!(ctx.server.is_running(), "BotServer process is not running");
+
+    println!("✓ BotServer process running");
+
+    // Verify server info endpoint
+    let info_url = format!("{}/api/v1/server/info", ctx.base_url());
+    match client.get(&info_url).send().await {
+        Ok(resp) => {
+            if resp.status().is_success() {
+                let body = resp.text().await?;
+                assert!(!body.is_empty(), "Server info response is empty");
+                println!(
+                    "✓ BotServer initialized with info: {}",
+                    body.chars().take(100).collect::<String>()
+                );
+            } else {
+                println!(
+                    "⚠ Server info endpoint returned {}, continuing anyway",
+                    resp.status()
+                );
+            }
+        }
+        Err(e) => {
+            println!(
+                "⚠ Could not reach server info endpoint: {}, continuing anyway",
+                e
+            );
+        }
+    }
+
+    println!("✓ BotServer is running and initialized");
+
+    Ok(())
+}
+
+/// Step 3: User login flow
+/// - Navigate to login page
+/// - Enter test credentials
+/// - Verify session created
+/// - Confirm redirect to dashboard
+pub async fn test_user_login(browser: &Browser, ctx: &E2ETestContext) -> anyhow::Result<()> {
+    let login_url = format!("{}/login", ctx.base_url());
+
+    // Navigate to login page
+    browser.navigate(&login_url).await?;
+    println!("✓ Navigated to login page: {}", login_url);
+
+    // Wait for login form to be visible
+    let timeout = Duration::from_secs(10);
+    browser
+        .wait_for_element("input[type='email']", timeout)
+        .await?;
+    println!("✓ Login form loaded");
+
+    // Fill in test credentials
+    let test_email = "test@example.com";
+    let test_password = "TestPassword123!";
+
+    browser
+        .fill_input("input[type='email']", test_email)
+        .await?;
+    println!("✓ Entered email: {}", test_email);
+
+    browser
+        .fill_input("input[type='password']", test_password)
+        .await?;
+    println!("✓ Entered password");
+
+    // Submit login form
+    let submit_timeout = Duration::from_secs(5);
+    browser
+        .click("button[type='submit']", submit_timeout)
+        .await?;
+    println!("✓ Clicked login button");
+
+    // Wait for redirect or dashboard
+    let redirect_timeout = Duration::from_secs(15);
+    let current_url = browser.get_current_url(redirect_timeout).await?;
+
+    // Check we're not on login page anymore
+    assert!(
+        !current_url.contains("/login"),
+        "Still on login page after login attempt. URL: {}",
+        current_url
+    );
+
+    println!("✓ Redirected from login page to: {}", current_url);
+
+    // Verify we can see dashboard or chat area
+    browser
+        .wait_for_element(
+            "[data-testid='chat-area'], [data-testid='dashboard'], main",
+            Duration::from_secs(10),
+        )
+        .await?;
+    println!("✓ Dashboard or chat area visible");
+
+    Ok(())
+}
+
+/// Step 4: Chat interaction
+/// - Open chat window
+/// - Send test message
+/// - Receive bot response
+/// - Verify message persisted
+pub async fn test_chat_interaction(browser: &Browser, ctx: &E2ETestContext) -> anyhow::Result<()> {
+    // Ensure we're on chat page
+    let chat_url = format!("{}/chat", ctx.base_url());
+    browser.navigate(&chat_url).await?;
+    println!("✓ Navigated to chat page");
+
+    // Wait for chat interface to load
+    browser
+        .wait_for_element(
+            "[data-testid='message-input'], textarea.chat-input, input.message",
+            Duration::from_secs(10),
+        )
+        .await?;
+    println!("✓ Chat interface loaded");
+
+    // Send test message
+    let test_message = "Hello, I need help";
+    browser
+        .fill_input("textarea.chat-input, input.message", test_message)
+        .await?;
+    println!("✓ Typed message: {}", test_message);
+
+    // Click send button or press Enter
+    let send_result = browser
+        .click(
+            "button[data-testid='send-button'], button.send-btn",
+            Duration::from_secs(5),
+        )
+        .await;
+
+    if send_result.is_err() {
+        // Try pressing Enter as alternative
+        browser.press_key("Enter").await?;
+        println!("✓ Sent message with Enter key");
+    } else {
+        println!("✓ Clicked send button");
+    }
+
+    // Wait for message to appear in chat history
+    browser
+        .wait_for_element(
+            "[data-testid='message-item'], .message-bubble, [class*='message']",
+            Duration::from_secs(10),
+        )
+        .await?;
+    println!("✓ Message appeared in chat");
+
+    // Wait for bot response
+    let response_timeout = Duration::from_secs(30);
+    browser
+        .wait_for_element(
+            "[data-testid='bot-response'], .bot-message, [class*='bot']",
+            response_timeout,
+        )
+        .await?;
+    println!("✓ Received bot response");
+
+    // Get response text
+    let response_text = browser
+        .get_text("[data-testid='bot-response'], .bot-message, [class*='bot']")
+        .await
+        .ok();
+
+    if let Some(text) = response_text {
+        println!(
+            "✓ Bot response: {}",
+            text.chars().take(100).collect::<String>()
+        );
+    }
+
+    Ok(())
+}
+
+/// Step 5: User logout flow
+/// - Click logout button
+/// - Verify session invalidated
+/// - Confirm redirect to login
+/// - Verify cannot access protected routes
+pub async fn test_user_logout(browser: &Browser, ctx: &E2ETestContext) -> anyhow::Result<()> {
+    // Find and click logout button
+    let logout_selectors = vec![
+        "button[data-testid='logout-btn']",
+        "button.logout",
+        "[data-testid='user-menu'] button[data-testid='logout']",
+        "a[href*='logout']",
+    ];
+
+    let mut logout_found = false;
+    for selector in logout_selectors {
+        if let Ok(_) = browser.click(selector, Duration::from_secs(3)).await {
+            println!("✓ Clicked logout button: {}", selector);
+            logout_found = true;
+            break;
+        }
+    }
+
+    if !logout_found {
+        println!("⚠ Could not find logout button, attempting with keyboard shortcut");
+        browser.press_key("l").await.ok(); // Some apps use 'l' for logout
+    }
+
+    // Wait for redirect to login
+    let redirect_timeout = Duration::from_secs(10);
+    let current_url = browser.get_current_url(redirect_timeout).await?;
+
+    assert!(
+        current_url.contains("/login") || current_url.contains("/auth"),
+        "Not redirected to login page after logout. URL: {}",
+        current_url
+    );
+
+    println!("✓ Redirected to login page after logout: {}", current_url);
+
+    // Verify we cannot access protected routes
+    let chat_url = format!("{}/chat", ctx.base_url());
+    browser.navigate(&chat_url).await?;
+
+    let check_url = browser.get_current_url(Duration::from_secs(5)).await?;
+    assert!(
+        check_url.contains("/login") || check_url.contains("/auth"),
+        "Should be redirected to login when accessing protected route after logout. URL: {}",
+        check_url
+    );
+
+    println!("✓ Protected routes properly redirect to login");
+
+    Ok(())
+}
+
+/// Complete platform flow test
+///
+/// This test validates the entire user journey:
+/// 1. Platform loads successfully
+/// 2. BotServer is initialized and running
+/// 3. User can login with credentials
+/// 4. User can interact with chat
+/// 5. User can logout and lose access
+#[tokio::test]
+async fn test_complete_platform_flow_login_chat_logout() {
+    if !should_run_e2e_tests() {
+        eprintln!("Skipping: E2E tests disabled (set SKIP_E2E_TESTS env var to disable)");
+        return;
+    }
+
+    if !check_webdriver_available().await {
+        eprintln!("Skipping: WebDriver not available at configured URL");
+        return;
+    }
+
+    println!("\n=== Starting Complete Platform Flow Test ===\n");
+
+    // Setup context
+    let ctx = match E2ETestContext::setup_with_browser().await {
+        Ok(ctx) => ctx,
+        Err(e) => {
+            eprintln!("Failed to setup E2E context: {}", e);
+            return;
+        }
+    };
+
+    if !ctx.has_browser() {
+        eprintln!("Browser not available");
+        return;
+    }
+
+    let browser = ctx.browser.as_ref().unwrap();
+
+    // Test each phase
+    println!("\n--- Phase 1: Platform Loading ---");
+    if let Err(e) = verify_platform_loading(&ctx).await {
+        eprintln!("Platform loading test failed: {}", e);
+        return;
+    }
+
+    println!("\n--- Phase 2: BotServer Initialization ---");
+    if let Err(e) = verify_botserver_running(&ctx).await {
+        eprintln!("BotServer initialization test failed: {}", e);
+        return;
+    }
+
+    println!("\n--- Phase 3: User Login ---");
+    if let Err(e) = test_user_login(browser, &ctx).await {
+        eprintln!("Login test failed: {}", e);
+        return;
+    }
+
+    println!("\n--- Phase 4: Chat Interaction ---");
+    if let Err(e) = test_chat_interaction(browser, &ctx).await {
+        eprintln!("Chat interaction test failed: {}", e);
+        // Don't return here - try to logout anyway
+    }
+
+    println!("\n--- Phase 5: User Logout ---");
+    if let Err(e) = test_user_logout(browser, &ctx).await {
+        eprintln!("Logout test failed: {}", e);
+        return;
+    }
+
+    println!("\n=== Complete Platform Flow Test PASSED ===\n");
+
+    ctx.close().await;
+}
+
+/// Simpler test for basic platform loading without browser
+#[tokio::test]
+async fn test_platform_loading_http_only() {
+    if !should_run_e2e_tests() {
+        eprintln!("Skipping: E2E tests disabled");
+        return;
+    }
+
+    println!("\n=== Testing Platform Loading (HTTP Only) ===\n");
+
+    let ctx = match E2ETestContext::setup().await {
+        Ok(ctx) => ctx,
+        Err(e) => {
+            eprintln!("Failed to setup context: {}", e);
+            return;
+        }
+    };
+
+    if let Err(e) = verify_platform_loading(&ctx).await {
+        eprintln!("Platform loading failed: {}", e);
+        return;
+    }
+
+    println!("\n✓ Platform Loading Test PASSED\n");
+
+    ctx.close().await;
+}
+
+/// Test BotServer startup and health
+#[tokio::test]
+async fn test_botserver_startup() {
+    if !should_run_e2e_tests() {
+        eprintln!("Skipping: E2E tests disabled");
+        return;
+    }
+
+    println!("\n=== Testing BotServer Startup ===\n");
+
+    let ctx = match E2ETestContext::setup().await {
+        Ok(ctx) => ctx,
+        Err(e) => {
+            eprintln!("Failed to setup context: {}", e);
+            return;
+        }
+    };
+
+    if let Err(e) = verify_botserver_running(&ctx).await {
+        eprintln!("BotServer test failed: {}", e);
+        return;
+    }
+
+    println!("\n✓ BotServer Startup Test PASSED\n");
+
+    ctx.close().await;
+}

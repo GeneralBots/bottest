@@ -1,6 +1,7 @@
 mod auth_flow;
 mod chat;
 mod dashboard;
+mod platform_flow;
 
 use bottest::prelude::*;
 use bottest::web::{Browser, BrowserConfig, BrowserType};
