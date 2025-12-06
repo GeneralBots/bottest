@@ -1,6 +1,6 @@
 //! MinIO service management for test infrastructure
 //!
-//! Starts and manages a MinIO instance for S3-compatible storage testing.
+//! Uses the MinIO binary from botserver-stack folder.
 //! Provides bucket creation, object operations, and credential management.
 
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
@@ -18,6 +18,7 @@ pub struct MinioService {
     api_port: u16,
     console_port: u16,
     data_dir: PathBuf,
+    bin_path: PathBuf,
     process: Option<Child>,
     access_key: String,
     secret_key: String,
@@ -30,8 +31,35 @@ impl MinioService {
     /// Default secret key for tests
     pub const DEFAULT_SECRET_KEY: &'static str = "minioadmin";
 
+    /// Find the botserver-stack path and return minio binary
+    fn find_minio_binary() -> Result<PathBuf> {
+        let cwd = std::env::current_dir()?;
+
+        let candidates = [
+            cwd.join("../botserver/botserver-stack/bin/drive/minio"),
+            cwd.join("botserver/botserver-stack/bin/drive/minio"),
+            PathBuf::from("/home/rodriguez/src/gb/botserver/botserver-stack/bin/drive/minio"),
+            std::env::var("BOTSERVER_STACK_PATH")
+                .map(|p| PathBuf::from(p).join("bin/drive/minio"))
+                .unwrap_or_default(),
+        ];
+
+        for candidate in &candidates {
+            if candidate.exists() {
+                return Ok(candidate.clone());
+            }
+        }
+
+        // Fallback to system minio
+        which::which("minio")
+            .context("minio not found in botserver-stack or PATH. Set BOTSERVER_STACK_PATH env var")
+    }
+
     /// Start a new MinIO instance on the specified port
     pub async fn start(api_port: u16, data_dir: &str) -> Result<Self> {
+        let bin_path = Self::find_minio_binary()?;
+        log::info!("Using MinIO from: {:?}", bin_path);
+
         let data_path = PathBuf::from(data_dir).join("minio");
         ensure_dir(&data_path)?;
 
@@ -42,6 +70,7 @@ impl MinioService {
             api_port,
             console_port,
             data_dir: data_path,
+            bin_path,
             process: None,
             access_key: Self::DEFAULT_ACCESS_KEY.to_string(),
             secret_key: Self::DEFAULT_SECRET_KEY.to_string(),
@@ -60,6 +89,9 @@ impl MinioService {
         access_key: &str,
         secret_key: &str,
     ) -> Result<Self> {
+        let bin_path = Self::find_minio_binary()?;
+        log::info!("Using MinIO from: {:?}", bin_path);
+
         let data_path = PathBuf::from(data_dir).join("minio");
         ensure_dir(&data_path)?;
 
@@ -69,6 +101,7 @@ impl MinioService {
             api_port,
             console_port,
             data_dir: data_path,
+            bin_path,
             process: None,
             access_key: access_key.to_string(),
             secret_key: secret_key.to_string(),
@@ -88,9 +121,7 @@ impl MinioService {
             self.console_port
         );
 
-        let minio = Self::find_binary()?;
-
-        let child = Command::new(&minio)
+        let child = Command::new(&self.bin_path)
             .args([
                 "server",
                 self.data_dir.to_str().unwrap(),
@@ -155,7 +186,11 @@ impl MinioService {
                 .output();
 
             let output = Command::new(&mc)
-                .args(["mb", "--ignore-existing", &format!("{}/{}", alias_name, name)])
+                .args([
+                    "mb",
+                    "--ignore-existing",
+                    &format!("{}/{}", alias_name, name),
+                ])
                 .output()?;
 
             if !output.status.success() {
@@ -347,32 +382,9 @@ impl MinioService {
         config
     }
 
-    /// Find the MinIO binary
-    fn find_binary() -> Result<PathBuf> {
-        let common_paths = [
-            "/usr/local/bin/minio",
-            "/usr/bin/minio",
-            "/opt/minio/minio",
-            "/opt/homebrew/bin/minio",
-        ];
-
-        for path in common_paths {
-            let p = PathBuf::from(path);
-            if p.exists() {
-                return Ok(p);
-            }
-        }
-
-        which::which("minio").context("minio binary not found in PATH or common locations")
-    }
-
     /// Find the MinIO client (mc) binary
     fn find_mc_binary() -> Result<PathBuf> {
-        let common_paths = [
-            "/usr/local/bin/mc",
-            "/usr/bin/mc",
-            "/opt/homebrew/bin/mc",
-        ];
+        let common_paths = ["/usr/local/bin/mc", "/usr/bin/mc", "/opt/homebrew/bin/mc"];
 
         for path in common_paths {
             let p = PathBuf::from(path);
@@ -444,6 +456,7 @@ mod tests {
             api_port: 9000,
             console_port: 10000,
             data_dir: PathBuf::from("/tmp/test"),
+            bin_path: PathBuf::from("/tmp/minio"),
             process: None,
             access_key: "test".to_string(),
             secret_key: "secret".to_string(),
@@ -459,6 +472,7 @@ mod tests {
             api_port: 9000,
             console_port: 10000,
             data_dir: PathBuf::from("/tmp/test"),
+            bin_path: PathBuf::from("/tmp/minio"),
             process: None,
             access_key: "mykey".to_string(),
             secret_key: "mysecret".to_string(),
@@ -475,13 +489,17 @@ mod tests {
             api_port: 9000,
             console_port: 10000,
             data_dir: PathBuf::from("/tmp/test"),
+            bin_path: PathBuf::from("/tmp/minio"),
             process: None,
             access_key: "access".to_string(),
             secret_key: "secret".to_string(),
         };
 
         let config = service.s3_config();
-        assert_eq!(config.get("endpoint_url"), Some(&"http://127.0.0.1:9000".to_string()));
+        assert_eq!(
+            config.get("endpoint_url"),
+            Some(&"http://127.0.0.1:9000".to_string())
+        );
         assert_eq!(config.get("access_key_id"), Some(&"access".to_string()));
         assert_eq!(config.get("force_path_style"), Some(&"true".to_string()));
     }

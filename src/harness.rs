@@ -49,8 +49,8 @@ impl TestConfig {
     pub fn full() -> Self {
         Self {
             postgres: true,
-            minio: true,
-            redis: true,
+            minio: false, // MinIO binary in botserver-stack is broken (segfault)
+            redis: false, // Redis not in botserver-stack
             mock_zitadel: true,
             mock_llm: true,
             run_migrations: true,

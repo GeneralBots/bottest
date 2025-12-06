@@ -1,7 +1,6 @@
 //! PostgreSQL service management for test infrastructure
 //!
-//! Starts and manages a PostgreSQL instance for integration testing.
-//! Uses the system PostgreSQL installation or botserver's embedded database.
+//! Uses the PostgreSQL binaries from botserver-stack folder.
 
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
 use anyhow::{Context, Result};
@@ -16,6 +15,7 @@ use tokio::time::sleep;
 pub struct PostgresService {
     port: u16,
     data_dir: PathBuf,
+    bin_dir: PathBuf,
     process: Option<Child>,
     connection_string: String,
     database_name: String,
@@ -33,14 +33,51 @@ impl PostgresService {
     /// Default password for tests
     pub const DEFAULT_PASSWORD: &'static str = "bottest";
 
+    /// Find the botserver-stack path
+    fn find_stack_path() -> Result<PathBuf> {
+        // Try relative to current working directory
+        let cwd = std::env::current_dir()?;
+
+        // Look for botserver-stack in various locations
+        let candidates = [
+            // From bottest directory
+            cwd.join("../botserver/botserver-stack"),
+            // From gb root
+            cwd.join("botserver/botserver-stack"),
+            // Absolute path
+            PathBuf::from("/home/rodriguez/src/gb/botserver/botserver-stack"),
+            // From BOTSERVER_STACK_PATH env var
+            std::env::var("BOTSERVER_STACK_PATH")
+                .map(PathBuf::from)
+                .unwrap_or_default(),
+        ];
+
+        for candidate in &candidates {
+            let bin_path = candidate.join("bin/tables/bin");
+            if bin_path.exists() && bin_path.join("postgres").exists() {
+                return Ok(candidate.clone());
+            }
+        }
+
+        anyhow::bail!(
+            "botserver-stack not found. Set BOTSERVER_STACK_PATH env var or ensure botserver-stack exists"
+        )
+    }
+
     /// Start a new PostgreSQL instance on the specified port
     pub async fn start(port: u16, data_dir: &str) -> Result<Self> {
+        let stack_path = Self::find_stack_path()?;
+        let bin_dir = stack_path.join("bin/tables/bin");
+
+        log::info!("Using PostgreSQL from botserver-stack: {:?}", bin_dir);
+
         let data_path = PathBuf::from(data_dir).join("postgres");
         ensure_dir(&data_path)?;
 
         let mut service = Self {
             port,
             data_dir: data_path.clone(),
+            bin_dir,
             process: None,
             connection_string: String::new(),
             database_name: Self::DEFAULT_DATABASE.to_string(),
@@ -67,6 +104,11 @@ impl PostgresService {
         Ok(service)
     }
 
+    /// Get binary path from bin_dir
+    fn get_binary(&self, name: &str) -> PathBuf {
+        self.bin_dir.join(name)
+    }
+
     /// Initialize the database cluster
     async fn init_db(&self) -> Result<()> {
         log::info!(
@@ -74,9 +116,13 @@ impl PostgresService {
             self.data_dir
         );
 
-        let initdb = Self::find_binary("initdb")?;
+        let initdb = self.get_binary("initdb");
 
         let output = Command::new(&initdb)
+            .env(
+                "LD_LIBRARY_PATH",
+                self.bin_dir.parent().unwrap().join("lib"),
+            )
             .args([
                 "-D",
                 self.data_dir.to_str().unwrap(),
@@ -89,7 +135,7 @@ impl PostgresService {
                 "--no-locale",
             ])
             .output()
-            .context("Failed to run initdb")?;
+            .context(format!("Failed to run initdb from {:?}", initdb))?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -105,6 +151,11 @@ impl PostgresService {
     /// Configure PostgreSQL for fast testing (reduced durability)
     fn configure_for_testing(&self) -> Result<()> {
         let config_path = self.data_dir.join("postgresql.conf");
+        // Use absolute path for unix_socket_directories
+        let abs_data_dir = self
+            .data_dir
+            .canonicalize()
+            .unwrap_or_else(|_| self.data_dir.clone());
         let config = format!(
             r#"
 # Test configuration - optimized for speed, not durability
@@ -126,7 +177,7 @@ log_duration = off
 unix_socket_directories = '{}'
 "#,
             self.port,
-            self.data_dir.to_str().unwrap()
+            abs_data_dir.to_str().unwrap()
         );
 
         std::fs::write(&config_path, config)?;
@@ -137,14 +188,24 @@ unix_socket_directories = '{}'
     async fn start_server(&mut self) -> Result<()> {
         log::info!("Starting PostgreSQL on port {}", self.port);
 
-        let postgres = Self::find_binary("postgres")?;
+        let postgres = self.get_binary("postgres");
+        let lib_dir = self.bin_dir.parent().unwrap().join("lib");
+
+        // Create log file for debugging
+        let log_path = self.data_dir.join("postgres.log");
+        let log_file = std::fs::File::create(&log_path)
+            .context(format!("Failed to create log file {:?}", log_path))?;
+        let stderr_file = log_file.try_clone()?;
+
+        log::info!("PostgreSQL log file: {:?}", log_path);
 
         let child = Command::new(&postgres)
+            .env("LD_LIBRARY_PATH", &lib_dir)
             .args(["-D", self.data_dir.to_str().unwrap()])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stdout(Stdio::from(log_file))
+            .stderr(Stdio::from(stderr_file))
             .spawn()
-            .context("Failed to start PostgreSQL")?;
+            .context(format!("Failed to start PostgreSQL from {:?}", postgres))?;
 
         self.process = Some(child);
         Ok(())
@@ -154,25 +215,36 @@ unix_socket_directories = '{}'
     async fn wait_ready(&self) -> Result<()> {
         log::info!("Waiting for PostgreSQL to be ready...");
 
-        wait_for(HEALTH_CHECK_TIMEOUT, HEALTH_CHECK_INTERVAL, || async {
+        let result = wait_for(HEALTH_CHECK_TIMEOUT, HEALTH_CHECK_INTERVAL, || async {
             check_tcp_port("127.0.0.1", self.port).await
         })
-        .await
-        .context("PostgreSQL failed to start in time")?;
+        .await;
+
+        if result.is_err() {
+            // Read log file to show error
+            let log_path = self.data_dir.join("postgres.log");
+            if log_path.exists() {
+                if let Ok(log_content) = std::fs::read_to_string(&log_path) {
+                    log::error!("PostgreSQL log:\n{}", log_content);
+                }
+            }
+            return Err(result.unwrap_err()).context("PostgreSQL failed to start in time");
+        }
 
         // Additional wait for pg_isready
-        let pg_isready = Self::find_binary("pg_isready").ok();
-        if let Some(pg_isready) = pg_isready {
-            for _ in 0..30 {
-                let status = Command::new(&pg_isready)
-                    .args(["-h", "127.0.0.1", "-p", &self.port.to_string()])
-                    .status();
+        let pg_isready = self.get_binary("pg_isready");
+        let lib_dir = self.bin_dir.parent().unwrap().join("lib");
 
-                if status.map(|s| s.success()).unwrap_or(false) {
-                    return Ok(());
-                }
-                sleep(Duration::from_millis(100)).await;
+        for _ in 0..30 {
+            let status = Command::new(&pg_isready)
+                .env("LD_LIBRARY_PATH", &lib_dir)
+                .args(["-h", "127.0.0.1", "-p", &self.port.to_string()])
+                .status();
+
+            if status.map(|s| s.success()).unwrap_or(false) {
+                return Ok(());
             }
+            sleep(Duration::from_millis(100)).await;
         }
 
         Ok(())
@@ -182,10 +254,12 @@ unix_socket_directories = '{}'
     async fn setup_test_database(&self) -> Result<()> {
         log::info!("Setting up test database '{}'", self.database_name);
 
-        let psql = Self::find_binary("psql")?;
+        let psql = self.get_binary("psql");
+        let lib_dir = self.bin_dir.parent().unwrap().join("lib");
 
         // Create user
         let _ = Command::new(&psql)
+            .env("LD_LIBRARY_PATH", &lib_dir)
             .args([
                 "-h",
                 "127.0.0.1",
@@ -203,6 +277,7 @@ unix_socket_directories = '{}'
 
         // Create database
         let _ = Command::new(&psql)
+            .env("LD_LIBRARY_PATH", &lib_dir)
             .args([
                 "-h",
                 "127.0.0.1",
@@ -248,9 +323,11 @@ unix_socket_directories = '{}'
 
     /// Create a new database with the given name
     pub async fn create_database(&self, name: &str) -> Result<()> {
-        let psql = Self::find_binary("psql")?;
+        let psql = self.get_binary("psql");
+        let lib_dir = self.bin_dir.parent().unwrap().join("lib");
 
         let output = Command::new(&psql)
+            .env("LD_LIBRARY_PATH", &lib_dir)
             .args([
                 "-h",
                 "127.0.0.1",
@@ -275,9 +352,11 @@ unix_socket_directories = '{}'
 
     /// Execute raw SQL
     pub async fn execute(&self, sql: &str) -> Result<()> {
-        let psql = Self::find_binary("psql")?;
+        let psql = self.get_binary("psql");
+        let lib_dir = self.bin_dir.parent().unwrap().join("lib");
 
         let output = Command::new(&psql)
+            .env("LD_LIBRARY_PATH", &lib_dir)
             .args([
                 "-h",
                 "127.0.0.1",
@@ -302,9 +381,11 @@ unix_socket_directories = '{}'
 
     /// Execute SQL and return results as JSON
     pub async fn query(&self, sql: &str) -> Result<String> {
-        let psql = Self::find_binary("psql")?;
+        let psql = self.get_binary("psql");
+        let lib_dir = self.bin_dir.parent().unwrap().join("lib");
 
         let output = Command::new(&psql)
+            .env("LD_LIBRARY_PATH", &lib_dir)
             .args([
                 "-h",
                 "127.0.0.1",
@@ -345,31 +426,6 @@ unix_socket_directories = '{}'
             "postgres://{}:{}@127.0.0.1:{}/{}",
             self.username, self.password, self.port, self.database_name
         )
-    }
-
-    /// Find a PostgreSQL binary
-    fn find_binary(name: &str) -> Result<PathBuf> {
-        // Try common locations
-        let common_paths = [
-            format!("/usr/bin/{}", name),
-            format!("/usr/local/bin/{}", name),
-            format!("/usr/lib/postgresql/16/bin/{}", name),
-            format!("/usr/lib/postgresql/15/bin/{}", name),
-            format!("/usr/lib/postgresql/14/bin/{}", name),
-            format!("/opt/homebrew/bin/{}", name),
-            format!("/opt/homebrew/opt/postgresql@16/bin/{}", name),
-            format!("/opt/homebrew/opt/postgresql@15/bin/{}", name),
-        ];
-
-        for path in common_paths {
-            let p = PathBuf::from(&path);
-            if p.exists() {
-                return Ok(p);
-            }
-        }
-
-        // Try which
-        which::which(name).context(format!("{} not found in PATH or common locations", name))
     }
 
     /// Stop the PostgreSQL server
@@ -436,6 +492,7 @@ mod tests {
         let service = PostgresService {
             port: 5432,
             data_dir: PathBuf::from("/tmp/test"),
+            bin_dir: PathBuf::from("/tmp/bin"),
             process: None,
             connection_string: String::new(),
             database_name: "testdb".to_string(),
