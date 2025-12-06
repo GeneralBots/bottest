@@ -1,7 +1,22 @@
-# BotTest Development Prompt Guide
+# BotTest Development Prompt
 
-**Version:** 6.1.0  
+**Version:** 7.0.0  
 **Purpose:** Test infrastructure for General Bots ecosystem
+
+---
+
+## CRITICAL RULE
+
+🚫 **NO .md FILES IN ROOT OF ANY PROJECT**
+
+All documentation goes in `botbook/src/17-testing/`:
+- `README.md` - Testing overview
+- `e2e-testing.md` - E2E test guide
+- `architecture.md` - Testing architecture
+- `performance.md` - Performance testing
+- `best-practices.md` - Best practices
+
+This PROMPT.md is the ONLY exception (it's for developers).
 
 ---
 
@@ -140,3 +155,23 @@ ctx.cleanup().await;  // Explicit cleanup
 - Each test gets unique temp directory
 - No shared state between tests
 - Safe to run with `cargo test -j 8`
+
+---
+
+## Documentation Location
+
+For guides, tutorials, and reference:
+→ Use `botbook/src/17-testing/`
+
+Examples:
+- E2E testing setup → `botbook/src/17-testing/e2e-testing.md`
+- Architecture details → `botbook/src/17-testing/architecture.md`
+- Performance tips → `botbook/src/17-testing/performance.md`
+
+Never create .md files at:
+- ✗ Root of bottest/
+- ✗ Root of botserver/
+- ✗ Root of botapp/
+- ✗ Any project root
+
+All non-PROMPT.md documentation belongs in botbook.
