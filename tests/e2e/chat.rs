@@ -1,4 +1,4 @@
-use super::{check_webdriver_available, should_run_e2e_tests, E2ETestContext};
+use super::{should_run_e2e_tests, E2ETestContext};
 use bottest::prelude::*;
 use bottest::web::Locator;
 

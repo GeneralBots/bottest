@@ -6,7 +6,7 @@
 pub mod browser;
 pub mod pages;
 
-pub use browser::{Browser, BrowserConfig, BrowserType, Element};
+pub use browser::{Browser, BrowserConfig, BrowserType};
 
 use serde::{Deserialize, Serialize};
 use std::time::Duration;

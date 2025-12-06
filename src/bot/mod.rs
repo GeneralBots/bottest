@@ -3,13 +3,8 @@
 //! Provides tools for simulating and testing bot conversations
 //! including message exchanges, flow validation, and response assertions.
 
-pub mod conversation;
-pub mod runner;
-
-pub use conversation::{ConversationBuilder, ConversationTest};
-pub use runner::{
-    BotRunner, BotRunnerConfig, ExecutionResult, LogEntry, LogLevel, RunnerMetrics, SessionInfo,
-};
+mod conversation;
+mod runner;
 
 use crate::fixtures::MessageDirection;
 use serde::{Deserialize, Serialize};

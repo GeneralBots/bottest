@@ -8,10 +8,10 @@
 //! 5. User logout
 
 use bottest::prelude::*;
-use bottest::web::{Browser, BrowserConfig};
+use bottest::web::{Browser, Locator};
 use std::time::Duration;
 
-use super::{browser_config, check_webdriver_available, should_run_e2e_tests, E2ETestContext};
+use super::{check_webdriver_available, should_run_e2e_tests, E2ETestContext};
 
 /// Step 1: Verify platform loads
 /// - Check UI is served
@@ -97,13 +97,12 @@ pub async fn test_user_login(browser: &Browser, ctx: &E2ETestContext) -> anyhow:
     let login_url = format!("{}/login", ctx.base_url());
 
     // Navigate to login page
-    browser.navigate(&login_url).await?;
+    browser.goto(&login_url).await?;
     println!("✓ Navigated to login page: {}", login_url);
 
     // Wait for login form to be visible
-    let timeout = Duration::from_secs(10);
     browser
-        .wait_for_element("input[type='email']", timeout)
+        .wait_for(Locator::css("input[type='email']"))
         .await?;
     println!("✓ Login form loaded");
 
@@ -112,25 +111,24 @@ pub async fn test_user_login(browser: &Browser, ctx: &E2ETestContext) -> anyhow:
     let test_password = "TestPassword123!";
 
     browser
-        .fill_input("input[type='email']", test_email)
+        .fill(Locator::css("input[type='email']"), test_email)
         .await?;
     println!("✓ Entered email: {}", test_email);
 
     browser
-        .fill_input("input[type='password']", test_password)
+        .fill(Locator::css("input[type='password']"), test_password)
         .await?;
     println!("✓ Entered password");
 
     // Submit login form
-    let submit_timeout = Duration::from_secs(5);
-    browser
-        .click("button[type='submit']", submit_timeout)
-        .await?;
+    browser.click(Locator::css("button[type='submit']")).await?;
     println!("✓ Clicked login button");
 
-    // Wait for redirect or dashboard
-    let redirect_timeout = Duration::from_secs(15);
-    let current_url = browser.get_current_url(redirect_timeout).await?;
+    // Wait a bit for redirect
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // Get current URL
+    let current_url = browser.current_url().await?;
 
     // Check we're not on login page anymore
     assert!(
@@ -143,10 +141,9 @@ pub async fn test_user_login(browser: &Browser, ctx: &E2ETestContext) -> anyhow:
 
     // Verify we can see dashboard or chat area
     browser
-        .wait_for_element(
+        .wait_for(Locator::css(
             "[data-testid='chat-area'], [data-testid='dashboard'], main",
-            Duration::from_secs(10),
-        )
+        ))
         .await?;
     println!("✓ Dashboard or chat area visible");
 
@@ -161,36 +158,40 @@ pub async fn test_user_login(browser: &Browser, ctx: &E2ETestContext) -> anyhow:
 pub async fn test_chat_interaction(browser: &Browser, ctx: &E2ETestContext) -> anyhow::Result<()> {
     // Ensure we're on chat page
     let chat_url = format!("{}/chat", ctx.base_url());
-    browser.navigate(&chat_url).await?;
+    browser.goto(&chat_url).await?;
     println!("✓ Navigated to chat page");
 
     // Wait for chat interface to load
     browser
-        .wait_for_element(
+        .wait_for(Locator::css(
             "[data-testid='message-input'], textarea.chat-input, input.message",
-            Duration::from_secs(10),
-        )
+        ))
         .await?;
     println!("✓ Chat interface loaded");
 
     // Send test message
     let test_message = "Hello, I need help";
     browser
-        .fill_input("textarea.chat-input, input.message", test_message)
+        .fill(
+            Locator::css("textarea.chat-input, input.message"),
+            test_message,
+        )
         .await?;
     println!("✓ Typed message: {}", test_message);
 
-    // Click send button or press Enter
+    // Click send button
     let send_result = browser
-        .click(
+        .click(Locator::css(
             "button[data-testid='send-button'], button.send-btn",
-            Duration::from_secs(5),
-        )
+        ))
         .await;
 
     if send_result.is_err() {
-        // Try pressing Enter as alternative
-        browser.press_key("Enter").await?;
+        // Try pressing Enter as alternative - find the input and send Enter key
+        let input = browser
+            .find(Locator::css("textarea.chat-input, input.message"))
+            .await?;
+        input.send_keys("\n").await?;
         println!("✓ Sent message with Enter key");
     } else {
         println!("✓ Clicked send button");
@@ -198,26 +199,25 @@ pub async fn test_chat_interaction(browser: &Browser, ctx: &E2ETestContext) -> a
 
     // Wait for message to appear in chat history
     browser
-        .wait_for_element(
+        .wait_for(Locator::css(
             "[data-testid='message-item'], .message-bubble, [class*='message']",
-            Duration::from_secs(10),
-        )
+        ))
         .await?;
     println!("✓ Message appeared in chat");
 
     // Wait for bot response
-    let response_timeout = Duration::from_secs(30);
     browser
-        .wait_for_element(
+        .wait_for(Locator::css(
             "[data-testid='bot-response'], .bot-message, [class*='bot']",
-            response_timeout,
-        )
+        ))
         .await?;
     println!("✓ Received bot response");
 
     // Get response text
     let response_text = browser
-        .get_text("[data-testid='bot-response'], .bot-message, [class*='bot']")
+        .text(Locator::css(
+            "[data-testid='bot-response'], .bot-message, [class*='bot']",
+        ))
         .await
         .ok();
 
@@ -247,7 +247,7 @@ pub async fn test_user_logout(browser: &Browser, ctx: &E2ETestContext) -> anyhow
 
     let mut logout_found = false;
     for selector in logout_selectors {
-        if let Ok(_) = browser.click(selector, Duration::from_secs(3)).await {
+        if browser.click(Locator::css(selector)).await.is_ok() {
             println!("✓ Clicked logout button: {}", selector);
             logout_found = true;
             break;
@@ -255,13 +255,14 @@ pub async fn test_user_logout(browser: &Browser, ctx: &E2ETestContext) -> anyhow
     }
 
     if !logout_found {
-        println!("⚠ Could not find logout button, attempting with keyboard shortcut");
-        browser.press_key("l").await.ok(); // Some apps use 'l' for logout
+        println!("⚠ Could not find logout button, attempting navigation to logout URL");
+        let logout_url = format!("{}/logout", ctx.base_url());
+        browser.goto(&logout_url).await?;
     }
 
     // Wait for redirect to login
-    let redirect_timeout = Duration::from_secs(10);
-    let current_url = browser.get_current_url(redirect_timeout).await?;
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    let current_url = browser.current_url().await?;
 
     assert!(
         current_url.contains("/login") || current_url.contains("/auth"),
@@ -273,9 +274,10 @@ pub async fn test_user_logout(browser: &Browser, ctx: &E2ETestContext) -> anyhow
 
     // Verify we cannot access protected routes
     let chat_url = format!("{}/chat", ctx.base_url());
-    browser.navigate(&chat_url).await?;
+    browser.goto(&chat_url).await?;
 
-    let check_url = browser.get_current_url(Duration::from_secs(5)).await?;
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    let check_url = browser.current_url().await?;
     assert!(
         check_url.contains("/login") || check_url.contains("/auth"),
         "Should be redirected to login when accessing protected route after logout. URL: {}",
