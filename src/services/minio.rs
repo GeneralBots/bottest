@@ -1,6 +1,7 @@
 //! MinIO service management for test infrastructure
 //!
-//! Uses the MinIO binary from botserver-stack folder.
+//! Starts and manages a MinIO instance for S3-compatible storage testing.
+//! Finds MinIO binary from system installation or botserver-stack.
 //! Provides bucket creation, object operations, and credential management.
 
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
@@ -31,28 +32,56 @@ impl MinioService {
     /// Default secret key for tests
     pub const DEFAULT_SECRET_KEY: &'static str = "minioadmin";
 
-    /// Find the botserver-stack path and return minio binary
+    /// Find MinIO binary - checks botserver-stack first, then system paths
     fn find_minio_binary() -> Result<PathBuf> {
-        let cwd = std::env::current_dir()?;
-
-        let candidates = [
-            cwd.join("../botserver/botserver-stack/bin/drive/minio"),
-            cwd.join("botserver/botserver-stack/bin/drive/minio"),
-            PathBuf::from("/home/rodriguez/src/gb/botserver/botserver-stack/bin/drive/minio"),
-            std::env::var("BOTSERVER_STACK_PATH")
-                .map(|p| PathBuf::from(p).join("bin/drive/minio"))
-                .unwrap_or_default(),
-        ];
-
-        for candidate in &candidates {
-            if candidate.exists() {
-                return Ok(candidate.clone());
+        // First, check BOTSERVER_STACK_PATH env var
+        if let Ok(stack_path) = std::env::var("BOTSERVER_STACK_PATH") {
+            let minio_path = PathBuf::from(&stack_path).join("bin/drive/minio");
+            if minio_path.exists() {
+                log::info!("Using MinIO from BOTSERVER_STACK_PATH: {:?}", minio_path);
+                return Ok(minio_path);
             }
         }
 
-        // Fallback to system minio
-        which::which("minio")
-            .context("minio not found in botserver-stack or PATH. Set BOTSERVER_STACK_PATH env var")
+        // Check relative paths from current directory
+        let cwd = std::env::current_dir().unwrap_or_default();
+        let relative_paths = [
+            "../botserver/botserver-stack/bin/drive/minio",
+            "botserver/botserver-stack/bin/drive/minio",
+            "botserver-stack/bin/drive/minio",
+        ];
+
+        for rel_path in &relative_paths {
+            let minio_path = cwd.join(rel_path);
+            if minio_path.exists() {
+                log::info!("Using MinIO from botserver-stack: {:?}", minio_path);
+                return Ok(minio_path);
+            }
+        }
+
+        // Check system paths
+        let system_paths = [
+            "/usr/local/bin/minio",
+            "/usr/bin/minio",
+            "/opt/minio/minio",
+            "/opt/homebrew/bin/minio",
+        ];
+
+        for path in &system_paths {
+            let minio_path = PathBuf::from(path);
+            if minio_path.exists() {
+                log::info!("Using system MinIO from: {:?}", minio_path);
+                return Ok(minio_path);
+            }
+        }
+
+        // Last resort: try to find via which
+        if let Ok(minio_path) = which::which("minio") {
+            log::info!("Using MinIO from PATH: {:?}", minio_path);
+            return Ok(minio_path);
+        }
+
+        anyhow::bail!("MinIO not found. Install MinIO or set BOTSERVER_STACK_PATH env var")
     }
 
     /// Start a new MinIO instance on the specified port

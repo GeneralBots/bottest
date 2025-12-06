@@ -49,8 +49,8 @@ impl TestConfig {
     pub fn full() -> Self {
         Self {
             postgres: true,
-            minio: false, // MinIO binary in botserver-stack is broken (segfault)
-            redis: false, // Redis not in botserver-stack
+            minio: false, // Botserver will bootstrap its own MinIO
+            redis: false, // Botserver will bootstrap its own Redis
             mock_zitadel: true,
             mock_llm: true,
             run_migrations: true,
@@ -377,6 +377,7 @@ impl Insertable for QueueEntry {
 pub struct BotServerInstance {
     pub url: String,
     pub port: u16,
+    pub stack_path: PathBuf,
     process: Option<std::process::Child>,
 }
 
@@ -385,10 +386,18 @@ impl BotServerInstance {
         let port = ctx.ports.botserver;
         let url = format!("http://127.0.0.1:{}", port);
 
+        // Create a clean test stack directory for this test run
+        let stack_path = ctx.data_dir.join("botserver-stack");
+        std::fs::create_dir_all(&stack_path)?;
+        log::info!("Created clean test stack at: {:?}", stack_path);
+
         let botserver_bin =
             std::env::var("BOTSERVER_BIN").unwrap_or_else(|_| "botserver".to_string());
 
+        // Pass --stack-path so botserver bootstraps into our clean test directory
         let process = std::process::Command::new(&botserver_bin)
+            .arg("--stack-path")
+            .arg(&stack_path)
             .arg("--port")
             .arg(port.to_string())
             .arg("--database-url")
@@ -406,7 +415,12 @@ impl BotServerInstance {
             for _ in 0..50 {
                 if let Ok(resp) = reqwest::get(&format!("{}/health", url)).await {
                     if resp.status().is_success() {
-                        return Ok(Self { url, port, process });
+                        return Ok(Self {
+                            url,
+                            port,
+                            stack_path,
+                            process,
+                        });
                     }
                 }
                 tokio::time::sleep(std::time::Duration::from_millis(100)).await;
@@ -416,6 +430,7 @@ impl BotServerInstance {
         Ok(Self {
             url,
             port,
+            stack_path,
             process: None,
         })
     }

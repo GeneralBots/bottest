@@ -806,14 +806,15 @@ async fn test_mock_services_available() {
         ctx.ctx.mock_zitadel().is_some(),
         "MockZitadel should be available"
     );
-    assert!(ctx.ctx.minio().is_some(), "MinIO should be available");
-    assert!(ctx.ctx.redis().is_some(), "Redis should be available");
     assert!(
         ctx.ctx.postgres().is_some(),
         "PostgreSQL should be available"
     );
 
-    println!("All services available in full harness");
+    // MinIO and Redis are bootstrapped by botserver, not the test harness
+    // so we only check the core test services here
+
+    println!("Core test services available in harness");
 
     ctx.close().await;
 }

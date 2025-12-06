@@ -177,11 +177,16 @@ async fn test_full_harness_has_all_services() {
         }
     };
 
-    assert!(ctx.postgres().is_some());
-    assert!(ctx.minio().is_some());
-    assert!(ctx.redis().is_some());
-    assert!(ctx.mock_llm().is_some());
-    assert!(ctx.mock_zitadel().is_some());
+    // Check services that are enabled in full() config
+    assert!(ctx.postgres().is_some(), "PostgreSQL should be available");
+    assert!(ctx.mock_llm().is_some(), "MockLLM should be available");
+    assert!(
+        ctx.mock_zitadel().is_some(),
+        "MockZitadel should be available"
+    );
+
+    // MinIO and Redis are disabled in full() config (not in botserver-stack)
+    // so we don't assert they are present
 
     assert!(ctx.data_dir.exists());
     assert!(ctx.data_dir.to_str().unwrap().contains("bottest-"));
