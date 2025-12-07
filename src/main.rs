@@ -745,17 +745,15 @@ async fn run_integration_tests(config: &RunnerConfig) -> Result<TestResults> {
 
     let filter = config.filter.as_deref();
     let db_url = ctx.database_url();
-    let zitadel_url = ctx.zitadel_url();
-    let llm_url = ctx.llm_url();
-    let minio_endpoint = ctx.minio_endpoint();
-    let redis_url = ctx.redis_url();
+    let directory_url = ctx.zitadel_url();
 
     let env_vars: Vec<(&str, &str)> = vec![
         ("DATABASE_URL", &db_url),
-        ("ZITADEL_URL", &zitadel_url),
-        ("LLM_URL", &llm_url),
-        ("MINIO_ENDPOINT", &minio_endpoint),
-        ("REDIS_URL", &redis_url),
+        ("DIRECTORY_URL", &directory_url),
+        ("ZITADEL_CLIENT_ID", "test-client-id"),
+        ("ZITADEL_CLIENT_SECRET", "test-client-secret"),
+        ("DRIVE_ACCESSKEY", "minioadmin"),
+        ("DRIVE_SECRET", "minioadmin"),
     ];
 
     match run_cargo_test(
@@ -907,16 +905,18 @@ async fn run_e2e_tests(config: &RunnerConfig) -> Result<TestResults> {
     let filter = config.filter.as_deref();
     let headed = if config.headed { "1" } else { "" };
     let db_url = ctx.database_url();
-    let zitadel_url = ctx.zitadel_url();
-    let llm_url = ctx.llm_url();
+    let directory_url = ctx.zitadel_url();
     let server_url = server.url.clone();
     let chrome_binary = chrome_path.to_string_lossy().to_string();
     let webdriver_url = format!("http://localhost:{}", webdriver_port);
 
     let env_vars: Vec<(&str, &str)> = vec![
         ("DATABASE_URL", &db_url),
-        ("ZITADEL_URL", &zitadel_url),
-        ("LLM_URL", &llm_url),
+        ("DIRECTORY_URL", &directory_url),
+        ("ZITADEL_CLIENT_ID", "test-client-id"),
+        ("ZITADEL_CLIENT_SECRET", "test-client-secret"),
+        ("DRIVE_ACCESSKEY", "minioadmin"),
+        ("DRIVE_SECRET", "minioadmin"),
         ("BOTSERVER_URL", &server_url),
         ("HEADED", headed),
         ("CHROME_BINARY", &chrome_binary),

@@ -72,6 +72,8 @@ pub struct BrowserConfig {
     pub browser_args: Vec<String>,
     /// Additional capabilities
     pub capabilities: HashMap<String, serde_json::Value>,
+    /// Browser binary path (for Brave/Chromium variants)
+    pub binary_path: Option<String>,
 }
 
 impl Default for BrowserConfig {
@@ -86,6 +88,7 @@ impl Default for BrowserConfig {
             accept_insecure_certs: true,
             browser_args: Vec::new(),
             capabilities: HashMap::new(),
+            binary_path: None,
         }
     }
 }
@@ -133,6 +136,12 @@ impl BrowserConfig {
         self
     }
 
+    /// Set browser binary path (for Brave, Chromium variants)
+    pub fn with_binary(mut self, path: &str) -> Self {
+        self.binary_path = Some(path.to_string());
+        self
+    }
+
     /// Build WebDriver capabilities
     pub fn build_capabilities(&self) -> serde_json::Value {
         let mut caps = serde_json::json!({
@@ -169,6 +178,11 @@ impl BrowserConfig {
         ));
 
         browser_options["args"] = serde_json::json!(args);
+
+        // Set browser binary path if specified
+        if let Some(ref binary) = self.binary_path {
+            browser_options["binary"] = serde_json::json!(binary);
+        }
 
         caps[self.browser_type.capability_name()] = browser_options;
 

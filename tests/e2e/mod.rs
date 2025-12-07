@@ -4,38 +4,64 @@ mod dashboard;
 mod platform_flow;
 
 use bottest::prelude::*;
+use bottest::services::ChromeDriverService;
 use bottest::web::{Browser, BrowserConfig, BrowserType};
 use std::time::Duration;
+
+static CHROMEDRIVER_PORT: u16 = 4444;
 
 pub struct E2ETestContext {
     pub ctx: TestContext,
     pub server: BotServerInstance,
     pub browser: Option<Browser>,
+    chromedriver: Option<ChromeDriverService>,
 }
 
 impl E2ETestContext {
     pub async fn setup() -> anyhow::Result<Self> {
-        let ctx = TestHarness::full().await?;
+        let ctx = if std::env::var("USE_EXISTING_STACK").is_ok() {
+            TestHarness::with_existing_stack().await?
+        } else {
+            TestHarness::full().await?
+        };
         let server = ctx.start_botserver().await?;
 
         Ok(Self {
             ctx,
             server,
             browser: None,
+            chromedriver: None,
         })
     }
 
     pub async fn setup_with_browser() -> anyhow::Result<Self> {
-        let ctx = TestHarness::full().await?;
+        let ctx = if std::env::var("USE_EXISTING_STACK").is_ok() {
+            TestHarness::with_existing_stack().await?
+        } else {
+            TestHarness::full().await?
+        };
         let server = ctx.start_botserver().await?;
 
-        let config = browser_config();
-        let browser = Browser::new(config).await.ok();
+        let chromedriver = match ChromeDriverService::start(CHROMEDRIVER_PORT).await {
+            Ok(cd) => Some(cd),
+            Err(e) => {
+                log::warn!("Failed to start ChromeDriver: {}", e);
+                None
+            }
+        };
+
+        let browser = if chromedriver.is_some() {
+            let config = browser_config();
+            Browser::new(config).await.ok()
+        } else {
+            None
+        };
 
         Ok(Self {
             ctx,
             server,
             browser,
+            chromedriver,
         })
     }
 
@@ -47,24 +73,46 @@ impl E2ETestContext {
         self.browser.is_some()
     }
 
-    pub async fn close(self) {
+    pub async fn close(mut self) {
         if let Some(browser) = self.browser {
             let _ = browser.close().await;
+        }
+        if let Some(mut cd) = self.chromedriver.take() {
+            let _ = cd.stop().await;
         }
     }
 }
 
 pub fn browser_config() -> BrowserConfig {
     let headless = std::env::var("HEADED").is_err();
-    let webdriver_url =
-        std::env::var("WEBDRIVER_URL").unwrap_or_else(|_| "http://localhost:4444".to_string());
+    let webdriver_url = std::env::var("WEBDRIVER_URL")
+        .unwrap_or_else(|_| format!("http://localhost:{}", CHROMEDRIVER_PORT));
 
-    BrowserConfig::default()
+    // Detect Brave browser path
+    let brave_paths = [
+        "/usr/bin/brave-browser",
+        "/usr/bin/brave",
+        "/snap/bin/brave",
+        "/opt/brave.com/brave/brave-browser",
+    ];
+
+    let mut config = BrowserConfig::default()
         .with_browser(BrowserType::Chrome)
         .with_webdriver_url(&webdriver_url)
         .headless(headless)
         .with_timeout(Duration::from_secs(30))
-        .with_window_size(1920, 1080)
+        .with_window_size(1920, 1080);
+
+    // Add Brave binary path if found
+    for path in &brave_paths {
+        if std::path::Path::new(path).exists() {
+            log::info!("Using browser binary: {}", path);
+            config = config.with_binary(path);
+            break;
+        }
+    }
+
+    config
 }
 
 pub fn should_run_e2e_tests() -> bool {
@@ -75,18 +123,7 @@ pub fn should_run_e2e_tests() -> bool {
 }
 
 pub async fn check_webdriver_available() -> bool {
-    let webdriver_url =
-        std::env::var("WEBDRIVER_URL").unwrap_or_else(|_| "http://localhost:4444".to_string());
-
-    let client = match reqwest::Client::builder()
-        .timeout(Duration::from_secs(2))
-        .build()
-    {
-        Ok(c) => c,
-        Err(_) => return false,
-    };
-
-    client.get(&webdriver_url).send().await.is_ok()
+    true
 }
 
 #[tokio::test]

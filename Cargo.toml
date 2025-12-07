@@ -49,6 +49,7 @@ which = "7"
 regex = "1.11"
 base64 = "0.22"
 url = "2.5"
+dirs = "5.0"
 
 # Process management for services
 nix = { version = "0.29", features = ["signal", "process"] }

@@ -2,8 +2,8 @@
 //!
 //! Ensures each test gets unique ports to avoid conflicts
 
-use std::sync::atomic::{AtomicU16, Ordering};
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::Mutex;
 
 static PORT_COUNTER: AtomicU16 = AtomicU16::new(15000);
@@ -19,7 +19,7 @@ impl PortAllocator {
                 PORT_COUNTER.store(15000, Ordering::SeqCst);
                 continue;
             }
-            
+
             if Self::is_available(port) {
                 let mut guard = ALLOCATED_PORTS.lock().unwrap();
                 let set = guard.get_or_insert_with(HashSet::new);
@@ -28,18 +28,18 @@ impl PortAllocator {
             }
         }
     }
-    
+
     pub fn allocate_range(count: usize) -> Vec<u16> {
         (0..count).map(|_| Self::allocate()).collect()
     }
-    
+
     pub fn release(port: u16) {
         let mut guard = ALLOCATED_PORTS.lock().unwrap();
         if let Some(set) = guard.as_mut() {
             set.remove(&port);
         }
     }
-    
+
     fn is_available(port: u16) -> bool {
         use std::net::TcpListener;
         TcpListener::bind(("127.0.0.1", port)).is_ok()
@@ -71,12 +71,26 @@ impl TestPorts {
 
 impl Drop for TestPorts {
     fn drop(&mut self) {
-        PortAllocator::release(self.postgres);
-        PortAllocator::release(self.minio);
-        PortAllocator::release(self.redis);
-        PortAllocator::release(self.botserver);
-        PortAllocator::release(self.mock_zitadel);
-        PortAllocator::release(self.mock_llm);
+        // Only release dynamically allocated ports (>= 15000)
+        // Fixed ports from existing stack should not be released
+        if self.postgres >= 15000 {
+            PortAllocator::release(self.postgres);
+        }
+        if self.minio >= 15000 {
+            PortAllocator::release(self.minio);
+        }
+        if self.redis >= 15000 {
+            PortAllocator::release(self.redis);
+        }
+        if self.botserver >= 15000 {
+            PortAllocator::release(self.botserver);
+        }
+        if self.mock_zitadel >= 15000 {
+            PortAllocator::release(self.mock_zitadel);
+        }
+        if self.mock_llm >= 15000 {
+            PortAllocator::release(self.mock_llm);
+        }
     }
 }
 

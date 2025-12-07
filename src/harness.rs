@@ -1,6 +1,6 @@
 use crate::fixtures::{Bot, Customer, Message, QueueEntry, Session, User};
 use crate::mocks::{MockLLM, MockZitadel};
-use crate::ports::TestPorts;
+use crate::ports::{PortAllocator, TestPorts};
 use crate::services::{MinioService, PostgresService, RedisService};
 use anyhow::Result;
 use diesel::r2d2::{ConnectionManager, Pool};
@@ -53,7 +53,7 @@ impl TestConfig {
             redis: false, // Botserver will bootstrap its own Redis
             mock_zitadel: true,
             mock_llm: true,
-            run_migrations: true,
+            run_migrations: false, // Let botserver run its own migrations
         }
     }
 
@@ -64,12 +64,34 @@ impl TestConfig {
             ..Self::minimal()
         }
     }
+
+    pub fn use_existing_stack() -> Self {
+        Self {
+            postgres: false,
+            minio: false,
+            redis: false,
+            mock_zitadel: true,
+            mock_llm: true,
+            run_migrations: false,
+        }
+    }
+}
+
+pub struct DefaultPorts;
+
+impl DefaultPorts {
+    pub const POSTGRES: u16 = 5432;
+    pub const MINIO: u16 = 9000;
+    pub const REDIS: u16 = 6379;
+    pub const ZITADEL: u16 = 8080;
+    pub const BOTSERVER: u16 = 8080;
 }
 
 pub struct TestContext {
     pub ports: TestPorts,
     pub config: TestConfig,
     pub data_dir: PathBuf,
+    pub use_existing_stack: bool,
     test_id: Uuid,
     postgres: Option<PostgresService>,
     minio: Option<MinioService>,
@@ -86,22 +108,43 @@ impl TestContext {
     }
 
     pub fn database_url(&self) -> String {
-        format!(
-            "postgres://bottest:bottest@127.0.0.1:{}/bottest",
-            self.ports.postgres
-        )
+        if self.use_existing_stack {
+            std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+                format!(
+                    "postgres://gbuser:gbpassword@127.0.0.1:{}/botserver",
+                    DefaultPorts::POSTGRES
+                )
+            })
+        } else {
+            format!(
+                "postgres://bottest:bottest@127.0.0.1:{}/bottest",
+                self.ports.postgres
+            )
+        }
     }
 
     pub fn minio_endpoint(&self) -> String {
-        format!("http://127.0.0.1:{}", self.ports.minio)
+        if self.use_existing_stack {
+            format!("http://127.0.0.1:{}", DefaultPorts::MINIO)
+        } else {
+            format!("http://127.0.0.1:{}", self.ports.minio)
+        }
     }
 
     pub fn redis_url(&self) -> String {
-        format!("redis://127.0.0.1:{}", self.ports.redis)
+        if self.use_existing_stack {
+            format!("redis://127.0.0.1:{}", DefaultPorts::REDIS)
+        } else {
+            format!("redis://127.0.0.1:{}", self.ports.redis)
+        }
     }
 
     pub fn zitadel_url(&self) -> String {
-        format!("http://127.0.0.1:{}", self.ports.mock_zitadel)
+        if self.use_existing_stack {
+            format!("https://127.0.0.1:{}", DefaultPorts::ZITADEL)
+        } else {
+            format!("http://127.0.0.1:{}", self.ports.mock_zitadel)
+        }
     }
 
     pub fn llm_url(&self) -> String {
@@ -382,6 +425,7 @@ pub struct BotServerInstance {
 }
 
 impl BotServerInstance {
+    /// Start botserver, creating a fresh stack from scratch for testing
     pub async fn start(ctx: &TestContext) -> Result<Self> {
         let port = ctx.ports.botserver;
         let url = format!("http://127.0.0.1:{}", port);
@@ -391,30 +435,60 @@ impl BotServerInstance {
         std::fs::create_dir_all(&stack_path)?;
         log::info!("Created clean test stack at: {:?}", stack_path);
 
-        let botserver_bin =
-            std::env::var("BOTSERVER_BIN").unwrap_or_else(|_| "botserver".to_string());
+        // Create config directories so botserver thinks services are configured
+        Self::setup_test_stack_config(&stack_path, ctx)?;
 
-        // Pass --stack-path so botserver bootstraps into our clean test directory
+        let botserver_bin = std::env::var("BOTSERVER_BIN")
+            .unwrap_or_else(|_| "../botserver/target/release/botserver".to_string());
+
+        // Check if binary exists
+        if !PathBuf::from(&botserver_bin).exists() {
+            log::warn!("Botserver binary not found at: {}", botserver_bin);
+            return Ok(Self {
+                url,
+                port,
+                stack_path,
+                process: None,
+            });
+        }
+
+        log::info!("Starting botserver from: {}", botserver_bin);
+
+        // Start botserver with test configuration
+        // - Uses test harness PostgreSQL
+        // - Uses mock Zitadel for auth
+        // - Uses mock LLM
+        // Env vars align with SecretsManager fallbacks (see botserver/src/core/secrets/mod.rs)
         let process = std::process::Command::new(&botserver_bin)
             .arg("--stack-path")
             .arg(&stack_path)
             .arg("--port")
             .arg(port.to_string())
-            .arg("--database-url")
-            .arg(ctx.database_url())
-            .env("ZITADEL_URL", ctx.zitadel_url())
-            .env("LLM_URL", ctx.llm_url())
-            .env("MINIO_ENDPOINT", ctx.minio_endpoint())
-            .env("REDIS_URL", ctx.redis_url())
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
+            .arg("--noconsole")
+            .env_remove("RUST_LOG") // Remove to avoid logger conflict
+            // Database - DATABASE_URL is the standard fallback
+            .env("DATABASE_URL", ctx.database_url())
+            // Directory (Zitadel) - use SecretsManager fallback env vars
+            .env("DIRECTORY_URL", ctx.zitadel_url())
+            .env("ZITADEL_CLIENT_ID", "test-client-id")
+            .env("ZITADEL_CLIENT_SECRET", "test-client-secret")
+            // Drive (MinIO) - use SecretsManager fallback env vars
+            .env("DRIVE_ACCESSKEY", "minioadmin")
+            .env("DRIVE_SECRET", "minioadmin")
+            // Skip service installation during tests
+            .env("BOTSERVER_SKIP_INSTALL", "1")
+            .stdout(std::process::Stdio::inherit())
+            .stderr(std::process::Stdio::inherit())
             .spawn()
             .ok();
 
         if process.is_some() {
-            for _ in 0..50 {
+            log::info!("Waiting for botserver to bootstrap and become ready...");
+            // Give more time for botserver to bootstrap services
+            for i in 0..120 {
                 if let Ok(resp) = reqwest::get(&format!("{}/health", url)).await {
                     if resp.status().is_success() {
+                        log::info!("Botserver is ready on port {}", port);
                         return Ok(Self {
                             url,
                             port,
@@ -423,8 +497,12 @@ impl BotServerInstance {
                         });
                     }
                 }
-                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                if i % 10 == 0 {
+                    log::info!("Still waiting for botserver... ({}s)", i);
+                }
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }
+            log::warn!("Botserver did not respond to health check in time");
         }
 
         Ok(Self {
@@ -437,6 +515,88 @@ impl BotServerInstance {
 
     pub fn is_running(&self) -> bool {
         self.process.is_some()
+    }
+
+    /// Setup minimal config files so botserver thinks services are configured
+    fn setup_test_stack_config(stack_path: &PathBuf, ctx: &TestContext) -> Result<()> {
+        // Create directory config path
+        let directory_conf = stack_path.join("conf/directory");
+        std::fs::create_dir_all(&directory_conf)?;
+
+        // Create zitadel.yaml pointing to our mock Zitadel
+        let zitadel_config = format!(
+            r#"Log:
+  Level: info
+
+Database:
+  postgres:
+    Host: 127.0.0.1
+    Port: {}
+    Database: bottest
+    User: bottest
+    Password: "bottest"
+    SSL:
+      Mode: disable
+
+ExternalSecure: false
+ExternalDomain: localhost
+ExternalPort: {}
+"#,
+            ctx.ports.postgres, ctx.ports.mock_zitadel
+        );
+
+        std::fs::write(directory_conf.join("zitadel.yaml"), zitadel_config)?;
+        log::info!("Created test zitadel.yaml config");
+
+        // Create system certificates directory
+        let certs_dir = stack_path.join("conf/system/certificates");
+        std::fs::create_dir_all(&certs_dir)?;
+
+        // Generate minimal self-signed certificates for API
+        Self::generate_test_certificates(&certs_dir)?;
+
+        Ok(())
+    }
+
+    /// Generate minimal test certificates
+    fn generate_test_certificates(certs_dir: &PathBuf) -> Result<()> {
+        use std::process::Command;
+
+        let api_dir = certs_dir.join("api");
+        std::fs::create_dir_all(&api_dir)?;
+
+        // Check if openssl is available
+        let openssl_check = Command::new("which").arg("openssl").output();
+        if openssl_check.map(|o| o.status.success()).unwrap_or(false) {
+            // Generate self-signed certificate using openssl
+            let key_path = api_dir.join("server.key");
+            let cert_path = api_dir.join("server.crt");
+
+            if !key_path.exists() {
+                let _ = Command::new("openssl")
+                    .args([
+                        "req",
+                        "-x509",
+                        "-newkey",
+                        "rsa:2048",
+                        "-keyout",
+                        key_path.to_str().unwrap(),
+                        "-out",
+                        cert_path.to_str().unwrap(),
+                        "-days",
+                        "1",
+                        "-nodes",
+                        "-subj",
+                        "/CN=localhost",
+                    ])
+                    .output();
+                log::info!("Generated test TLS certificates");
+            }
+        } else {
+            log::warn!("openssl not found, skipping certificate generation");
+        }
+
+        Ok(())
     }
 }
 
@@ -453,6 +613,14 @@ pub struct TestHarness;
 
 impl TestHarness {
     pub async fn setup(config: TestConfig) -> Result<TestContext> {
+        Self::setup_internal(config, false).await
+    }
+
+    pub async fn with_existing_stack() -> Result<TestContext> {
+        Self::setup_internal(TestConfig::use_existing_stack(), true).await
+    }
+
+    async fn setup_internal(config: TestConfig, use_existing_stack: bool) -> Result<TestContext> {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let test_id = Uuid::new_v4();
@@ -460,12 +628,25 @@ impl TestHarness {
 
         std::fs::create_dir_all(&data_dir)?;
 
-        let ports = TestPorts::allocate();
+        let ports = if use_existing_stack {
+            TestPorts {
+                postgres: DefaultPorts::POSTGRES,
+                minio: DefaultPorts::MINIO,
+                redis: DefaultPorts::REDIS,
+                botserver: PortAllocator::allocate(),
+                mock_zitadel: PortAllocator::allocate(),
+                mock_llm: PortAllocator::allocate(),
+            }
+        } else {
+            TestPorts::allocate()
+        };
+
         log::info!(
-            "Test {} allocated ports: {:?}, data_dir: {:?}",
+            "Test {} allocated ports: {:?}, data_dir: {:?}, use_existing_stack: {}",
             test_id,
             ports,
-            data_dir
+            data_dir,
+            use_existing_stack
         );
 
         let data_dir_str = data_dir.to_str().unwrap().to_string();
@@ -474,6 +655,7 @@ impl TestHarness {
             ports,
             config: config.clone(),
             data_dir,
+            use_existing_stack,
             test_id,
             postgres: None,
             minio: None,
@@ -524,7 +706,11 @@ impl TestHarness {
     }
 
     pub async fn full() -> Result<TestContext> {
-        Self::setup(TestConfig::full()).await
+        if std::env::var("USE_EXISTING_STACK").is_ok() {
+            Self::with_existing_stack().await
+        } else {
+            Self::setup(TestConfig::full()).await
+        }
     }
 
     pub async fn minimal() -> Result<TestContext> {
