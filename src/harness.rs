@@ -109,13 +109,19 @@ impl TestContext {
 
     pub fn database_url(&self) -> String {
         if self.use_existing_stack {
-            std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-                format!(
-                    "postgres://gbuser:gbpassword@127.0.0.1:{}/botserver",
-                    DefaultPorts::POSTGRES
-                )
-            })
+            // Credentials must be provided via environment or vault - no hardcoded fallbacks
+            // For existing stack, expect VAULT_ADDR and credentials from vault
+            let host = std::env::var("DB_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+            let port = std::env::var("DB_PORT")
+                .ok()
+                .and_then(|p| p.parse().ok())
+                .unwrap_or(DefaultPorts::POSTGRES);
+            let user = std::env::var("DB_USER").expect("DB_USER must be set for existing stack");
+            let password = std::env::var("DB_PASSWORD").expect("DB_PASSWORD must be set for existing stack");
+            let database = std::env::var("DB_NAME").unwrap_or_else(|_| "botserver".to_string());
+            format!("postgres://{}:{}@{}:{}/{}", user, password, host, port, database)
         } else {
+            // For test-managed postgres, use test credentials
             format!(
                 "postgres://bottest:bottest@127.0.0.1:{}/bottest",
                 self.ports.postgres
