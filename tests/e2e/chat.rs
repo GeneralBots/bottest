@@ -32,7 +32,7 @@ async fn test_chat_page_loads() {
         return;
     }
 
-    let chat_input = Locator::css("#chat-input, .chat-input, textarea[placeholder*='message']");
+    let chat_input = Locator::css("#messageInput");
 
     match browser.wait_for(chat_input).await {
         Ok(_) => println!("Chat input found"),
@@ -72,12 +72,9 @@ async fn test_chat_widget_elements() {
     }
 
     let elements_to_check = vec![
-        ("#chat-container, .chat-container", "chat container"),
-        ("#chat-input, .chat-input, textarea", "input field"),
-        (
-            "#send-button, .send-button, button[type='submit']",
-            "send button",
-        ),
+        ("#chat-app, .chat-layout", "chat container"),
+        ("#messageInput", "input field"),
+        ("#sendBtn", "send button"),
     ];
 
     for (selector, name) in elements_to_check {
@@ -126,7 +123,7 @@ async fn test_send_message() {
         return;
     }
 
-    let input_locator = Locator::css("#chat-input, .chat-input, textarea");
+    let input_locator = Locator::css("#messageInput");
     if let Err(e) = browser.wait_for(input_locator.clone()).await {
         eprintln!("Input not ready: {}", e);
         ctx.close().await;
@@ -139,7 +136,7 @@ async fn test_send_message() {
         return;
     }
 
-    let send_button = Locator::css("#send-button, .send-button, button[type='submit']");
+    let send_button = Locator::css("#sendBtn");
     if let Err(e) = browser.click(send_button).await {
         eprintln!("Failed to click send: {}", e);
     }
@@ -182,14 +179,14 @@ async fn test_receive_bot_response() {
         return;
     }
 
-    let input_locator = Locator::css("#chat-input, .chat-input, textarea");
+    let input_locator = Locator::css("#messageInput");
     let _ = browser.wait_for(input_locator.clone()).await;
     let _ = browser.type_text(input_locator, "Test message").await;
 
-    let send_button = Locator::css("#send-button, .send-button, button[type='submit']");
+    let send_button = Locator::css("#sendBtn");
     let _ = browser.click(send_button).await;
 
-    let response_locator = Locator::css(".bot-message, .message-bot, .response");
+    let response_locator = Locator::css(".message.bot .bot-message");
     match browser.wait_for(response_locator).await {
         Ok(_) => println!("Bot response received"),
         Err(e) => eprintln!("No bot response: {}", e),
@@ -231,8 +228,8 @@ async fn test_chat_history() {
         return;
     }
 
-    let input_locator = Locator::css("#chat-input, .chat-input, textarea");
-    let send_button = Locator::css("#send-button, .send-button, button[type='submit']");
+    let input_locator = Locator::css("#messageInput");
+    let send_button = Locator::css("#sendBtn");
 
     for i in 1..=3 {
         let _ = browser.wait_for(input_locator.clone()).await;
@@ -243,7 +240,7 @@ async fn test_chat_history() {
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
     }
 
-    let messages_locator = Locator::css(".message, .chat-message");
+    let messages_locator = Locator::css(".message");
     match browser.find_elements(messages_locator).await {
         Ok(elements) => {
             println!("Found {} messages in history", elements.len());
@@ -288,8 +285,8 @@ async fn test_typing_indicator() {
         return;
     }
 
-    let input_locator = Locator::css("#chat-input, .chat-input, textarea");
-    let send_button = Locator::css("#send-button, .send-button, button[type='submit']");
+    let input_locator = Locator::css("#messageInput");
+    let send_button = Locator::css("#sendBtn");
 
     let _ = browser.wait_for(input_locator.clone()).await;
     let _ = browser.type_text(input_locator, "Hello").await;
@@ -337,7 +334,7 @@ async fn test_keyboard_shortcuts() {
         return;
     }
 
-    let input_locator = Locator::css("#chat-input, .chat-input, textarea");
+    let input_locator = Locator::css("#messageInput");
     let _ = browser.wait_for(input_locator.clone()).await;
     let _ = browser
         .type_text(input_locator.clone(), "Test enter key")
@@ -379,7 +376,7 @@ async fn test_empty_message_prevention() {
         return;
     }
 
-    let send_button = Locator::css("#send-button, .send-button, button[type='submit']");
+    let send_button = Locator::css("#sendBtn");
     let _ = browser.wait_for(send_button.clone()).await;
 
     match browser.is_element_enabled(send_button.clone()).await {
@@ -435,7 +432,7 @@ async fn test_responsive_design() {
         if browser.set_window_size(width, height).await.is_ok() {
             tokio::time::sleep(std::time::Duration::from_millis(200)).await;
 
-            let chat_container = Locator::css("#chat-container, .chat-container, .chat-widget");
+            let chat_container = Locator::css("#chat-app, .chat-layout");
             match browser.is_element_visible(chat_container).await {
                 Ok(visible) => {
                     if visible {
@@ -485,8 +482,8 @@ async fn test_conversation_reset() {
         return;
     }
 
-    let input_locator = Locator::css("#chat-input, .chat-input, textarea");
-    let send_button = Locator::css("#send-button, .send-button, button[type='submit']");
+    let input_locator = Locator::css("#messageInput");
+    let send_button = Locator::css("#sendBtn");
 
     let _ = browser.wait_for(input_locator.clone()).await;
     let _ = browser.type_text(input_locator, "Test message").await;
@@ -498,7 +495,7 @@ async fn test_conversation_reset() {
     match browser.click(reset_button).await {
         Ok(_) => {
             tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-            let messages_locator = Locator::css(".message, .chat-message");
+            let messages_locator = Locator::css(".message");
             match browser.find_elements(messages_locator).await {
                 Ok(elements) if elements.is_empty() => {
                     println!("Conversation reset successfully");

@@ -57,6 +57,19 @@ impl TestConfig {
         }
     }
 
+    /// Auto-install mode: let botserver bootstrap all services
+    /// No need for pre-installed PostgreSQL binaries
+    pub fn auto_install() -> Self {
+        Self {
+            postgres: false, // Botserver will install PostgreSQL
+            minio: false,    // Botserver will install MinIO
+            redis: false,    // Botserver will install Redis
+            mock_zitadel: true,
+            mock_llm: true,
+            run_migrations: false, // Botserver handles migrations
+        }
+    }
+
     pub fn database_only() -> Self {
         Self {
             postgres: true,
@@ -481,17 +494,21 @@ impl BotServerInstance {
             // Drive (MinIO) - use SecretsManager fallback env vars
             .env("DRIVE_ACCESSKEY", "minioadmin")
             .env("DRIVE_SECRET", "minioadmin")
-            // Skip service installation during tests
-            .env("BOTSERVER_SKIP_INSTALL", "1")
+            // Allow botserver to install services if USE_BOTSERVER_BOOTSTRAP is set
+            // Otherwise skip installation for faster tests with existing stack
+            .env("BOTSERVER_SKIP_INSTALL", 
+                 if std::env::var("USE_BOTSERVER_BOOTSTRAP").is_ok() { "0" } else { "1" })
             .stdout(std::process::Stdio::inherit())
             .stderr(std::process::Stdio::inherit())
             .spawn()
             .ok();
 
         if process.is_some() {
-            log::info!("Waiting for botserver to bootstrap and become ready...");
+            // Give more time if using botserver bootstrap (needs to download Vault, PostgreSQL, etc.)
+            let max_wait = if std::env::var("USE_BOTSERVER_BOOTSTRAP").is_ok() { 600 } else { 120 };
+            log::info!("Waiting for botserver to bootstrap and become ready... (max {}s)", max_wait);
             // Give more time for botserver to bootstrap services
-            for i in 0..120 {
+            for i in 0..max_wait {
                 if let Ok(resp) = reqwest::get(&format!("{}/health", url)).await {
                     if resp.status().is_success() {
                         log::info!("Botserver is ready on port {}", port);
@@ -714,9 +731,16 @@ impl TestHarness {
     pub async fn full() -> Result<TestContext> {
         if std::env::var("USE_EXISTING_STACK").is_ok() {
             Self::with_existing_stack().await
+        } else if std::env::var("USE_BOTSERVER_BOOTSTRAP").is_ok() {
+            Self::setup(TestConfig::auto_install()).await
         } else {
             Self::setup(TestConfig::full()).await
         }
+    }
+
+    /// Setup with botserver auto-installing all services
+    pub async fn with_auto_install() -> Result<TestContext> {
+        Self::setup(TestConfig::auto_install()).await
     }
 
     pub async fn minimal() -> Result<TestContext> {
