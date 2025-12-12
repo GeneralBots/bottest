@@ -24,7 +24,7 @@ impl ChromeDriverService {
             .spawn()
             .context("Failed to start chromedriver")?;
 
-        let mut service = Self {
+        let service = Self {
             port,
             process: Some(process),
             binary_path,
