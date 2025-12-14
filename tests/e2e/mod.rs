@@ -20,10 +20,15 @@ pub struct E2ETestContext {
 
 impl E2ETestContext {
     pub async fn setup() -> anyhow::Result<Self> {
-        let ctx = if std::env::var("USE_EXISTING_STACK").is_ok() {
-            TestHarness::with_existing_stack().await?
-        } else {
+        // Default to USE_EXISTING_STACK for faster e2e tests
+        // Set FULL_BOOTSTRAP=1 to run full bootstrap instead
+        let ctx = if std::env::var("FULL_BOOTSTRAP").is_ok() {
             TestHarness::full().await?
+        } else {
+            // Use existing stack by default - much faster for e2e tests
+            // Make sure botserver is running: cargo run --package botserver
+            log::info!("Using existing stack (set FULL_BOOTSTRAP=1 for full bootstrap)");
+            TestHarness::with_existing_stack().await?
         };
         let server = ctx.start_botserver().await?;
 
@@ -40,10 +45,15 @@ impl E2ETestContext {
     }
 
     pub async fn setup_with_browser() -> anyhow::Result<Self> {
-        let ctx = if std::env::var("USE_EXISTING_STACK").is_ok() {
-            TestHarness::with_existing_stack().await?
-        } else {
+        // Default to USE_EXISTING_STACK for faster e2e tests
+        // Set FULL_BOOTSTRAP=1 to run full bootstrap instead
+        let ctx = if std::env::var("FULL_BOOTSTRAP").is_ok() {
             TestHarness::full().await?
+        } else {
+            // Use existing stack by default - much faster for e2e tests
+            // Make sure botserver is running: cargo run --package botserver
+            log::info!("Using existing stack (set FULL_BOOTSTRAP=1 for full bootstrap)");
+            TestHarness::with_existing_stack().await?
         };
         let server = ctx.start_botserver().await?;
 
