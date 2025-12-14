@@ -86,17 +86,32 @@ impl E2ETestContext {
         };
 
         let chromedriver = match ChromeDriverService::start(CHROMEDRIVER_PORT).await {
-            Ok(cd) => Some(cd),
+            Ok(cd) => {
+                log::info!("ChromeDriver started on port {}", CHROMEDRIVER_PORT);
+                Some(cd)
+            }
             Err(e) => {
-                log::warn!("Failed to start ChromeDriver: {}", e);
+                log::error!("Failed to start ChromeDriver: {}", e);
+                eprintln!("Failed to start ChromeDriver: {}", e);
                 None
             }
         };
 
         let browser = if chromedriver.is_some() {
             let config = browser_config();
-            Browser::new(config).await.ok()
+            match Browser::new(config).await {
+                Ok(b) => {
+                    log::info!("Browser created successfully");
+                    Some(b)
+                }
+                Err(e) => {
+                    log::error!("Failed to create browser: {}", e);
+                    eprintln!("Failed to create browser: {}", e);
+                    None
+                }
+            }
         } else {
+            log::warn!("ChromeDriver not available, skipping browser");
             None
         };
 
@@ -142,12 +157,13 @@ pub fn browser_config() -> BrowserConfig {
     let webdriver_url = std::env::var("WEBDRIVER_URL")
         .unwrap_or_else(|_| format!("http://localhost:{}", CHROMEDRIVER_PORT));
 
-    // Detect Brave browser path
+    // Detect Brave browser path - need actual binary, not wrapper script
     let brave_paths = [
-        "/usr/bin/brave-browser",
-        "/usr/bin/brave",
-        "/snap/bin/brave",
-        "/opt/brave.com/brave/brave-browser",
+        "/opt/brave.com/brave-nightly/brave", // Brave Nightly actual binary
+        "/opt/brave.com/brave/brave",         // Brave stable actual binary
+        "/snap/brave/current/opt/brave.com/brave/brave", // Snap installation
+        "/usr/bin/google-chrome",             // Chrome as fallback
+        "/usr/bin/chromium-browser",          // Chromium as fallback
     ];
 
     let mut config = BrowserConfig::default()

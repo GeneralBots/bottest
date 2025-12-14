@@ -206,11 +206,35 @@ impl Browser {
     pub async fn new(config: BrowserConfig) -> Result<Self> {
         let caps = config.build_capabilities();
 
-        let client = ClientBuilder::native()
+        log::info!("Connecting to WebDriver at {}", config.webdriver_url);
+        log::debug!(
+            "Capabilities: {}",
+            serde_json::to_string_pretty(&caps).unwrap_or_default()
+        );
+
+        // Give chromedriver a moment to be fully ready
+        tokio::time::sleep(Duration::from_millis(500)).await;
+
+        let client = match ClientBuilder::native()
             .capabilities(caps.as_object().cloned().unwrap_or_default())
             .connect(&config.webdriver_url)
             .await
-            .context("Failed to connect to WebDriver")?;
+        {
+            Ok(c) => {
+                log::info!("Successfully connected to WebDriver");
+                c
+            }
+            Err(e) => {
+                log::error!("WebDriver connection error: {:?}", e);
+                log::error!("WebDriver URL: {}", config.webdriver_url);
+                log::error!("Browser type: {:?}", config.browser_type);
+                log::error!("Headless: {}", config.headless);
+                if let Some(ref binary) = config.binary_path {
+                    log::error!("Binary path: {}", binary);
+                }
+                return Err(anyhow::anyhow!("Failed to connect to WebDriver: {:?}", e));
+            }
+        };
 
         Ok(Self { client, config })
     }
