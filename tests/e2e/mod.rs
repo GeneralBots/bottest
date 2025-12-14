@@ -159,12 +159,12 @@ pub fn browser_config() -> BrowserConfig {
 
     // Detect browser binary - prioritize Chromium which works best with system chromedriver
     // Brave nightly has compatibility issues with chromedriver
+    // For snap chromium, we need the actual binary, not the wrapper
     let browser_paths = [
-        "/usr/bin/chromium-browser",     // Chromium - best compatibility
-        "/snap/bin/chromium",            // Snap Chromium
-        "/usr/bin/google-chrome",        // Google Chrome
-        "/usr/bin/google-chrome-stable", // Chrome stable
-        "/opt/brave.com/brave/brave",    // Brave stable (may have issues)
+        "/snap/chromium/current/usr/lib/chromium-browser/chrome", // Snap Chromium actual binary
+        "/usr/bin/google-chrome",                                 // Google Chrome
+        "/usr/bin/google-chrome-stable",                          // Chrome stable
+        "/opt/brave.com/brave/brave",                             // Brave stable (may have issues)
     ];
 
     let mut config = BrowserConfig::default()
