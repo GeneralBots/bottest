@@ -52,6 +52,13 @@ impl ChromeDriverService {
     }
 
     async fn ensure_chromedriver() -> Result<PathBuf> {
+        // First, check if system chromedriver is available
+        if let Ok(system_path) = which::which("chromedriver") {
+            info!("Using system chromedriver at {:?}", system_path);
+            return Ok(system_path);
+        }
+
+        // Fall back to downloading/caching chromedriver
         let cache_dir = dirs::cache_dir()
             .unwrap_or_else(|| PathBuf::from("/tmp"))
             .join("bottest")
