@@ -22,18 +22,33 @@ impl E2ETestContext {
     pub async fn setup() -> anyhow::Result<Self> {
         // Default to USE_EXISTING_STACK for faster e2e tests
         // Set FULL_BOOTSTRAP=1 to run full bootstrap instead
-        let ctx = if std::env::var("FULL_BOOTSTRAP").is_ok() {
-            TestHarness::full().await?
-        } else {
-            // Use existing stack by default - much faster for e2e tests
-            // Make sure botserver is running: cargo run --package botserver
-            log::info!("Using existing stack (set FULL_BOOTSTRAP=1 for full bootstrap)");
-            TestHarness::with_existing_stack().await?
-        };
-        let server = ctx.start_botserver().await?;
+        let use_existing = std::env::var("FULL_BOOTSTRAP").is_err();
 
-        // Start botui for serving the web interface
-        let ui = ctx.start_botui(&server.url).await.ok();
+        let (ctx, server, ui) = if use_existing {
+            // Use existing stack - connect to running botserver/botui
+            // Make sure they are running:
+            //   cargo run --package botserver
+            //   BOTSERVER_URL=https://localhost:8080 cargo run --package botui
+            log::info!("Using existing stack (set FULL_BOOTSTRAP=1 for full bootstrap)");
+            let ctx = TestHarness::with_existing_stack().await?;
+
+            // Get URLs from env or use defaults
+            let botserver_url = std::env::var("BOTSERVER_URL")
+                .unwrap_or_else(|_| "https://localhost:8080".to_string());
+            let botui_url =
+                std::env::var("BOTUI_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+
+            // Create a dummy server instance pointing to existing botserver
+            let server = BotServerInstance::existing(&botserver_url);
+            let ui = Some(BotUIInstance::existing(&botui_url));
+
+            (ctx, server, ui)
+        } else {
+            let ctx = TestHarness::full().await?;
+            let server = ctx.start_botserver().await?;
+            let ui = ctx.start_botui(&server.url).await.ok();
+            (ctx, server, ui)
+        };
 
         Ok(Self {
             ctx,
@@ -47,18 +62,28 @@ impl E2ETestContext {
     pub async fn setup_with_browser() -> anyhow::Result<Self> {
         // Default to USE_EXISTING_STACK for faster e2e tests
         // Set FULL_BOOTSTRAP=1 to run full bootstrap instead
-        let ctx = if std::env::var("FULL_BOOTSTRAP").is_ok() {
-            TestHarness::full().await?
-        } else {
-            // Use existing stack by default - much faster for e2e tests
-            // Make sure botserver is running: cargo run --package botserver
-            log::info!("Using existing stack (set FULL_BOOTSTRAP=1 for full bootstrap)");
-            TestHarness::with_existing_stack().await?
-        };
-        let server = ctx.start_botserver().await?;
+        let use_existing = std::env::var("FULL_BOOTSTRAP").is_err();
 
-        // Start botui for serving the web interface
-        let ui = ctx.start_botui(&server.url).await.ok();
+        let (ctx, server, ui) = if use_existing {
+            // Use existing stack - connect to running botserver/botui
+            log::info!("Using existing stack (set FULL_BOOTSTRAP=1 for full bootstrap)");
+            let ctx = TestHarness::with_existing_stack().await?;
+
+            let botserver_url = std::env::var("BOTSERVER_URL")
+                .unwrap_or_else(|_| "https://localhost:8080".to_string());
+            let botui_url =
+                std::env::var("BOTUI_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+
+            let server = BotServerInstance::existing(&botserver_url);
+            let ui = Some(BotUIInstance::existing(&botui_url));
+
+            (ctx, server, ui)
+        } else {
+            let ctx = TestHarness::full().await?;
+            let server = ctx.start_botserver().await?;
+            let ui = ctx.start_botui(&server.url).await.ok();
+            (ctx, server, ui)
+        };
 
         let chromedriver = match ChromeDriverService::start(CHROMEDRIVER_PORT).await {
             Ok(cd) => Some(cd),

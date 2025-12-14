@@ -122,16 +122,16 @@ impl TestContext {
 
     pub fn database_url(&self) -> String {
         if self.use_existing_stack {
-            // Credentials must be provided via environment or vault - no hardcoded fallbacks
-            // For existing stack, expect VAULT_ADDR and credentials from vault
+            // For existing stack, use sensible defaults matching botserver's bootstrap
+            // These can be overridden via environment variables if needed
             let host = std::env::var("DB_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
             let port = std::env::var("DB_PORT")
                 .ok()
                 .and_then(|p| p.parse().ok())
                 .unwrap_or(DefaultPorts::POSTGRES);
-            let user = std::env::var("DB_USER").expect("DB_USER must be set for existing stack");
-            let password =
-                std::env::var("DB_PASSWORD").expect("DB_PASSWORD must be set for existing stack");
+            // Default to gbuser/botserver which is what botserver bootstrap creates
+            let user = std::env::var("DB_USER").unwrap_or_else(|_| "gbuser".to_string());
+            let password = std::env::var("DB_PASSWORD").unwrap_or_else(|_| "gbuser".to_string());
             let database = std::env::var("DB_NAME").unwrap_or_else(|_| "botserver".to_string());
             format!(
                 "postgres://{}:{}@{}:{}/{}",
@@ -451,10 +451,43 @@ pub struct BotServerInstance {
     process: Option<std::process::Child>,
 }
 
+impl BotServerInstance {
+    /// Create an instance pointing to an already-running botserver
+    pub fn existing(url: &str) -> Self {
+        let port = url
+            .split(':')
+            .last()
+            .and_then(|p| p.parse().ok())
+            .unwrap_or(8080);
+        Self {
+            url: url.to_string(),
+            port,
+            stack_path: PathBuf::from("./botserver-stack"),
+            process: None,
+        }
+    }
+}
+
 pub struct BotUIInstance {
     pub url: String,
     pub port: u16,
     process: Option<std::process::Child>,
+}
+
+impl BotUIInstance {
+    /// Create an instance pointing to an already-running botui
+    pub fn existing(url: &str) -> Self {
+        let port = url
+            .split(':')
+            .last()
+            .and_then(|p| p.parse().ok())
+            .unwrap_or(3000);
+        Self {
+            url: url.to_string(),
+            port,
+            process: None,
+        }
+    }
 }
 
 impl BotUIInstance {
