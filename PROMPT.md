@@ -28,23 +28,24 @@ This PROMPT.md is the ONLY exception (it's for developers).
 
 ## Architecture
 
+**IMPORTANT:** E2E tests always use `USE_BOTSERVER_BOOTSTRAP=1` mode. No global PostgreSQL or other services are required. The botserver handles all service installation during bootstrap.
+
 ```
-TestHarness::setup()
+TestHarness::full() / E2E Tests
     │
     ├── Allocate unique ports (15000+)
     ├── Create ./tmp/bottest-{uuid}/
     │
-    ├── Start services (via bootstrap)
-    │   ├── PostgreSQL on custom port
-    │   ├── MinIO on custom port  
-    │   └── Redis on custom port
-    │
-    ├── Start mock servers
+    ├── Start mock servers only
     │   ├── MockZitadel (wiremock)
-    │   ├── MockLLM (wiremock)
-    │   └── MockWhatsApp (wiremock)
+    │   └── MockLLM (wiremock)
     │
-    ├── Run migrations
+    ├── Start botserver with --stack-path
+    │   └── Botserver auto-installs:
+    │       ├── PostgreSQL (tables)
+    │       ├── MinIO (drive)
+    │       └── Redis (cache)
+    │
     └── Return TestContext
 
 TestContext provides:

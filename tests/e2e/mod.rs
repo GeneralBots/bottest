@@ -13,6 +13,7 @@ static CHROMEDRIVER_PORT: u16 = 4444;
 pub struct E2ETestContext {
     pub ctx: TestContext,
     pub server: BotServerInstance,
+    pub ui: Option<BotUIInstance>,
     pub browser: Option<Browser>,
     chromedriver: Option<ChromeDriverService>,
 }
@@ -26,9 +27,13 @@ impl E2ETestContext {
         };
         let server = ctx.start_botserver().await?;
 
+        // Start botui for serving the web interface
+        let ui = ctx.start_botui(&server.url).await.ok();
+
         Ok(Self {
             ctx,
             server,
+            ui,
             browser: None,
             chromedriver: None,
         })
@@ -41,6 +46,9 @@ impl E2ETestContext {
             TestHarness::full().await?
         };
         let server = ctx.start_botserver().await?;
+
+        // Start botui for serving the web interface
+        let ui = ctx.start_botui(&server.url).await.ok();
 
         let chromedriver = match ChromeDriverService::start(CHROMEDRIVER_PORT).await {
             Ok(cd) => Some(cd),
@@ -60,12 +68,23 @@ impl E2ETestContext {
         Ok(Self {
             ctx,
             server,
+            ui,
             browser,
             chromedriver,
         })
     }
 
+    /// Get the base URL for browser tests - uses botui if available, otherwise botserver
     pub fn base_url(&self) -> &str {
+        if let Some(ref ui) = self.ui {
+            &ui.url
+        } else {
+            &self.server.url
+        }
+    }
+
+    /// Get the botserver API URL
+    pub fn api_url(&self) -> &str {
         &self.server.url
     }
 
