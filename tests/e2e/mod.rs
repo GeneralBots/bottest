@@ -157,13 +157,14 @@ pub fn browser_config() -> BrowserConfig {
     let webdriver_url = std::env::var("WEBDRIVER_URL")
         .unwrap_or_else(|_| format!("http://localhost:{}", CHROMEDRIVER_PORT));
 
-    // Detect Brave browser path - need actual binary, not wrapper script
-    let brave_paths = [
-        "/opt/brave.com/brave-nightly/brave", // Brave Nightly actual binary
-        "/opt/brave.com/brave/brave",         // Brave stable actual binary
-        "/snap/brave/current/opt/brave.com/brave/brave", // Snap installation
-        "/usr/bin/google-chrome",             // Chrome as fallback
-        "/usr/bin/chromium-browser",          // Chromium as fallback
+    // Detect browser binary - prioritize Chromium which works best with system chromedriver
+    // Brave nightly has compatibility issues with chromedriver
+    let browser_paths = [
+        "/usr/bin/chromium-browser",     // Chromium - best compatibility
+        "/snap/bin/chromium",            // Snap Chromium
+        "/usr/bin/google-chrome",        // Google Chrome
+        "/usr/bin/google-chrome-stable", // Chrome stable
+        "/opt/brave.com/brave/brave",    // Brave stable (may have issues)
     ];
 
     let mut config = BrowserConfig::default()
@@ -173,8 +174,8 @@ pub fn browser_config() -> BrowserConfig {
         .with_timeout(Duration::from_secs(30))
         .with_window_size(1920, 1080);
 
-    // Add Brave binary path if found
-    for path in &brave_paths {
+    // Add browser binary path if found
+    for path in &browser_paths {
         if std::path::Path::new(path).exists() {
             log::info!("Using browser binary: {}", path);
             config = config.with_binary(path);
