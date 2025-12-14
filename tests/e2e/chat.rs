@@ -24,7 +24,7 @@ async fn test_chat_page_loads() {
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/test-bot", ctx.base_url());
+    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
 
     if let Err(e) = browser.goto(&chat_url).await {
         eprintln!("Failed to navigate: {}", e);
@@ -64,7 +64,7 @@ async fn test_chat_widget_elements() {
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/test-bot", ctx.base_url());
+    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
 
     if browser.goto(&chat_url).await.is_err() {
         ctx.close().await;
@@ -116,7 +116,7 @@ async fn test_send_message() {
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/test-bot", ctx.base_url());
+    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
 
     if browser.goto(&chat_url).await.is_err() {
         ctx.close().await;
@@ -172,7 +172,7 @@ async fn test_receive_bot_response() {
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/test-bot", ctx.base_url());
+    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
 
     if browser.goto(&chat_url).await.is_err() {
         ctx.close().await;
@@ -221,7 +221,7 @@ async fn test_chat_history() {
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/test-bot", ctx.base_url());
+    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
 
     if browser.goto(&chat_url).await.is_err() {
         ctx.close().await;
@@ -278,7 +278,7 @@ async fn test_typing_indicator() {
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/test-bot", ctx.base_url());
+    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
 
     if browser.goto(&chat_url).await.is_err() {
         ctx.close().await;
@@ -327,7 +327,7 @@ async fn test_keyboard_shortcuts() {
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/test-bot", ctx.base_url());
+    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
 
     if browser.goto(&chat_url).await.is_err() {
         ctx.close().await;
@@ -369,7 +369,7 @@ async fn test_empty_message_prevention() {
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/test-bot", ctx.base_url());
+    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
 
     if browser.goto(&chat_url).await.is_err() {
         ctx.close().await;
@@ -415,7 +415,7 @@ async fn test_responsive_design() {
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/test-bot", ctx.base_url());
+    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
 
     if browser.goto(&chat_url).await.is_err() {
         ctx.close().await;
@@ -475,7 +475,7 @@ async fn test_conversation_reset() {
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/test-bot", ctx.base_url());
+    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
 
     if browser.goto(&chat_url).await.is_err() {
         ctx.close().await;
