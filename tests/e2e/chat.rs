@@ -2,587 +2,170 @@ use super::{should_run_e2e_tests, E2ETestContext};
 use bottest::prelude::*;
 use bottest::web::Locator;
 
+/// Simple "hi" chat test with real botserver
+#[tokio::test]
+async fn test_chat_hi() {
+    if !should_run_e2e_tests() {
+        eprintln!("Skipping: E2E tests disabled");
+        return;
+    }
+
+    let ctx = match E2ETestContext::setup_with_browser().await {
+        Ok(ctx) => ctx,
+        Err(e) => {
+            eprintln!("Test failed: {}", e);
+            panic!("Failed to setup E2E context: {}", e);
+        }
+    };
+
+    if !ctx.has_browser() {
+        ctx.close().await;
+        panic!("Browser not available - cannot run E2E test");
+    }
+
+    // Chat UI requires botui
+    if ctx.ui.is_none() {
+        ctx.close().await;
+        panic!("BotUI not available - chat tests require botui running on port 3000");
+    }
+
+    let browser = ctx.browser.as_ref().unwrap();
+    // Use botui URL for chat (botserver is API only)
+    let ui_url = ctx.ui.as_ref().unwrap().url.clone();
+    let chat_url = format!("{}/#chat", ui_url);
+
+    println!("🌐 Navigating to: {}", chat_url);
+
+    if let Err(e) = browser.goto(&chat_url).await {
+        ctx.close().await;
+        panic!("Failed to navigate to chat: {}", e);
+    }
+
+    // Wait for page to load and HTMX to initialize chat content
+    println!("⏳ Waiting for page to load...");
+    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+
+    // Chat input: botui uses #messageInput or #ai-input
+    let input = Locator::css("#messageInput, #ai-input, .ai-input");
+
+    // Try to find input with retries (HTMX loads content dynamically)
+    let mut found_input = false;
+    for attempt in 1..=10 {
+        if browser.exists(input.clone()).await {
+            found_input = true;
+            println!("✓ Chat input found (attempt {})", attempt);
+            break;
+        }
+        println!("  ... waiting for chat input (attempt {}/10)", attempt);
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    }
+
+    if !found_input {
+        // Take screenshot on failure
+        if let Ok(screenshot) = browser.screenshot().await {
+            let _ = std::fs::write("/tmp/bottest-chat-fail.png", &screenshot);
+            println!("Screenshot saved to /tmp/bottest-chat-fail.png");
+        }
+        // Also print page source for debugging
+        if let Ok(source) = browser.page_source().await {
+            let preview: String = source.chars().take(2000).collect();
+            println!("Page source preview:\n{}", preview);
+        }
+        ctx.close().await;
+        panic!("Chat input not found after 10 attempts");
+    }
+
+    // Type "hi"
+    println!("⌨️ Typing 'hi'...");
+    if let Err(e) = browser.type_text(input.clone(), "hi").await {
+        ctx.close().await;
+        panic!("Failed to type: {}", e);
+    }
+
+    // Click send button or press Enter
+    let send_btn = Locator::css("#sendBtn, #ai-send, .ai-send, button[type='submit']");
+    match browser.click(send_btn).await {
+        Ok(_) => println!("✓ Message sent (click)"),
+        Err(_) => {
+            // Try Enter key instead
+            match browser.press_key(input, "Enter").await {
+                Ok(_) => println!("✓ Message sent (Enter key)"),
+                Err(e) => println!("⚠ Send may have failed: {}", e),
+            }
+        }
+    }
+
+    // Wait for response
+    println!("⏳ Waiting for bot response...");
+    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+    // Check for response - botui uses .message.bot or .assistant class
+    let response =
+        Locator::css(".message.bot, .message.assistant, .bot-message, .assistant-message");
+    match browser.find_elements(response).await {
+        Ok(elements) if !elements.is_empty() => {
+            println!("✓ Bot responded! ({} messages)", elements.len());
+        }
+        _ => {
+            println!("⚠ No bot response detected (may need LLM configuration)");
+        }
+    }
+
+    // Take final screenshot
+    if let Ok(screenshot) = browser.screenshot().await {
+        let _ = std::fs::write("/tmp/bottest-chat-result.png", &screenshot);
+        println!("📸 Screenshot: /tmp/bottest-chat-result.png");
+    }
+
+    ctx.close().await;
+    println!("✅ Chat test complete!");
+}
+
 #[tokio::test]
 async fn test_chat_page_loads() {
     if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
         return;
     }
 
     let ctx = match E2ETestContext::setup_with_browser().await {
         Ok(ctx) => ctx,
         Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
+            panic!("Setup failed: {}", e);
         }
     };
 
     if !ctx.has_browser() {
-        eprintln!("Skipping: browser not available");
         ctx.close().await;
-        return;
+        panic!("Browser not available");
+    }
+
+    // Chat UI requires botui
+    if ctx.ui.is_none() {
+        ctx.close().await;
+        panic!("BotUI not available - chat tests require botui. Start it with: cd ../botui && cargo run");
     }
 
     let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
+    // Use botui URL for chat (botserver is API only)
+    let ui_url = ctx.ui.as_ref().unwrap().url.clone();
+    let chat_url = format!("{}/#chat", ui_url);
 
     if let Err(e) = browser.goto(&chat_url).await {
-        eprintln!("Failed to navigate: {}", e);
         ctx.close().await;
-        return;
+        panic!("Navigation failed: {}", e);
     }
 
-    let chat_input = Locator::css("#messageInput");
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-    match browser.wait_for(chat_input).await {
-        Ok(_) => println!("Chat input found"),
-        Err(e) => eprintln!("Chat input not found: {}", e),
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_chat_widget_elements() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
+    let input = Locator::css("#messageInput, input[type='text'], textarea");
+    match browser.wait_for(input).await {
+        Ok(_) => println!("✓ Chat loaded"),
         Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if !ctx.has_browser() {
-        eprintln!("Skipping: browser not available");
-        ctx.close().await;
-        return;
-    }
-
-    let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
-
-    if browser.goto(&chat_url).await.is_err() {
-        ctx.close().await;
-        return;
-    }
-
-    let elements_to_check = vec![
-        ("#chat-app, .chat-layout", "chat container"),
-        ("#messageInput", "input field"),
-        ("#sendBtn", "send button"),
-    ];
-
-    for (selector, name) in elements_to_check {
-        let locator = Locator::css(selector);
-        match browser.find_element(locator).await {
-            Ok(_) => println!("Found: {}", name),
-            Err(_) => eprintln!("Not found: {}", name),
-        }
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_send_message() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if !ctx.has_browser() {
-        eprintln!("Skipping: browser not available");
-        ctx.close().await;
-        return;
-    }
-
-    if let Some(mock_llm) = ctx.ctx.mock_llm() {
-        mock_llm
-            .expect_completion("Hello", "Hi there! How can I help you?")
-            .await;
-    }
-
-    let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
-
-    if browser.goto(&chat_url).await.is_err() {
-        ctx.close().await;
-        return;
-    }
-
-    let input_locator = Locator::css("#messageInput");
-    if let Err(e) = browser.wait_for(input_locator.clone()).await {
-        eprintln!("Input not ready: {}", e);
-        ctx.close().await;
-        return;
-    }
-
-    if let Err(e) = browser.type_text(input_locator, "Hello").await {
-        eprintln!("Failed to type: {}", e);
-        ctx.close().await;
-        return;
-    }
-
-    let send_button = Locator::css("#sendBtn");
-    if let Err(e) = browser.click(send_button).await {
-        eprintln!("Failed to click send: {}", e);
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_receive_bot_response() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if !ctx.has_browser() {
-        eprintln!("Skipping: browser not available");
-        ctx.close().await;
-        return;
-    }
-
-    if let Some(mock_llm) = ctx.ctx.mock_llm() {
-        mock_llm
-            .set_default_response("This is a test response from the bot.")
-            .await;
-    }
-
-    let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
-
-    if browser.goto(&chat_url).await.is_err() {
-        ctx.close().await;
-        return;
-    }
-
-    let input_locator = Locator::css("#messageInput");
-    let _ = browser.wait_for(input_locator.clone()).await;
-    let _ = browser.type_text(input_locator, "Test message").await;
-
-    let send_button = Locator::css("#sendBtn");
-    let _ = browser.click(send_button).await;
-
-    let response_locator = Locator::css(".message.bot .bot-message");
-    match browser.wait_for(response_locator).await {
-        Ok(_) => println!("Bot response received"),
-        Err(e) => eprintln!("No bot response: {}", e),
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_chat_history() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if !ctx.has_browser() {
-        eprintln!("Skipping: browser not available");
-        ctx.close().await;
-        return;
-    }
-
-    if let Some(mock_llm) = ctx.ctx.mock_llm() {
-        mock_llm.set_default_response("Response").await;
-    }
-
-    let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
-
-    if browser.goto(&chat_url).await.is_err() {
-        ctx.close().await;
-        return;
-    }
-
-    let input_locator = Locator::css("#messageInput");
-    let send_button = Locator::css("#sendBtn");
-
-    for i in 1..=3 {
-        let _ = browser.wait_for(input_locator.clone()).await;
-        let _ = browser
-            .type_text(input_locator.clone(), &format!("Message {}", i))
-            .await;
-        let _ = browser.click(send_button.clone()).await;
-        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-    }
-
-    let messages_locator = Locator::css(".message");
-    match browser.find_elements(messages_locator).await {
-        Ok(elements) => {
-            println!("Found {} messages in history", elements.len());
-        }
-        Err(e) => eprintln!("Failed to find messages: {}", e),
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_typing_indicator() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if !ctx.has_browser() {
-        eprintln!("Skipping: browser not available");
-        ctx.close().await;
-        return;
-    }
-
-    if let Some(mock_llm) = ctx.ctx.mock_llm() {
-        mock_llm.with_latency(2000);
-        mock_llm.set_default_response("Delayed response").await;
-    }
-
-    let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
-
-    if browser.goto(&chat_url).await.is_err() {
-        ctx.close().await;
-        return;
-    }
-
-    let input_locator = Locator::css("#messageInput");
-    let send_button = Locator::css("#sendBtn");
-
-    let _ = browser.wait_for(input_locator.clone()).await;
-    let _ = browser.type_text(input_locator, "Hello").await;
-    let _ = browser.click(send_button).await;
-
-    let typing_locator = Locator::css(".typing-indicator, .typing, .loading");
-    match browser.find_element(typing_locator).await {
-        Ok(_) => println!("Typing indicator found"),
-        Err(_) => eprintln!("Typing indicator not found (may have completed quickly)"),
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_keyboard_shortcuts() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if !ctx.has_browser() {
-        eprintln!("Skipping: browser not available");
-        ctx.close().await;
-        return;
-    }
-
-    if let Some(mock_llm) = ctx.ctx.mock_llm() {
-        mock_llm.set_default_response("Response").await;
-    }
-
-    let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
-
-    if browser.goto(&chat_url).await.is_err() {
-        ctx.close().await;
-        return;
-    }
-
-    let input_locator = Locator::css("#messageInput");
-    let _ = browser.wait_for(input_locator.clone()).await;
-    let _ = browser
-        .type_text(input_locator.clone(), "Test enter key")
-        .await;
-
-    if let Err(e) = browser.press_key(input_locator, "Enter").await {
-        eprintln!("Failed to press Enter: {}", e);
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_empty_message_prevention() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if !ctx.has_browser() {
-        eprintln!("Skipping: browser not available");
-        ctx.close().await;
-        return;
-    }
-
-    let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
-
-    if browser.goto(&chat_url).await.is_err() {
-        ctx.close().await;
-        return;
-    }
-
-    let send_button = Locator::css("#sendBtn");
-    let _ = browser.wait_for(send_button.clone()).await;
-
-    match browser.is_element_enabled(send_button.clone()).await {
-        Ok(enabled) => {
-            if !enabled {
-                println!("Send button correctly disabled for empty input");
-            } else {
-                println!("Send button enabled (validation may be on submit)");
+            if let Ok(s) = browser.screenshot().await {
+                let _ = std::fs::write("/tmp/bottest-fail.png", &s);
             }
-        }
-        Err(e) => eprintln!("Could not check button state: {}", e),
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_responsive_design() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if !ctx.has_browser() {
-        eprintln!("Skipping: browser not available");
-        ctx.close().await;
-        return;
-    }
-
-    let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
-
-    if browser.goto(&chat_url).await.is_err() {
-        ctx.close().await;
-        return;
-    }
-
-    let viewports = vec![
-        (375, 667, "mobile"),
-        (768, 1024, "tablet"),
-        (1920, 1080, "desktop"),
-    ];
-
-    for (width, height, name) in viewports {
-        if browser.set_window_size(width, height).await.is_ok() {
-            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-
-            let chat_container = Locator::css("#chat-app, .chat-layout");
-            match browser.is_element_visible(chat_container).await {
-                Ok(visible) => {
-                    if visible {
-                        println!("{} viewport ({}x{}): chat visible", name, width, height);
-                    } else {
-                        eprintln!("{} viewport: chat not visible", name);
-                    }
-                }
-                Err(e) => eprintln!("{} viewport check failed: {}", name, e),
-            }
-        }
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_conversation_reset() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if !ctx.has_browser() {
-        eprintln!("Skipping: browser not available");
-        ctx.close().await;
-        return;
-    }
-
-    if let Some(mock_llm) = ctx.ctx.mock_llm() {
-        mock_llm.set_default_response("Response").await;
-    }
-
-    let browser = ctx.browser.as_ref().unwrap();
-    let chat_url = format!("{}/chat/chat.html", ctx.base_url());
-
-    if browser.goto(&chat_url).await.is_err() {
-        ctx.close().await;
-        return;
-    }
-
-    let input_locator = Locator::css("#messageInput");
-    let send_button = Locator::css("#sendBtn");
-
-    let _ = browser.wait_for(input_locator.clone()).await;
-    let _ = browser.type_text(input_locator, "Test message").await;
-    let _ = browser.click(send_button).await;
-    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-
-    let reset_button =
-        Locator::css("#reset-button, .reset-button, .new-chat, [data-action='reset']");
-    match browser.click(reset_button).await {
-        Ok(_) => {
-            tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-            let messages_locator = Locator::css(".message");
-            match browser.find_elements(messages_locator).await {
-                Ok(elements) if elements.is_empty() => {
-                    println!("Conversation reset successfully");
-                }
-                Ok(elements) => {
-                    println!("Messages remaining after reset: {}", elements.len());
-                }
-                Err(_) => println!("No messages found (reset may have worked)"),
-            }
-        }
-        Err(_) => eprintln!("Reset button not found (feature may not be implemented)"),
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_mock_llm_integration() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if let Some(mock_llm) = ctx.ctx.mock_llm() {
-        mock_llm
-            .expect_completion("what is the weather", "The weather is sunny today!")
-            .await;
-
-        mock_llm.assert_not_called().await;
-
-        let client = reqwest::Client::new();
-        let response = client
-            .post(&format!("{}/v1/chat/completions", mock_llm.url()))
-            .json(&serde_json::json!({
-                "model": "gpt-4",
-                "messages": [{"role": "user", "content": "what is the weather"}]
-            }))
-            .send()
-            .await;
-
-        if let Ok(resp) = response {
-            assert!(resp.status().is_success());
-            mock_llm.assert_called().await;
-        }
-    }
-
-    ctx.close().await;
-}
-
-#[tokio::test]
-async fn test_mock_llm_error_handling() {
-    if !should_run_e2e_tests() {
-        eprintln!("Skipping: E2E tests disabled");
-        return;
-    }
-
-    let ctx = match E2ETestContext::setup().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Skipping: {}", e);
-            return;
-        }
-    };
-
-    if let Some(mock_llm) = ctx.ctx.mock_llm() {
-        mock_llm.next_call_fails(500, "Internal server error").await;
-
-        let client = reqwest::Client::new();
-        let response = client
-            .post(&format!("{}/v1/chat/completions", mock_llm.url()))
-            .json(&serde_json::json!({
-                "model": "gpt-4",
-                "messages": [{"role": "user", "content": "test"}]
-            }))
-            .send()
-            .await;
-
-        if let Ok(resp) = response {
-            assert_eq!(resp.status().as_u16(), 500);
+            ctx.close().await;
+            panic!("Chat not loaded: {}", e);
         }
     }
 

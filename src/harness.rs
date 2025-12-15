@@ -466,6 +466,107 @@ impl BotServerInstance {
             process: None,
         }
     }
+
+    /// Start botserver using the MAIN stack (../botserver/botserver-stack)
+    /// This uses the real stack with LLM, Zitadel, etc. already configured
+    /// For E2E demo tests that need actual bot responses
+    pub async fn start_with_main_stack() -> Result<Self> {
+        let port = 8080;
+        let url = "https://localhost:8080".to_string();
+
+        let botserver_bin = std::env::var("BOTSERVER_BIN")
+            .unwrap_or_else(|_| "../botserver/target/debug/botserver".to_string());
+
+        // Check if binary exists
+        if !PathBuf::from(&botserver_bin).exists() {
+            log::warn!("Botserver binary not found at: {}", botserver_bin);
+            anyhow::bail!(
+                "Botserver binary not found at: {}. Run: cd ../botserver && cargo build",
+                botserver_bin
+            );
+        }
+
+        // Get absolute path to botserver directory (where botserver-stack lives)
+        let botserver_bin_path =
+            std::fs::canonicalize(&botserver_bin).unwrap_or_else(|_| PathBuf::from(&botserver_bin));
+        let botserver_dir = botserver_bin_path
+            .parent() // target/debug
+            .and_then(|p| p.parent()) // target
+            .and_then(|p| p.parent()) // botserver
+            .map(|p| p.to_path_buf())
+            .unwrap_or_else(|| {
+                std::fs::canonicalize("../botserver")
+                    .unwrap_or_else(|_| PathBuf::from("../botserver"))
+            });
+
+        let stack_path = botserver_dir.join("botserver-stack");
+
+        // Check if main stack exists
+        if !stack_path.exists() {
+            anyhow::bail!(
+                "Main botserver-stack not found at {:?}.\n\
+                 Run botserver once to initialize: cd ../botserver && cargo run",
+                stack_path
+            );
+        }
+
+        log::info!("Starting botserver with MAIN stack at {:?}", stack_path);
+        println!("🚀 Starting BotServer with main stack...");
+        println!("   Stack: {:?}", stack_path);
+
+        // Start botserver from its directory, using default stack path
+        // NO --stack-path argument = uses ./botserver-stack (the main one)
+        // NO mock env vars = uses real services
+        let process = std::process::Command::new(&botserver_bin_path)
+            .current_dir(&botserver_dir)
+            .arg("--noconsole")
+            .env_remove("RUST_LOG")
+            .stdout(std::process::Stdio::inherit())
+            .stderr(std::process::Stdio::inherit())
+            .spawn()
+            .ok();
+
+        if process.is_some() {
+            // Wait for botserver to be ready (may take time for LLM to load)
+            let max_wait = 120; // 2 minutes for LLM
+            log::info!("Waiting for botserver to start (max {}s)...", max_wait);
+
+            let client = reqwest::Client::builder()
+                .danger_accept_invalid_certs(true)
+                .timeout(std::time::Duration::from_secs(5))
+                .build()
+                .unwrap_or_default();
+
+            for i in 0..max_wait {
+                if let Ok(resp) = client.get(format!("{}/health", url)).send().await {
+                    if resp.status().is_success() {
+                        log::info!("Botserver ready on port {}", port);
+                        println!("   ✓ BotServer ready at {}", url);
+                        return Ok(Self {
+                            url,
+                            port,
+                            stack_path,
+                            process,
+                        });
+                    }
+                }
+                if i % 10 == 0 && i > 0 {
+                    log::info!("Still waiting for botserver... ({}s)", i);
+                    println!("   ... waiting ({}s)", i);
+                }
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            }
+            log::warn!("Botserver did not respond in time");
+            println!("   ⚠ Botserver may not be ready");
+        }
+
+        Ok(Self {
+            url,
+            port,
+            stack_path,
+            process,
+        })
+    }
 }
 
 pub struct BotUIInstance {
@@ -508,12 +609,28 @@ impl BotUIInstance {
             });
         }
 
+        // BotUI needs to run from its own directory so it can find ui/ folder
+        // Get absolute path of botui binary and derive working directory
+        let botui_bin_path =
+            std::fs::canonicalize(&botui_bin).unwrap_or_else(|_| PathBuf::from(&botui_bin));
+        let botui_dir = botui_bin_path
+            .parent() // target/debug
+            .and_then(|p| p.parent()) // target
+            .and_then(|p| p.parent()) // botui
+            .map(|p| p.to_path_buf())
+            .unwrap_or_else(|| {
+                std::fs::canonicalize("../botui").unwrap_or_else(|_| PathBuf::from("../botui"))
+            });
+
         log::info!("Starting botui from: {} on port {}", botui_bin, port);
         log::info!("  BOTUI_PORT={}", port);
         log::info!("  BOTSERVER_URL={}", botserver_url);
+        log::info!("  Working directory: {:?}", botui_dir);
 
         // botui uses env vars, not command line args
-        let process = std::process::Command::new(&botui_bin)
+        // Must run from botui directory to find ui/ folder
+        let process = std::process::Command::new(&botui_bin_path)
+            .current_dir(&botui_dir)
             .env("BOTUI_PORT", port.to_string())
             .env("BOTSERVER_URL", botserver_url)
             .env_remove("RUST_LOG")
@@ -638,8 +755,6 @@ impl BotServerInstance {
             .env_remove("RUST_LOG") // Remove to avoid logger conflict
             // Use local installers - DO NOT download
             .env("BOTSERVER_INSTALLERS_PATH", &installers_path)
-            // Skip local LLM server startup - tests use mock LLM
-            .env("SKIP_LLM_SERVER", "1")
             // Database - DATABASE_URL is the standard fallback
             .env("DATABASE_URL", ctx.database_url())
             // Directory (Zitadel) - use SecretsManager fallback env vars
@@ -799,8 +914,59 @@ impl TestHarness {
         Self::setup_internal(TestConfig::use_existing_stack(), true).await
     }
 
+    /// Kill all processes that might interfere with tests
+    /// This ensures a clean slate before starting test infrastructure
+    fn cleanup_existing_processes() {
+        log::info!("Cleaning up any existing stack processes before test...");
+
+        // List of process patterns to kill
+        let patterns = [
+            "botserver",
+            "botui",
+            "vault",
+            "postgres",
+            "zitadel",
+            "minio",
+            "llama-server",
+            "valkey-server",
+            "valkey",
+            "chromedriver",
+            "chrome.*--user-data-dir=/tmp/browser-test",
+            "brave.*--user-data-dir=/tmp/browser-test",
+        ];
+
+        for pattern in patterns {
+            // Use pkill to kill processes matching pattern
+            // Ignore errors - process might not exist
+            let _ = std::process::Command::new("pkill")
+                .args(["-9", "-f", pattern])
+                .output();
+        }
+
+        // Clean up browser profile directories using shell rm
+        let _ = std::process::Command::new("rm")
+            .args(["-rf", "/tmp/browser-test-*"])
+            .output();
+
+        // Clean up old test data directories (older than 1 hour)
+        let _ = std::process::Command::new("sh")
+            .args(["-c", "find ./tmp -maxdepth 1 -name 'bottest-*' -type d -mmin +60 -exec rm -rf {} + 2>/dev/null"])
+            .output();
+
+        // Give processes time to terminate
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+
+        log::info!("Process cleanup completed");
+    }
+
     async fn setup_internal(config: TestConfig, use_existing_stack: bool) -> Result<TestContext> {
         let _ = env_logger::builder().is_test(true).try_init();
+
+        // Clean up any existing processes that might interfere
+        // Skip if using existing stack (user wants to connect to running services)
+        if !use_existing_stack {
+            Self::cleanup_existing_processes();
+        }
 
         let test_id = Uuid::new_v4();
         let data_dir = PathBuf::from("./tmp").join(format!("bottest-{}", test_id));
@@ -884,11 +1050,15 @@ impl TestHarness {
         Self::setup(TestConfig::default()).await
     }
 
+    /// Setup for full E2E tests - connects to existing running services by default
+    /// Set FRESH_STACK=1 env var to bootstrap a fresh stack instead
     pub async fn full() -> Result<TestContext> {
-        if std::env::var("USE_EXISTING_STACK").is_ok() {
-            Self::with_existing_stack().await
-        } else {
+        // Default: use existing stack (user already has botserver running)
+        // Set FRESH_STACK=1 to bootstrap fresh stack from scratch
+        if std::env::var("FRESH_STACK").is_ok() {
             Self::setup(TestConfig::full()).await
+        } else {
+            Self::with_existing_stack().await
         }
     }
 

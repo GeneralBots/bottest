@@ -124,6 +124,24 @@ impl Locator {
     pub fn class(name: &str) -> Self {
         Self::ClassName(name.to_string())
     }
+    
+    /// Convert locator to CSS selector string for CDP
+    pub fn to_css_selector(&self) -> String {
+        match self {
+            Locator::Css(s) => s.clone(),
+            Locator::XPath(_) => {
+                // XPath not directly supported in CSS - log warning and return generic
+                log::warn!("XPath locators not directly supported in CDP, use CSS selectors");
+                "*".to_string()
+            }
+            Locator::Id(s) => format!("#{}", s),
+            Locator::Name(s) => format!("[name='{}']", s),
+            Locator::LinkText(s) => format!("a:contains('{}')", s),
+            Locator::PartialLinkText(s) => format!("a[href*='{}']", s),
+            Locator::TagName(s) => s.clone(),
+            Locator::ClassName(s) => format!(".{}", s),
+        }
+    }
 }
 
 /// Keyboard keys for special key presses

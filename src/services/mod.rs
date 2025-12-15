@@ -3,12 +3,12 @@
 //! Provides real service instances (PostgreSQL, MinIO, Redis) for integration testing.
 //! Each service runs on a dynamic port to enable parallel test execution.
 
-mod chromedriver;
+mod browser_service;
 mod minio;
 mod postgres;
 mod redis;
 
-pub use chromedriver::ChromeDriverService;
+pub use browser_service::{BrowserService, DEFAULT_DEBUG_PORT};
 pub use minio::MinioService;
 pub use postgres::PostgresService;
 pub use redis::RedisService;

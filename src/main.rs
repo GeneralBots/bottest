@@ -514,62 +514,48 @@ async fn check_webdriver_available(port: u16) -> bool {
 async fn run_browser_demo() -> Result<()> {
     info!("Running browser demo...");
 
-    let (chromedriver_path, chrome_path) = setup_test_dependencies().await?;
+    // Use CDP directly via BrowserService
+    let debug_port = 9222u16;
+    
+    let mut browser_service = match services::BrowserService::start(debug_port).await {
+        Ok(bs) => bs,
+        Err(e) => {
+            anyhow::bail!("Failed to start browser: {}", e);
+        }
+    };
 
-    let webdriver_port = 4444u16;
-    let mut chromedriver_process = None;
+    info!("Browser started on CDP port {}", debug_port);
 
-    if !check_webdriver_available(webdriver_port).await {
-        chromedriver_process = Some(start_chromedriver(&chromedriver_path, webdriver_port).await?);
-    }
+    let config = web::BrowserConfig::default()
+        .with_browser(web::BrowserType::Chrome)
+        .with_debug_port(debug_port)
+        .headless(false)
+        .with_timeout(std::time::Duration::from_secs(30));
 
-    info!("Connecting to WebDriver...");
+    let browser = match web::Browser::new(config).await {
+        Ok(b) => b,
+        Err(e) => {
+            let _ = browser_service.stop().await;
+            anyhow::bail!("Failed to connect to browser CDP: {}", e);
+        }
+    };
 
-    let chrome_binary = chrome_path.to_string_lossy().to_string();
-
-    let mut caps = serde_json::Map::new();
-    let mut chrome_opts = serde_json::Map::new();
-    chrome_opts.insert("binary".to_string(), serde_json::json!(chrome_binary));
-    chrome_opts.insert(
-        "args".to_string(),
-        serde_json::json!(["--no-sandbox", "--disable-dev-shm-usage"]),
-    );
-    caps.insert(
-        "goog:chromeOptions".to_string(),
-        serde_json::Value::Object(chrome_opts),
-    );
-
-    let client = fantoccini::ClientBuilder::native()
-        .capabilities(caps)
-        .connect(&format!("http://localhost:{}", webdriver_port))
-        .await?;
-
-    info!("Browser connected! Navigating to example.com...");
-    client.goto("https://example.com").await?;
-
-    let title = client.title().await?;
-    info!("Page title: {}", title);
+    info!("Browser CDP connection established!");
+    info!("Navigating to example.com...");
+    browser.goto("https://example.com").await?;
 
     info!("Waiting 5 seconds so you can see the browser...");
     tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
     info!("Navigating to Google...");
-    client.goto("https://www.google.com").await?;
-
-    let title = client.title().await?;
-    info!("Page title: {}", title);
+    browser.goto("https://www.google.com").await?;
 
     info!("Waiting 5 seconds...");
     tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
     info!("Closing browser...");
-    client.close().await?;
-
-    if let Some(mut child) = chromedriver_process {
-        info!("Stopping ChromeDriver...");
-        let _ = child.kill();
-        let _ = child.wait();
-    }
+    let _ = browser.close().await;
+    let _ = browser_service.stop().await;
 
     info!("Demo complete!");
     Ok(())
