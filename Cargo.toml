@@ -28,7 +28,7 @@ mockito = "1.7"
 reqwest = { version = "0.12", features = ["json", "cookies", "blocking"] }
 
 # Web/E2E testing - using Chrome DevTools Protocol directly (no chromedriver)
-chromiumoxide = { version = "0.8", features = ["tokio-runtime"], default-features = false }
+chromiumoxide = { version = "0.7", features = ["tokio-runtime"], default-features = false }
 
 # Web framework for test server
 axum = { version = "0.7.5", features = ["ws", "multipart", "macros"] }
