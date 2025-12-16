@@ -1,0 +1,38 @@
+name: GBCI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: gbo
+
+    steps:
+      - name: Disable SSL verification (temporary)
+        run: git config --global http.sslVerify false
+
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: msrd0/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Run build
+        run: |
+          cargo build --locked
+
+      - name: Run unit tests
+        run: |
+          cargo test --locked
+
+      - name: Run integration tests
+        run: |
+          cargo test --locked --features integration
+
+      - name: Run all tests with full features
+        run: |
+          cargo test --locked --features full
