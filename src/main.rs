@@ -1,3 +1,7 @@
+#![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+
 use anyhow::Result;
 use std::env;
 use std::path::PathBuf;
@@ -516,7 +520,7 @@ async fn run_browser_demo() -> Result<()> {
 
     // Use CDP directly via BrowserService
     let debug_port = 9222u16;
-    
+
     let mut browser_service = match services::BrowserService::start(debug_port).await {
         Ok(bs) => bs,
         Err(e) => {
