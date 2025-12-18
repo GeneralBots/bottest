@@ -5,6 +5,44 @@
 
 ---
 
+## Weekly Maintenance - EVERY MONDAY
+
+### Package Review Checklist
+
+**Every Monday, review the following:**
+
+1. **Dependency Updates**
+   ```bash
+   cargo outdated
+   cargo audit
+   ```
+
+2. **Package Consolidation Opportunities**
+   - Check if new crates can replace custom code
+   - Look for crates that combine multiple dependencies
+   - Review `Cargo.toml` for redundant dependencies
+
+3. **Code Reduction Candidates**
+   - Custom mock implementations that can use crates
+   - Test utilities that have crate equivalents
+   - Boilerplate that can be replaced with macros
+
+4. **Test Infrastructure Updates**
+   - Check for new testing patterns
+   - Review mock server libraries
+   - Update fixture generation approaches
+
+### Packages to Watch
+
+| Area | Potential Packages | Purpose |
+|------|-------------------|---------|
+| Mocking | `wiremock`, `mockall` | Simplify mock creation |
+| Assertions | `assertables`, `pretty_assertions` | Better test output |
+| Fixtures | `fake`, `proptest` | Generate test data |
+| Async Testing | `tokio-test` | Async test utilities |
+
+---
+
 ## CRITICAL RULE
 
 🚫 **NO .md FILES IN ROOT OF ANY PROJECT**
