@@ -5,6 +5,84 @@
 
 ---
 
+## ZERO TOLERANCE POLICY
+
+**This project has the strictest code quality requirements possible.**
+
+**EVERY SINGLE WARNING MUST BE FIXED. NO EXCEPTIONS.**
+
+---
+
+## ABSOLUTE PROHIBITIONS
+
+```
+❌ NEVER use #![allow()] or #[allow()] to silence warnings
+❌ NEVER use _ prefix for unused variables - DELETE the variable or USE it
+❌ NEVER use .unwrap() - use ? or proper error handling
+❌ NEVER use .expect() - use ? or proper error handling  
+❌ NEVER use panic!() or unreachable!() - handle all cases
+❌ NEVER use todo!() or unimplemented!() - write real code
+❌ NEVER leave unused imports - DELETE them
+❌ NEVER leave dead code - DELETE it or IMPLEMENT it
+❌ NEVER use approximate constants (3.14159) - use std::f64::consts::PI
+❌ NEVER silence clippy - FIX THE CODE
+❌ NEVER add comments explaining what code does - code must be self-documenting
+```
+
+---
+
+## MANDATORY CODE PATTERNS
+
+### Error Handling - Use `?` Operator
+
+```rust
+// ❌ WRONG
+let value = something.unwrap();
+let value = something.expect("msg");
+
+// ✅ CORRECT
+let value = something?;
+let value = something.ok_or_else(|| Error::NotFound)?;
+```
+
+### Self Usage in Impl Blocks
+
+```rust
+// ❌ WRONG
+impl MyStruct {
+    fn new() -> MyStruct { MyStruct { } }
+}
+
+// ✅ CORRECT
+impl MyStruct {
+    fn new() -> Self { Self { } }
+}
+```
+
+### Format Strings - Inline Variables
+
+```rust
+// ❌ WRONG
+format!("Hello {}", name)
+
+// ✅ CORRECT
+format!("Hello {name}")
+```
+
+### Derive Eq with PartialEq
+
+```rust
+// ❌ WRONG
+#[derive(PartialEq)]
+struct MyStruct { }
+
+// ✅ CORRECT
+#[derive(PartialEq, Eq)]
+struct MyStruct { }
+```
+
+---
+
 ## Weekly Maintenance - EVERY MONDAY
 
 ### Package Review Checklist
@@ -214,3 +292,17 @@ Never create .md files at:
 - ✗ Any project root
 
 All non-PROMPT.md documentation belongs in botbook.
+
+---
+
+## Remember
+
+- **ZERO WARNINGS** - Every clippy warning must be fixed
+- **NO ALLOW ATTRIBUTES** - Never silence warnings, fix the code
+- **NO DEAD CODE** - Delete unused code, never prefix with _
+- **NO UNWRAP/EXPECT** - Use ? operator or proper error handling
+- **INLINE FORMAT ARGS** - format!("{name}") not format!("{}", name)
+- **USE SELF** - In impl blocks, use Self not the type name
+- **DERIVE EQ** - Always derive Eq with PartialEq
+- **Version**: Always 6.1.0 - do not change without approval
+- **Session Continuation**: When running out of context, create detailed summary: (1) what was done, (2) what remains, (3) specific files and line numbers, (4) exact next steps.

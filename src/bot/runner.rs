@@ -312,26 +312,120 @@ impl BotRunner {
         }
     }
 
-    /// Execute bot logic (placeholder for actual implementation)
     async fn execute_bot_logic(
         &self,
-        _session_id: Uuid,
+        session_id: Uuid,
         message: &str,
-        _state: &SessionState,
+        state: &SessionState,
     ) -> Result<BotResponse> {
-        // In a real implementation, this would:
-        // 1. Load the bot's BASIC script
-        // 2. Execute it with the message as input
-        // 3. Return the bot's response
+        let start = Instant::now();
 
-        // For now, return a mock response
+        let bot = self.bot.as_ref().context("No bot configured")?;
+
+        let script_path = self
+            .config
+            .working_dir
+            .join(&bot.name)
+            .join("dialog")
+            .join("start.bas");
+
+        let script_content = if script_path.exists() {
+            tokio::fs::read_to_string(&script_path)
+                .await
+                .unwrap_or_default()
+        } else {
+            let cache = self.script_cache.lock().unwrap();
+            cache.get("default").cloned().unwrap_or_default()
+        };
+
+        let response_content = if script_content.is_empty() {
+            format!("Received: {}", message)
+        } else {
+            self.evaluate_basic_script(&script_content, message, &state.context)
+                .await
+                .unwrap_or_else(|e| format!("Error: {}", e))
+        };
+
+        let latency = start.elapsed().as_millis() as u64;
+
+        let mut metrics = self.metrics.lock().unwrap();
+        metrics.total_requests += 1;
+        metrics.successful_requests += 1;
+        metrics.total_latency_ms += latency;
+
         Ok(BotResponse {
             id: Uuid::new_v4(),
-            content: format!("Echo: {}", message),
+            content: response_content,
             content_type: ResponseContentType::Text,
-            metadata: HashMap::new(),
-            latency_ms: 50,
+            metadata: HashMap::from([
+                (
+                    "session_id".to_string(),
+                    serde_json::Value::String(session_id.to_string()),
+                ),
+                (
+                    "bot_name".to_string(),
+                    serde_json::Value::String(bot.name.clone()),
+                ),
+            ]),
+            latency_ms: latency,
         })
+    }
+
+    async fn evaluate_basic_script(
+        &self,
+        script: &str,
+        input: &str,
+        context: &HashMap<String, serde_json::Value>,
+    ) -> Result<String> {
+        let mut output = String::new();
+        let mut variables: HashMap<String, String> = HashMap::new();
+
+        variables.insert("INPUT".to_string(), input.to_string());
+        for (key, value) in context {
+            variables.insert(key.to_uppercase(), value.to_string());
+        }
+
+        for line in script.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('\'') || line.starts_with("REM") {
+                continue;
+            }
+
+            if line.to_uppercase().starts_with("TALK") {
+                let content = line[4..].trim().trim_matches('"');
+                let expanded = self.expand_variables(content, &variables);
+                if !output.is_empty() {
+                    output.push('\n');
+                }
+                output.push_str(&expanded);
+            } else if line.to_uppercase().starts_with("HEAR") {
+                variables.insert("LAST_INPUT".to_string(), input.to_string());
+            } else if line.contains('=') && !line.to_uppercase().starts_with("IF") {
+                let parts: Vec<&str> = line.splitn(2, '=').collect();
+                if parts.len() == 2 {
+                    let var_name = parts[0].trim().to_uppercase();
+                    let var_value = parts[1].trim().trim_matches('"').to_string();
+                    let expanded = self.expand_variables(&var_value, &variables);
+                    variables.insert(var_name, expanded);
+                }
+            }
+        }
+
+        if output.is_empty() {
+            output = format!("Processed: {}", input);
+        }
+
+        Ok(output)
+    }
+
+    fn expand_variables(&self, text: &str, variables: &HashMap<String, String>) -> String {
+        let mut result = text.to_string();
+        for (key, value) in variables {
+            result = result.replace(&format!("{{{}}}", key), value);
+            result = result.replace(&format!("${}", key), value);
+            result = result.replace(key, value);
+        }
+        result
     }
 
     /// Execute a BASIC script directly
@@ -379,7 +473,6 @@ impl BotRunner {
             metrics.script_executions += 1;
         }
 
-        // Execute script (placeholder)
         let result = self.execute_script_internal(&script, input).await;
 
         let execution_time = start.elapsed();
@@ -410,11 +503,9 @@ impl BotRunner {
         }
     }
 
-    /// Internal script execution (placeholder)
-    async fn execute_script_internal(&self, _script: &str, input: &str) -> Result<String> {
-        // In a real implementation, this would parse and execute the BASIC script
-        // For now, just echo the input
-        Ok(format!("Script output for: {}", input))
+    async fn execute_script_internal(&self, script: &str, input: &str) -> Result<String> {
+        let context = HashMap::new();
+        self.evaluate_basic_script(script, input, &context).await
     }
 
     /// Get current metrics

@@ -1,9 +1,7 @@
 use rhai::Engine;
 use std::sync::{Arc, Mutex};
 
-// =============================================================================
 // Test Utilities
-// =============================================================================
 
 /// Create a Rhai engine with BASIC-like functions registered
 fn create_basic_engine() -> Engine {
@@ -158,9 +156,7 @@ fn create_conversation_engine(output: OutputCollector, input: InputProvider) -> 
     engine
 }
 
-// =============================================================================
 // String Function Tests with Engine
-// =============================================================================
 
 #[test]
 fn test_string_concatenation_in_engine() {
@@ -229,9 +225,7 @@ fn test_replace_function() {
     assert_eq!(result, "bbb");
 }
 
-// =============================================================================
 // Math Function Tests with Engine
-// =============================================================================
 
 #[test]
 fn test_math_operations_chain() {
@@ -300,9 +294,7 @@ fn test_val_function() {
     assert!((result - 0.0).abs() < f64::EPSILON);
 }
 
-// =============================================================================
 // TALK/HEAR Conversation Tests
-// =============================================================================
 
 #[test]
 fn test_talk_output() {
@@ -426,9 +418,7 @@ fn test_keyword_detection() {
     assert_eq!(messages[0], "I can help you! What do you need?");
 }
 
-// =============================================================================
 // Variable and Expression Tests
-// =============================================================================
 
 #[test]
 fn test_variable_assignment() {
@@ -480,9 +470,7 @@ fn test_numeric_expressions() {
     assert_eq!(result, 12);
 }
 
-// =============================================================================
 // Loop and Control Flow Tests
-// =============================================================================
 
 #[test]
 fn test_for_loop() {
@@ -527,9 +515,7 @@ fn test_while_loop() {
     assert_eq!(result, 10); // 0 + 1 + 2 + 3 + 4 = 10
 }
 
-// =============================================================================
 // Error Handling Tests
-// =============================================================================
 
 #[test]
 fn test_division_by_zero() {
@@ -561,9 +547,7 @@ fn test_type_mismatch() {
     assert!(result.is_err());
 }
 
-// =============================================================================
 // Script Fixture Tests
-// =============================================================================
 
 #[test]
 fn test_greeting_script_logic() {
@@ -659,9 +643,7 @@ fn test_echo_bot_logic() {
     assert_eq!(messages[2], "You said: How are you?");
 }
 
-// =============================================================================
 // Complex Scenario Tests
-// =============================================================================
 
 #[test]
 fn test_order_lookup_simulation() {

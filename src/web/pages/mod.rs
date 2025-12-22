@@ -25,9 +25,7 @@ pub trait Page {
     async fn wait_for_load(&self, browser: &Browser) -> Result<()>;
 }
 
-// =============================================================================
 // Login Page
-// =============================================================================
 
 /// Login page object
 pub struct LoginPage {
@@ -120,9 +118,7 @@ impl Page for LoginPage {
     }
 }
 
-// =============================================================================
 // Dashboard Page
-// =============================================================================
 
 /// Dashboard home page object
 pub struct DashboardPage {
@@ -199,9 +195,7 @@ impl Page for DashboardPage {
     }
 }
 
-// =============================================================================
 // Chat Page
-// =============================================================================
 
 /// Chat interface page object
 pub struct ChatPage {
@@ -359,9 +353,7 @@ impl Page for ChatPage {
     }
 }
 
-// =============================================================================
 // Queue Panel Page
-// =============================================================================
 
 /// Queue management panel page object
 pub struct QueuePage {
@@ -431,9 +423,7 @@ impl Page for QueuePage {
     }
 }
 
-// =============================================================================
 // Bot Management Page
-// =============================================================================
 
 /// Bot management page object
 pub struct BotManagementPage {
@@ -528,9 +518,7 @@ impl Page for BotManagementPage {
     }
 }
 
-// =============================================================================
 // Knowledge Base Page
-// =============================================================================
 
 /// Knowledge base management page object
 pub struct KnowledgeBasePage {
@@ -599,9 +587,7 @@ impl Page for KnowledgeBasePage {
     }
 }
 
-// =============================================================================
 // Analytics Page
-// =============================================================================
 
 /// Analytics dashboard page object
 pub struct AnalyticsPage {
@@ -656,9 +642,7 @@ impl Page for AnalyticsPage {
     }
 }
 
-// =============================================================================
 // Tests
-// =============================================================================
 
 #[cfg(test)]
 mod tests {

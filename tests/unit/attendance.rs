@@ -66,9 +66,7 @@ fn get_next_in_queue(entries: &[QueueEntry]) -> Option<&QueueEntry> {
     Some(best)
 }
 
-// =============================================================================
 // Priority Comparison Tests
-// =============================================================================
 
 #[test]
 fn test_priority_ordering() {
@@ -83,9 +81,7 @@ fn test_priority_equality() {
     assert_ne!(Priority::Normal, Priority::High);
 }
 
-// =============================================================================
 // Queue Entry Comparison Tests
-// =============================================================================
 
 #[test]
 fn test_higher_priority_comes_first() {
@@ -125,9 +121,7 @@ fn test_urgent_beats_everything() {
     assert_eq!(compare_queue_entries(&urgent, &low), Ordering::Less);
 }
 
-// =============================================================================
 // Queue Sorting Tests
-// =============================================================================
 
 #[test]
 fn test_sort_queue_by_priority() {
@@ -180,9 +174,7 @@ fn test_sort_single_entry() {
     assert_eq!(queue[0].id, 1);
 }
 
-// =============================================================================
 // Get Next in Queue Tests
-// =============================================================================
 
 #[test]
 fn test_get_next_returns_highest_priority() {
@@ -222,9 +214,7 @@ fn test_get_next_single_entry() {
     assert_eq!(next.id, 42);
 }
 
-// =============================================================================
 // Real-world Scenario Tests
-// =============================================================================
 
 #[test]
 fn test_scenario_customer_support_queue() {
@@ -314,9 +304,7 @@ fn test_estimated_wait_time() {
     assert_eq!(estimated_wait, 10); // 2 people * 5 minutes each
 }
 
-// =============================================================================
 // Edge Case Tests
-// =============================================================================
 
 #[test]
 fn test_large_queue() {

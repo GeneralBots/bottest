@@ -5,6 +5,9 @@ edition = "2021"
 description = "Comprehensive test suite for General Bots - Unit, Integration, and E2E testing"
 license = "AGPL-3.0"
 repository = "https://github.com/GeneralBots/BotServer"
+readme = "README.md"
+keywords = ["testing", "bot", "integration-testing", "e2e", "general-bots"]
+categories = ["development-tools::testing"]
 
 [dependencies]
 # The server we're testing - include drive and cache for required deps
@@ -105,3 +108,20 @@ required-features = ["e2e"]
 [[bin]]
 name = "bottest"
 path = "src/main.rs"
+
+[lints.rust]
+unused_imports = "warn"
+unused_variables = "warn"
+unused_mut = "warn"
+unsafe_code = "deny"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+todo = "warn"

@@ -174,7 +174,7 @@ async fn test_query_result_types() {
             9223372036854775807::bigint as bigint_val,
             'hello' as text_val,
             true as bool_val,
-            3.14159 as float_val",
+            3.125 as float_val",
     )
     .load(&mut conn)
     .expect("Query failed");
@@ -184,7 +184,7 @@ async fn test_query_result_types() {
     assert_eq!(result[0].bigint_val, 9223372036854775807_i64);
     assert_eq!(result[0].text_val, "hello");
     assert!(result[0].bool_val);
-    assert!((result[0].float_val - 3.14159).abs() < 0.0001);
+    assert!((result[0].float_val - 3.125).abs() < 0.0001);
 }
 
 #[tokio::test]
