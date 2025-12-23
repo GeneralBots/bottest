@@ -1,7 +1,3 @@
-//! Mock WhatsApp Business API server for testing
-//!
-//! Provides a mock server that simulates the WhatsApp Business API
-//! including message sending, template messages, and webhook events.
 
 use super::{new_expectation_store, ExpectationStore};
 use anyhow::{Context, Result};
@@ -11,7 +7,6 @@ use uuid::Uuid;
 use wiremock::matchers::{method, path_regex};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-/// Mock WhatsApp Business API server
 pub struct MockWhatsApp {
     server: MockServer,
     port: u16,
@@ -23,7 +18,6 @@ pub struct MockWhatsApp {
     access_token: String,
 }
 
-/// A message that was "sent" through the mock
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SentMessage {
     pub id: String,
@@ -33,8 +27,7 @@ pub struct SentMessage {
     pub timestamp: u64,
 }
 
-/// Type of message
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum MessageType {
     Text,
@@ -49,7 +42,6 @@ pub enum MessageType {
     Reaction,
 }
 
-/// Message content variants
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MessageContent {
@@ -80,28 +72,24 @@ pub enum MessageContent {
     },
 }
 
-/// Webhook event from WhatsApp
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebhookEvent {
     pub object: String,
     pub entry: Vec<WebhookEntry>,
 }
 
-/// Entry in a webhook event
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebhookEntry {
     pub id: String,
     pub changes: Vec<WebhookChange>,
 }
 
-/// Change in a webhook entry
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebhookChange {
     pub value: WebhookValue,
     pub field: String,
 }
 
-/// Value in a webhook change
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebhookValue {
     pub messaging_product: String,
@@ -114,27 +102,23 @@ pub struct WebhookValue {
     pub statuses: Option<Vec<MessageStatus>>,
 }
 
-/// Metadata in webhook
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebhookMetadata {
     pub display_phone_number: String,
     pub phone_number_id: String,
 }
 
-/// Contact in webhook
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebhookContact {
     pub profile: ContactProfile,
     pub wa_id: String,
 }
 
-/// Contact profile
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContactProfile {
     pub name: String,
 }
 
-/// Incoming message from webhook
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IncomingMessage {
     pub from: String,
@@ -154,13 +138,11 @@ pub struct IncomingMessage {
     pub interactive: Option<InteractiveReply>,
 }
 
-/// Text message content
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TextMessage {
     pub body: String,
 }
 
-/// Media message content
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MediaMessage {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -173,14 +155,12 @@ pub struct MediaMessage {
     pub caption: Option<String>,
 }
 
-/// Button reply
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ButtonReply {
     pub payload: String,
     pub text: String,
 }
 
-/// Interactive reply (list/button)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InteractiveReply {
     #[serde(rename = "type")]
@@ -191,14 +171,12 @@ pub struct InteractiveReply {
     pub list_reply: Option<ListReplyContent>,
 }
 
-/// Button reply content
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ButtonReplyContent {
     pub id: String,
     pub title: String,
 }
 
-/// List reply content
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListReplyContent {
     pub id: String,
@@ -207,7 +185,6 @@ pub struct ListReplyContent {
     pub description: Option<String>,
 }
 
-/// Message status update
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageStatus {
     pub id: String,
@@ -220,7 +197,6 @@ pub struct MessageStatus {
     pub pricing: Option<Pricing>,
 }
 
-/// Conversation info
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Conversation {
     pub id: String,
@@ -228,14 +204,12 @@ pub struct Conversation {
     pub origin: Option<ConversationOrigin>,
 }
 
-/// Conversation origin
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConversationOrigin {
     #[serde(rename = "type")]
     pub origin_type: String,
 }
 
-/// Pricing info
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pricing {
     pub billable: bool,
@@ -243,7 +217,6 @@ pub struct Pricing {
     pub category: String,
 }
 
-/// Send message API request
 #[derive(Debug, Deserialize)]
 struct SendMessageRequest {
     messaging_product: String,
@@ -255,7 +228,6 @@ struct SendMessageRequest {
     content: serde_json::Value,
 }
 
-/// Send message API response
 #[derive(Serialize)]
 struct SendMessageResponse {
     messaging_product: String,
@@ -263,26 +235,22 @@ struct SendMessageResponse {
     messages: Vec<MessageResponse>,
 }
 
-/// Contact in send response
 #[derive(Serialize)]
 struct ContactResponse {
     input: String,
     wa_id: String,
 }
 
-/// Message in send response
 #[derive(Serialize)]
 struct MessageResponse {
     id: String,
 }
 
-/// Error response
 #[derive(Serialize)]
 struct ErrorResponse {
     error: ErrorDetail,
 }
 
-/// Error detail
 #[derive(Serialize)]
 struct ErrorDetail {
     message: String,
@@ -292,7 +260,6 @@ struct ErrorDetail {
     fbtrace_id: String,
 }
 
-/// Expectation builder for message sending
 pub struct MessageExpectation {
     to: String,
     message_type: Option<MessageType>,
@@ -300,20 +267,17 @@ pub struct MessageExpectation {
 }
 
 impl MessageExpectation {
-    /// Expect a specific message type
-    pub fn of_type(mut self, t: MessageType) -> Self {
+    pub const fn of_type(mut self, t: MessageType) -> Self {
         self.message_type = Some(t);
         self
     }
 
-    /// Expect message to contain specific text
     pub fn containing(mut self, text: &str) -> Self {
         self.contains = Some(text.to_string());
         self
     }
 }
 
-/// Expectation builder for template messages
 pub struct TemplateExpectation {
     name: String,
     to: Option<String>,
@@ -321,13 +285,11 @@ pub struct TemplateExpectation {
 }
 
 impl TemplateExpectation {
-    /// Expect template to be sent to specific number
     pub fn to(mut self, phone: &str) -> Self {
         self.to = Some(phone.to_string());
         self
     }
 
-    /// Expect template with specific language
     pub fn with_language(mut self, lang: &str) -> Self {
         self.language = Some(lang.to_string());
         self
@@ -335,18 +297,14 @@ impl TemplateExpectation {
 }
 
 impl MockWhatsApp {
-    /// Default phone number ID for testing
     pub const DEFAULT_PHONE_NUMBER_ID: &'static str = "123456789012345";
 
-    /// Default business account ID
     pub const DEFAULT_BUSINESS_ACCOUNT_ID: &'static str = "987654321098765";
 
-    /// Default access token
     pub const DEFAULT_ACCESS_TOKEN: &'static str = "test_access_token_12345";
 
-    /// Start a new mock WhatsApp server on the specified port
     pub async fn start(port: u16) -> Result<Self> {
-        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{}", port))
+        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{port}"))
             .context("Failed to bind MockWhatsApp port")?;
 
         let server = MockServer::builder().listener(listener).start().await;
@@ -367,14 +325,13 @@ impl MockWhatsApp {
         Ok(mock)
     }
 
-    /// Start with custom configuration
     pub async fn start_with_config(
         port: u16,
         phone_number_id: &str,
         business_account_id: &str,
         access_token: &str,
     ) -> Result<Self> {
-        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{}", port))
+        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{port}"))
             .context("Failed to bind MockWhatsApp port")?;
 
         let server = MockServer::builder().listener(listener).start().await;
@@ -395,9 +352,7 @@ impl MockWhatsApp {
         Ok(mock)
     }
 
-    /// Set up default API routes
     async fn setup_default_routes(&self) {
-        // Send message endpoint
         let sent_messages = self.sent_messages.clone();
         let _phone_id = self.phone_number_id.clone();
 
@@ -408,7 +363,7 @@ impl MockWhatsApp {
                 let to = body.get("to").and_then(|v| v.as_str()).unwrap_or("unknown");
                 let msg_type = body.get("type").and_then(|v| v.as_str()).unwrap_or("text");
 
-                let message_id = format!("wamid.{}", Uuid::new_v4().to_string().replace("-", ""));
+                let message_id = format!("wamid.{}", Uuid::new_v4().to_string().replace('-', ""));
 
                 let now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
@@ -489,7 +444,6 @@ impl MockWhatsApp {
             .mount(&self.server)
             .await;
 
-        // Media upload endpoint
         Mock::given(method("POST"))
             .and(path_regex(r"/v\d+\.\d+/\d+/media"))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
@@ -498,7 +452,6 @@ impl MockWhatsApp {
             .mount(&self.server)
             .await;
 
-        // Media download endpoint
         Mock::given(method("GET"))
             .and(path_regex(r"/v\d+\.\d+/\d+"))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
@@ -511,7 +464,6 @@ impl MockWhatsApp {
             .mount(&self.server)
             .await;
 
-        // Business profile endpoint
         Mock::given(method("GET"))
             .and(path_regex(r"/v\d+\.\d+/\d+/whatsapp_business_profile"))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
@@ -529,7 +481,7 @@ impl MockWhatsApp {
             .await;
     }
 
-    /// Expect a message to be sent to a specific number
+    #[must_use] 
     pub fn expect_send_message(&self, to: &str) -> MessageExpectation {
         MessageExpectation {
             to: to.to_string(),
@@ -538,7 +490,7 @@ impl MockWhatsApp {
         }
     }
 
-    /// Expect a template message to be sent
+    #[must_use] 
     pub fn expect_send_template(&self, name: &str) -> TemplateExpectation {
         TemplateExpectation {
             name: name.to_string(),
@@ -547,9 +499,8 @@ impl MockWhatsApp {
         }
     }
 
-    /// Simulate an incoming message
     pub fn simulate_incoming(&self, from: &str, text: &str) -> Result<WebhookEvent> {
-        let message_id = format!("wamid.{}", Uuid::new_v4().to_string().replace("-", ""));
+        let message_id = format!("wamid.{}", Uuid::new_v4().to_string().replace('-', ""));
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
@@ -597,14 +548,13 @@ impl MockWhatsApp {
         Ok(event)
     }
 
-    /// Simulate an incoming image message
     pub fn simulate_incoming_image(
         &self,
         from: &str,
         media_id: &str,
         caption: Option<&str>,
     ) -> Result<WebhookEvent> {
-        let message_id = format!("wamid.{}", Uuid::new_v4().to_string().replace("-", ""));
+        let message_id = format!("wamid.{}", Uuid::new_v4().to_string().replace('-', ""));
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
@@ -638,7 +588,7 @@ impl MockWhatsApp {
                                 id: Some(media_id.to_string()),
                                 mime_type: Some("image/jpeg".to_string()),
                                 sha256: Some("abc123".to_string()),
-                                caption: caption.map(|c| c.to_string()),
+                                caption: caption.map(std::string::ToString::to_string),
                             }),
                             document: None,
                             button: None,
@@ -655,14 +605,13 @@ impl MockWhatsApp {
         Ok(event)
     }
 
-    /// Simulate a button reply
     pub fn simulate_button_reply(
         &self,
         from: &str,
         button_id: &str,
         button_text: &str,
     ) -> Result<WebhookEvent> {
-        let message_id = format!("wamid.{}", Uuid::new_v4().to_string().replace("-", ""));
+        let message_id = format!("wamid.{}", Uuid::new_v4().to_string().replace('-', ""));
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
@@ -715,13 +664,11 @@ impl MockWhatsApp {
         Ok(event)
     }
 
-    /// Simulate a webhook event
     pub fn simulate_webhook(&self, event: WebhookEvent) -> Result<()> {
         self.received_webhooks.lock().unwrap().push(event);
         Ok(())
     }
 
-    /// Simulate a message status update
     pub fn simulate_status(
         &self,
         message_id: &str,
@@ -774,7 +721,6 @@ impl MockWhatsApp {
         Ok(event)
     }
 
-    /// Expect an error response for the next request
     pub async fn expect_error(&self, code: u32, message: &str) {
         let error_response = ErrorResponse {
             error: ErrorDetail {
@@ -792,12 +738,10 @@ impl MockWhatsApp {
             .await;
     }
 
-    /// Expect rate limit error
     pub async fn expect_rate_limit(&self) {
         self.expect_error(80007, "Rate limit hit").await;
     }
 
-    /// Expect invalid token error
     pub async fn expect_invalid_token(&self) {
         let error_response = ErrorResponse {
             error: ErrorDetail {
@@ -815,12 +759,12 @@ impl MockWhatsApp {
             .await;
     }
 
-    /// Get all sent messages
+    #[must_use] 
     pub fn sent_messages(&self) -> Vec<SentMessage> {
         self.sent_messages.lock().unwrap().clone()
     }
 
-    /// Get sent messages to a specific number
+    #[must_use] 
     pub fn sent_messages_to(&self, phone: &str) -> Vec<SentMessage> {
         self.sent_messages
             .lock()
@@ -831,47 +775,45 @@ impl MockWhatsApp {
             .collect()
     }
 
-    /// Get the last sent message
+    #[must_use] 
     pub fn last_sent_message(&self) -> Option<SentMessage> {
         self.sent_messages.lock().unwrap().last().cloned()
     }
 
-    /// Clear sent messages
     pub fn clear_sent_messages(&self) {
         self.sent_messages.lock().unwrap().clear();
     }
 
-    /// Get the server URL
+    #[must_use] 
     pub fn url(&self) -> String {
         format!("http://127.0.0.1:{}", self.port)
     }
 
-    /// Get the Graph API base URL
+    #[must_use] 
     pub fn graph_api_url(&self) -> String {
         format!("http://127.0.0.1:{}/v17.0", self.port)
     }
 
-    /// Get the port
-    pub fn port(&self) -> u16 {
+    #[must_use] 
+    pub const fn port(&self) -> u16 {
         self.port
     }
 
-    /// Get the phone number ID
+    #[must_use] 
     pub fn phone_number_id(&self) -> &str {
         &self.phone_number_id
     }
 
-    /// Get the business account ID
+    #[must_use] 
     pub fn business_account_id(&self) -> &str {
         &self.business_account_id
     }
 
-    /// Get the access token
+    #[must_use] 
     pub fn access_token(&self) -> &str {
         &self.access_token
     }
 
-    /// Verify all expectations were met
     pub fn verify(&self) -> Result<()> {
         let store = self.expectations.lock().unwrap();
         for (_, exp) in store.iter() {
@@ -880,7 +822,6 @@ impl MockWhatsApp {
         Ok(())
     }
 
-    /// Reset all mocks
     pub async fn reset(&self) {
         self.server.reset().await;
         self.sent_messages.lock().unwrap().clear();
@@ -889,7 +830,6 @@ impl MockWhatsApp {
         self.setup_default_routes().await;
     }
 
-    /// Get received requests for inspection
     pub async fn received_requests(&self) -> Vec<wiremock::Request> {
         self.server.received_requests().await.unwrap_or_default()
     }

@@ -1,7 +1,3 @@
-//! Web E2E testing module
-//!
-//! Provides tools for browser-based end-to-end testing using WebDriver
-//! (via fantoccini) to automate browser interactions with the chat interface.
 
 pub mod browser;
 pub mod pages;
@@ -11,24 +7,15 @@ pub use browser::{Browser, BrowserConfig, BrowserType};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-/// Configuration for E2E tests
 #[derive(Debug, Clone)]
 pub struct E2EConfig {
-    /// Browser type to use
     pub browser: BrowserType,
-    /// Whether to run headless
     pub headless: bool,
-    /// Default timeout for operations
     pub timeout: Duration,
-    /// Window width
     pub window_width: u32,
-    /// Window height
     pub window_height: u32,
-    /// WebDriver URL
     pub webdriver_url: String,
-    /// Whether to capture screenshots on failure
     pub screenshot_on_failure: bool,
-    /// Directory to save screenshots
     pub screenshot_dir: String,
 }
 
@@ -48,7 +35,7 @@ impl Default for E2EConfig {
 }
 
 impl E2EConfig {
-    /// Create a BrowserConfig from this E2EConfig
+    #[must_use] 
     pub fn to_browser_config(&self) -> BrowserConfig {
         BrowserConfig::default()
             .with_browser(self.browser)
@@ -59,7 +46,6 @@ impl E2EConfig {
     }
 }
 
-/// Result of an E2E test
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct E2ETestResult {
     pub name: String,
@@ -70,7 +56,6 @@ pub struct E2ETestResult {
     pub error: Option<String>,
 }
 
-/// A step in an E2E test
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestStep {
     pub name: String,
@@ -79,72 +64,67 @@ pub struct TestStep {
     pub error: Option<String>,
 }
 
-/// Element locator strategies
 #[derive(Debug, Clone)]
 pub enum Locator {
-    /// CSS selector
     Css(String),
-    /// XPath expression
     XPath(String),
-    /// Element ID
     Id(String),
-    /// Element name attribute
     Name(String),
-    /// Link text
     LinkText(String),
-    /// Partial link text
     PartialLinkText(String),
-    /// Tag name
     TagName(String),
-    /// Class name
     ClassName(String),
 }
 
 impl Locator {
+    #[must_use] 
     pub fn css(selector: &str) -> Self {
         Self::Css(selector.to_string())
     }
 
+    #[must_use] 
     pub fn xpath(expr: &str) -> Self {
         Self::XPath(expr.to_string())
     }
 
+    #[must_use] 
     pub fn id(id: &str) -> Self {
         Self::Id(id.to_string())
     }
 
+    #[must_use] 
     pub fn name(name: &str) -> Self {
         Self::Name(name.to_string())
     }
 
+    #[must_use] 
     pub fn link_text(text: &str) -> Self {
         Self::LinkText(text.to_string())
     }
 
+    #[must_use] 
     pub fn class(name: &str) -> Self {
         Self::ClassName(name.to_string())
     }
     
-    /// Convert locator to CSS selector string for CDP
+    #[must_use] 
     pub fn to_css_selector(&self) -> String {
         match self {
-            Locator::Css(s) => s.clone(),
-            Locator::XPath(_) => {
-                // XPath not directly supported in CSS - log warning and return generic
+            Self::Css(s) => s.clone(),
+            Self::XPath(_) => {
                 log::warn!("XPath locators not directly supported in CDP, use CSS selectors");
                 "*".to_string()
             }
-            Locator::Id(s) => format!("#{}", s),
-            Locator::Name(s) => format!("[name='{}']", s),
-            Locator::LinkText(s) => format!("a:contains('{}')", s),
-            Locator::PartialLinkText(s) => format!("a[href*='{}']", s),
-            Locator::TagName(s) => s.clone(),
-            Locator::ClassName(s) => format!(".{}", s),
+            Self::Id(s) => format!("#{s}"),
+            Self::Name(s) => format!("[name='{s}']"),
+            Self::LinkText(s) => format!("a:contains('{s}')"),
+            Self::PartialLinkText(s) => format!("a[href*='{s}']"),
+            Self::TagName(s) => s.clone(),
+            Self::ClassName(s) => format!(".{s}"),
         }
     }
 }
 
-/// Keyboard keys for special key presses
 #[derive(Debug, Clone, Copy)]
 pub enum Key {
     Enter,
@@ -178,7 +158,6 @@ pub enum Key {
     Meta,
 }
 
-/// Mouse button
 #[derive(Debug, Clone, Copy)]
 pub enum MouseButton {
     Left,
@@ -186,33 +165,22 @@ pub enum MouseButton {
     Middle,
 }
 
-/// Wait condition for elements
 #[derive(Debug, Clone)]
 pub enum WaitCondition {
-    /// Element is present in DOM
     Present,
-    /// Element is visible
     Visible,
-    /// Element is clickable
     Clickable,
-    /// Element is not present
     NotPresent,
-    /// Element is not visible
     NotVisible,
-    /// Element contains text
     ContainsText(String),
-    /// Element has attribute value
     HasAttribute(String, String),
-    /// Custom JavaScript condition
     Script(String),
 }
 
-/// Action chain for complex interactions
 pub struct ActionChain {
     actions: Vec<Action>,
 }
 
-/// Individual action in a chain
 #[derive(Debug, Clone)]
 pub enum Action {
     Click(Locator),
@@ -230,86 +198,86 @@ pub enum Action {
 }
 
 impl ActionChain {
-    /// Create a new action chain
-    pub fn new() -> Self {
+    #[must_use] 
+    pub const fn new() -> Self {
         Self {
             actions: Vec::new(),
         }
     }
 
-    /// Add a click action
+    #[must_use] 
     pub fn click(mut self, locator: Locator) -> Self {
         self.actions.push(Action::Click(locator));
         self
     }
 
-    /// Add a double click action
+    #[must_use] 
     pub fn double_click(mut self, locator: Locator) -> Self {
         self.actions.push(Action::DoubleClick(locator));
         self
     }
 
-    /// Add a right click action
+    #[must_use] 
     pub fn right_click(mut self, locator: Locator) -> Self {
         self.actions.push(Action::RightClick(locator));
         self
     }
 
-    /// Move to an element
+    #[must_use] 
     pub fn move_to(mut self, locator: Locator) -> Self {
         self.actions.push(Action::MoveTo(locator));
         self
     }
 
-    /// Move by offset
+    #[must_use] 
     pub fn move_by(mut self, x: i32, y: i32) -> Self {
         self.actions.push(Action::MoveByOffset(x, y));
         self
     }
 
-    /// Press a key down
+    #[must_use] 
     pub fn key_down(mut self, key: Key) -> Self {
         self.actions.push(Action::KeyDown(key));
         self
     }
 
-    /// Release a key
+    #[must_use] 
     pub fn key_up(mut self, key: Key) -> Self {
         self.actions.push(Action::KeyUp(key));
         self
     }
 
-    /// Send keys (type text)
+    #[must_use] 
     pub fn send_keys(mut self, text: &str) -> Self {
         self.actions.push(Action::SendKeys(text.to_string()));
         self
     }
 
-    /// Pause for a duration
+    #[must_use] 
     pub fn pause(mut self, duration: Duration) -> Self {
         self.actions.push(Action::Pause(duration));
         self
     }
 
-    /// Drag and drop
+    #[must_use] 
     pub fn drag_and_drop(mut self, source: Locator, target: Locator) -> Self {
         self.actions.push(Action::DragAndDrop(source, target));
         self
     }
 
-    /// Scroll to element
+    #[must_use] 
     pub fn scroll_to(mut self, locator: Locator) -> Self {
         self.actions.push(Action::ScrollTo(locator));
         self
     }
 
-    /// Scroll by amount
+    #[must_use] 
     pub fn scroll_by(mut self, x: i32, y: i32) -> Self {
         self.actions.push(Action::ScrollByAmount(x, y));
         self
     }
 
-    /// Get the actions
+    #[must_use] 
     pub fn actions(&self) -> &[Action] {
         &self.actions
     }
@@ -321,7 +289,6 @@ impl Default for ActionChain {
     }
 }
 
-/// Cookie data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cookie {
     pub name: String,
@@ -335,6 +302,7 @@ pub struct Cookie {
 }
 
 impl Cookie {
+    #[must_use] 
     pub fn new(name: &str, value: &str) -> Self {
         Self {
             name: name.to_string(),
@@ -348,22 +316,26 @@ impl Cookie {
         }
     }
 
+    #[must_use] 
     pub fn with_domain(mut self, domain: &str) -> Self {
         self.domain = Some(domain.to_string());
         self
     }
 
+    #[must_use] 
     pub fn with_path(mut self, path: &str) -> Self {
         self.path = Some(path.to_string());
         self
     }
 
-    pub fn secure(mut self) -> Self {
+    #[must_use] 
+    pub const fn secure(mut self) -> Self {
         self.secure = Some(true);
         self
     }
 
-    pub fn http_only(mut self) -> Self {
+    #[must_use] 
+    pub const fn http_only(mut self) -> Self {
         self.http_only = Some(true);
         self
     }

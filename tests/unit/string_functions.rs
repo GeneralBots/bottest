@@ -1,20 +1,11 @@
-//! Unit tests for BASIC string functions from botserver
-//!
-//! These tests create a Rhai engine, register the same string functions
-//! that botserver uses, and verify they work correctly.
-//!
-//! Note: We test the function logic directly without requiring botserver's
-//! full infrastructure (AppState, database, etc.).
 
 use rhai::Engine;
 
-// INSTR Function Tests - Testing the actual behavior
 
 #[test]
 fn test_instr_finds_substring() {
     let mut engine = Engine::new();
 
-    // Register INSTR the same way botserver does
     engine.register_fn("INSTR", |haystack: &str, needle: &str| -> i64 {
         if haystack.is_empty() || needle.is_empty() {
             return 0;
@@ -65,7 +56,6 @@ fn test_instr_case_sensitive() {
     assert_eq!(result, 0); // Case sensitive, so not found
 }
 
-// UPPER / UCASE Function Tests
 
 #[test]
 fn test_upper_basic() {
@@ -94,7 +84,6 @@ fn test_ucase_alias() {
     assert_eq!(result, "TEST");
 }
 
-// LOWER / LCASE Function Tests
 
 #[test]
 fn test_lower_basic() {
@@ -114,7 +103,6 @@ fn test_lcase_alias() {
     assert_eq!(result, "test");
 }
 
-// LEN Function Tests
 
 #[test]
 fn test_len_basic() {
@@ -143,7 +131,6 @@ fn test_len_with_spaces() {
     assert_eq!(result, 11);
 }
 
-// TRIM / LTRIM / RTRIM Function Tests
 
 #[test]
 fn test_trim_both_sides() {
@@ -172,7 +159,6 @@ fn test_rtrim() {
     assert_eq!(result, "  hello");
 }
 
-// LEFT Function Tests
 
 #[test]
 fn test_left_basic() {
@@ -210,7 +196,6 @@ fn test_left_zero() {
     assert_eq!(result, "");
 }
 
-// RIGHT Function Tests
 
 #[test]
 fn test_right_basic() {
@@ -246,7 +231,6 @@ fn test_right_exceeds_length() {
     assert_eq!(result, "Hi");
 }
 
-// MID Function Tests
 
 #[test]
 fn test_mid_with_length() {
@@ -270,7 +254,6 @@ fn test_mid_one_based_index() {
         s.chars().skip(start_idx).take(len).collect()
     });
 
-    // BASIC uses 1-based indexing, so MID("ABCDE", 1, 1) = "A"
     let result: String = engine.eval(r#"MID("ABCDE", 1, 1)"#).unwrap();
     assert_eq!(result, "A");
 
@@ -278,7 +261,6 @@ fn test_mid_one_based_index() {
     assert_eq!(result, "C");
 }
 
-// REPLACE Function Tests
 
 #[test]
 fn test_replace_basic() {
@@ -315,7 +297,6 @@ fn test_replace_not_found() {
     assert_eq!(result, "Hello");
 }
 
-// IS_NUMERIC Function Tests
 
 #[test]
 fn test_is_numeric_integer() {
@@ -377,7 +358,6 @@ fn test_is_numeric_empty() {
     assert!(!result);
 }
 
-// Combined Expression Tests
 
 #[test]
 fn test_combined_string_operations() {
@@ -386,11 +366,9 @@ fn test_combined_string_operations() {
     engine.register_fn("TRIM", |s: &str| -> String { s.trim().to_string() });
     engine.register_fn("LEN", |s: &str| -> i64 { s.len() as i64 });
 
-    // UPPER(TRIM("  hello  ")) should be "HELLO"
     let result: String = engine.eval(r#"UPPER(TRIM("  hello  "))"#).unwrap();
     assert_eq!(result, "HELLO");
 
-    // LEN(TRIM("  hi  ")) should be 2
     let result: i64 = engine.eval(r#"LEN(TRIM("  hi  "))"#).unwrap();
     assert_eq!(result, 2);
 }

@@ -1,8 +1,3 @@
-//! MinIO service management for test infrastructure
-//!
-//! Starts and manages a MinIO instance for S3-compatible storage testing.
-//! Finds MinIO binary from system installation or botserver-stack.
-//! Provides bucket creation, object operations, and credential management.
 
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
 use anyhow::{Context, Result};
@@ -14,7 +9,6 @@ use std::process::{Child, Command, Stdio};
 use std::time::Duration;
 use tokio::time::sleep;
 
-/// MinIO service for S3-compatible storage in test environments
 pub struct MinioService {
     api_port: u16,
     console_port: u16,
@@ -26,24 +20,19 @@ pub struct MinioService {
 }
 
 impl MinioService {
-    /// Default access key for tests
     pub const DEFAULT_ACCESS_KEY: &'static str = "minioadmin";
 
-    /// Default secret key for tests
     pub const DEFAULT_SECRET_KEY: &'static str = "minioadmin";
 
-    /// Find MinIO binary - checks botserver-stack first, then system paths
     fn find_minio_binary() -> Result<PathBuf> {
-        // First, check BOTSERVER_STACK_PATH env var
         if let Ok(stack_path) = std::env::var("BOTSERVER_STACK_PATH") {
             let minio_path = PathBuf::from(&stack_path).join("bin/drive/minio");
             if minio_path.exists() {
-                log::info!("Using MinIO from BOTSERVER_STACK_PATH: {:?}", minio_path);
+                log::info!("Using MinIO from BOTSERVER_STACK_PATH: {minio_path:?}");
                 return Ok(minio_path);
             }
         }
 
-        // Check relative paths from current directory
         let cwd = std::env::current_dir().unwrap_or_default();
         let relative_paths = [
             "../botserver/botserver-stack/bin/drive/minio",
@@ -54,12 +43,11 @@ impl MinioService {
         for rel_path in &relative_paths {
             let minio_path = cwd.join(rel_path);
             if minio_path.exists() {
-                log::info!("Using MinIO from botserver-stack: {:?}", minio_path);
+                log::info!("Using MinIO from botserver-stack: {minio_path:?}");
                 return Ok(minio_path);
             }
         }
 
-        // Check system paths
         let system_paths = [
             "/usr/local/bin/minio",
             "/usr/bin/minio",
@@ -70,29 +58,26 @@ impl MinioService {
         for path in &system_paths {
             let minio_path = PathBuf::from(path);
             if minio_path.exists() {
-                log::info!("Using system MinIO from: {:?}", minio_path);
+                log::info!("Using system MinIO from: {minio_path:?}");
                 return Ok(minio_path);
             }
         }
 
-        // Last resort: try to find via which
         if let Ok(minio_path) = which::which("minio") {
-            log::info!("Using MinIO from PATH: {:?}", minio_path);
+            log::info!("Using MinIO from PATH: {minio_path:?}");
             return Ok(minio_path);
         }
 
         anyhow::bail!("MinIO not found. Install MinIO or set BOTSERVER_STACK_PATH env var")
     }
 
-    /// Start a new MinIO instance on the specified port
     pub async fn start(api_port: u16, data_dir: &str) -> Result<Self> {
         let bin_path = Self::find_minio_binary()?;
-        log::info!("Using MinIO from: {:?}", bin_path);
+        log::info!("Using MinIO from: {bin_path:?}");
 
         let data_path = PathBuf::from(data_dir).join("minio");
         ensure_dir(&data_path)?;
 
-        // Allocate a console port (api_port + 1000 or find available)
         let console_port = api_port + 1000;
 
         let mut service = Self {
@@ -111,7 +96,6 @@ impl MinioService {
         Ok(service)
     }
 
-    /// Start MinIO with custom credentials
     pub async fn start_with_credentials(
         api_port: u16,
         data_dir: &str,
@@ -119,7 +103,7 @@ impl MinioService {
         secret_key: &str,
     ) -> Result<Self> {
         let bin_path = Self::find_minio_binary()?;
-        log::info!("Using MinIO from: {:?}", bin_path);
+        log::info!("Using MinIO from: {bin_path:?}");
 
         let data_path = PathBuf::from(data_dir).join("minio");
         ensure_dir(&data_path)?;
@@ -142,7 +126,6 @@ impl MinioService {
         Ok(service)
     }
 
-    /// Start the MinIO server process
     async fn start_server(&mut self) -> Result<()> {
         log::info!(
             "Starting MinIO on port {} (console: {})",
@@ -170,7 +153,6 @@ impl MinioService {
         Ok(())
     }
 
-    /// Wait for MinIO to be ready
     async fn wait_ready(&self) -> Result<()> {
         log::info!("Waiting for MinIO to be ready...");
 
@@ -180,7 +162,6 @@ impl MinioService {
         .await
         .context("MinIO failed to start in time")?;
 
-        // Additional health check via HTTP
         let health_url = format!("http://127.0.0.1:{}/minio/health/live", self.api_port);
         for _ in 0..30 {
             if let Ok(resp) = reqwest::get(&health_url).await {
@@ -191,17 +172,13 @@ impl MinioService {
             sleep(Duration::from_millis(100)).await;
         }
 
-        // Even if health check fails, TCP is up so proceed
         Ok(())
     }
 
-    /// Create a new bucket
     pub async fn create_bucket(&self, name: &str) -> Result<()> {
-        log::info!("Creating bucket '{}'", name);
+        log::info!("Creating bucket '{name}'");
 
-        // Try using mc (MinIO client) if available
         if let Ok(mc) = Self::find_mc_binary() {
-            // Configure mc alias
             let alias_name = format!("test{}", self.api_port);
             let _ = Command::new(&mc)
                 .args([
@@ -218,21 +195,20 @@ impl MinioService {
                 .args([
                     "mb",
                     "--ignore-existing",
-                    &format!("{}/{}", alias_name, name),
+                    &format!("{alias_name}/{name}"),
                 ])
                 .output()?;
 
             if !output.status.success() {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 if !stderr.contains("already") {
-                    anyhow::bail!("Failed to create bucket: {}", stderr);
+                    anyhow::bail!("Failed to create bucket: {stderr}");
                 }
             }
 
             return Ok(());
         }
 
-        // Fallback: use HTTP PUT request
         let url = format!("{}/{}", self.endpoint(), name);
         let client = reqwest::Client::new();
         let resp = client
@@ -248,7 +224,6 @@ impl MinioService {
         Ok(())
     }
 
-    /// Put an object into a bucket
     pub async fn put_object(&self, bucket: &str, key: &str, data: &[u8]) -> Result<()> {
         log::debug!("Putting object '{}/{}' ({} bytes)", bucket, key, data.len());
 
@@ -268,9 +243,8 @@ impl MinioService {
         Ok(())
     }
 
-    /// Get an object from a bucket
     pub async fn get_object(&self, bucket: &str, key: &str) -> Result<Vec<u8>> {
-        log::debug!("Getting object '{}/{}'", bucket, key);
+        log::debug!("Getting object '{bucket}/{key}'");
 
         let url = format!("{}/{}/{}", self.endpoint(), bucket, key);
         let client = reqwest::Client::new();
@@ -287,9 +261,8 @@ impl MinioService {
         Ok(resp.bytes().await?.to_vec())
     }
 
-    /// Delete an object from a bucket
     pub async fn delete_object(&self, bucket: &str, key: &str) -> Result<()> {
-        log::debug!("Deleting object '{}/{}'", bucket, key);
+        log::debug!("Deleting object '{bucket}/{key}'");
 
         let url = format!("{}/{}/{}", self.endpoint(), bucket, key);
         let client = reqwest::Client::new();
@@ -306,13 +279,12 @@ impl MinioService {
         Ok(())
     }
 
-    /// List objects in a bucket
     pub async fn list_objects(&self, bucket: &str, prefix: Option<&str>) -> Result<Vec<String>> {
-        log::debug!("Listing objects in bucket '{}'", bucket);
+        log::debug!("Listing objects in bucket '{bucket}'");
 
         let mut url = format!("{}/{}", self.endpoint(), bucket);
         if let Some(p) = prefix {
-            url = format!("{}?prefix={}", url, p);
+            url = format!("{url}?prefix={p}");
         }
 
         let client = reqwest::Client::new();
@@ -326,11 +298,9 @@ impl MinioService {
             anyhow::bail!("Failed to list objects: {}", resp.status());
         }
 
-        // Parse XML response (simplified)
         let body = resp.text().await?;
         let mut objects = Vec::new();
 
-        // Simple XML parsing for <Key> elements
         for line in body.lines() {
             if let Some(start) = line.find("<Key>") {
                 if let Some(end) = line.find("</Key>") {
@@ -343,7 +313,6 @@ impl MinioService {
         Ok(objects)
     }
 
-    /// Check if a bucket exists
     pub async fn bucket_exists(&self, name: &str) -> Result<bool> {
         let url = format!("{}/{}", self.endpoint(), name);
         let client = reqwest::Client::new();
@@ -356,9 +325,8 @@ impl MinioService {
         Ok(resp.status().is_success())
     }
 
-    /// Delete a bucket
     pub async fn delete_bucket(&self, name: &str) -> Result<()> {
-        log::info!("Deleting bucket '{}'", name);
+        log::info!("Deleting bucket '{name}'");
 
         let url = format!("{}/{}", self.endpoint(), name);
         let client = reqwest::Client::new();
@@ -375,32 +343,32 @@ impl MinioService {
         Ok(())
     }
 
-    /// Get the S3 endpoint URL
+    #[must_use] 
     pub fn endpoint(&self) -> String {
         format!("http://127.0.0.1:{}", self.api_port)
     }
 
-    /// Get the console URL
+    #[must_use] 
     pub fn console_url(&self) -> String {
         format!("http://127.0.0.1:{}", self.console_port)
     }
 
-    /// Get the API port
-    pub fn api_port(&self) -> u16 {
+    #[must_use] 
+    pub const fn api_port(&self) -> u16 {
         self.api_port
     }
 
-    /// Get the console port
-    pub fn console_port(&self) -> u16 {
+    #[must_use] 
+    pub const fn console_port(&self) -> u16 {
         self.console_port
     }
 
-    /// Get credentials as (access_key, secret_key)
+    #[must_use] 
     pub fn credentials(&self) -> (String, String) {
         (self.access_key.clone(), self.secret_key.clone())
     }
 
-    /// Get S3-compatible configuration for AWS SDK
+    #[must_use] 
     pub fn s3_config(&self) -> HashMap<String, String> {
         let mut config = HashMap::new();
         config.insert("endpoint_url".to_string(), self.endpoint());
@@ -411,7 +379,6 @@ impl MinioService {
         config
     }
 
-    /// Find the MinIO client (mc) binary
     fn find_mc_binary() -> Result<PathBuf> {
         let common_paths = ["/usr/local/bin/mc", "/usr/bin/mc", "/opt/homebrew/bin/mc"];
 
@@ -425,7 +392,6 @@ impl MinioService {
         which::which("mc").context("mc binary not found")
     }
 
-    /// Stop the MinIO server
     pub async fn stop(&mut self) -> Result<()> {
         if let Some(ref mut child) = self.process {
             log::info!("Stopping MinIO...");
@@ -452,7 +418,6 @@ impl MinioService {
         Ok(())
     }
 
-    /// Clean up data directory
     pub fn cleanup(&self) -> Result<()> {
         if self.data_dir.exists() {
             std::fs::remove_dir_all(&self.data_dir)?;

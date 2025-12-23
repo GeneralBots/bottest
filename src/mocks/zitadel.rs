@@ -1,7 +1,3 @@
-//! Mock Zitadel server for testing OIDC/Auth flows
-//!
-//! Provides a mock authentication server that simulates Zitadel's OIDC endpoints
-//! including login, token issuance, refresh, and introspection.
 
 use super::{new_expectation_store, ExpectationStore};
 use anyhow::{Context, Result};
@@ -13,7 +9,6 @@ use uuid::Uuid;
 use wiremock::matchers::{body_string_contains, header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-/// Mock Zitadel server for OIDC testing
 pub struct MockZitadel {
     server: MockServer,
     port: u16,
@@ -23,7 +18,6 @@ pub struct MockZitadel {
     issuer: String,
 }
 
-/// Test user for authentication
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestUser {
     pub id: String,
@@ -47,7 +41,6 @@ impl Default for TestUser {
     }
 }
 
-/// Token information stored by the mock
 #[derive(Debug, Clone)]
 struct TokenInfo {
     user_id: String,
@@ -58,7 +51,6 @@ struct TokenInfo {
     active: bool,
 }
 
-/// Token response from authorization endpoints
 #[derive(Serialize)]
 struct TokenResponse {
     access_token: String,
@@ -71,7 +63,6 @@ struct TokenResponse {
     scope: String,
 }
 
-/// OIDC discovery document
 #[derive(Serialize)]
 struct OIDCDiscovery {
     issuer: String,
@@ -89,7 +80,6 @@ struct OIDCDiscovery {
     claims_supported: Vec<String>,
 }
 
-/// Introspection response
 #[derive(Serialize)]
 struct IntrospectionResponse {
     active: bool,
@@ -113,7 +103,6 @@ struct IntrospectionResponse {
     iss: Option<String>,
 }
 
-/// User info response
 #[derive(Serialize)]
 struct UserInfoResponse {
     sub: String,
@@ -125,7 +114,6 @@ struct UserInfoResponse {
     roles: Option<Vec<String>>,
 }
 
-/// Error response
 #[derive(Serialize)]
 struct ErrorResponse {
     error: String,
@@ -133,13 +121,12 @@ struct ErrorResponse {
 }
 
 impl MockZitadel {
-    /// Start a new mock Zitadel server on the specified port
     pub async fn start(port: u16) -> Result<Self> {
-        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{}", port))
+        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{port}"))
             .context("Failed to bind MockZitadel port")?;
 
         let server = MockServer::builder().listener(listener).start().await;
-        let issuer = format!("http://127.0.0.1:{}", port);
+        let issuer = format!("http://127.0.0.1:{port}");
 
         let mock = Self {
             server,
@@ -156,18 +143,17 @@ impl MockZitadel {
         Ok(mock)
     }
 
-    /// Set up the OIDC discovery endpoint
     async fn setup_discovery_endpoint(&self) {
         let base_url = self.url();
 
         let discovery = OIDCDiscovery {
             issuer: base_url.clone(),
-            authorization_endpoint: format!("{}/oauth/v2/authorize", base_url),
-            token_endpoint: format!("{}/oauth/v2/token", base_url),
-            userinfo_endpoint: format!("{}/oidc/v1/userinfo", base_url),
-            introspection_endpoint: format!("{}/oauth/v2/introspect", base_url),
-            revocation_endpoint: format!("{}/oauth/v2/revoke", base_url),
-            jwks_uri: format!("{}/oauth/v2/keys", base_url),
+            authorization_endpoint: format!("{base_url}/oauth/v2/authorize"),
+            token_endpoint: format!("{base_url}/oauth/v2/token"),
+            userinfo_endpoint: format!("{base_url}/oidc/v1/userinfo"),
+            introspection_endpoint: format!("{base_url}/oauth/v2/introspect"),
+            revocation_endpoint: format!("{base_url}/oauth/v2/revoke"),
+            jwks_uri: format!("{base_url}/oauth/v2/keys"),
             response_types_supported: vec![
                 "code".to_string(),
                 "token".to_string(),
@@ -210,9 +196,7 @@ impl MockZitadel {
             .await;
     }
 
-    /// Set up the JWKS endpoint with a mock key
     async fn setup_jwks_endpoint(&self) {
-        // Simple mock JWKS - in production this would be a real RSA key
         let jwks = serde_json::json!({
             "keys": [{
                 "kty": "RSA",
@@ -231,7 +215,7 @@ impl MockZitadel {
             .await;
     }
 
-    /// Create a test user and return their ID
+    #[must_use] 
     pub fn create_test_user(&self, email: &str) -> TestUser {
         let user = TestUser {
             id: Uuid::new_v4().to_string(),
@@ -248,7 +232,7 @@ impl MockZitadel {
         user
     }
 
-    /// Create a test user with specific details
+    #[must_use] 
     pub fn create_user(&self, user: TestUser) -> TestUser {
         self.users
             .lock()
@@ -257,7 +241,6 @@ impl MockZitadel {
         user
     }
 
-    /// Expect a login with specific credentials and return a token response
     pub async fn expect_login(&self, email: &str, password: &str) -> String {
         let user = self
             .users
@@ -286,7 +269,6 @@ impl MockZitadel {
             .as_secs();
         let expires_in = 3600u64;
 
-        // Store token info
         self.tokens.lock().unwrap().insert(
             access_token.clone(),
             TokenInfo {
@@ -312,10 +294,9 @@ impl MockZitadel {
             scope: "openid profile email".to_string(),
         };
 
-        // Set up the mock for password grant
         Mock::given(method("POST"))
             .and(path("/oauth/v2/token"))
-            .and(body_string_contains(&format!("username={}", email)))
+            .and(body_string_contains(format!("username={email}")))
             .respond_with(ResponseTemplate::new(200).set_body_json(&token_response))
             .mount(&self.server)
             .await;
@@ -323,7 +304,6 @@ impl MockZitadel {
         access_token
     }
 
-    /// Expect token refresh
     pub async fn expect_token_refresh(&self) {
         let access_token = format!("test_access_{}", Uuid::new_v4());
         let refresh_token = format!("test_refresh_{}", Uuid::new_v4());
@@ -345,7 +325,6 @@ impl MockZitadel {
             .await;
     }
 
-    /// Expect token introspection
     pub async fn expect_introspect(&self, token: &str, active: bool) {
         let response = if active {
             let now = SystemTime::now()
@@ -382,13 +361,12 @@ impl MockZitadel {
 
         Mock::given(method("POST"))
             .and(path("/oauth/v2/introspect"))
-            .and(body_string_contains(&format!("token={}", token)))
+            .and(body_string_contains(format!("token={token}")))
             .respond_with(ResponseTemplate::new(200).set_body_json(&response))
             .mount(&self.server)
             .await;
     }
 
-    /// Set up default introspection that always returns active
     pub async fn expect_any_introspect_active(&self) {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -415,7 +393,6 @@ impl MockZitadel {
             .await;
     }
 
-    /// Expect userinfo request
     pub async fn expect_userinfo(&self, token: &str, user: &TestUser) {
         let response = UserInfoResponse {
             sub: user.id.clone(),
@@ -430,14 +407,13 @@ impl MockZitadel {
             .and(path("/oidc/v1/userinfo"))
             .and(header(
                 "authorization",
-                format!("Bearer {}", token).as_str(),
+                format!("Bearer {token}").as_str(),
             ))
             .respond_with(ResponseTemplate::new(200).set_body_json(&response))
             .mount(&self.server)
             .await;
     }
 
-    /// Set up default userinfo endpoint
     pub async fn expect_any_userinfo(&self) {
         let response = UserInfoResponse {
             sub: Uuid::new_v4().to_string(),
@@ -455,7 +431,6 @@ impl MockZitadel {
             .await;
     }
 
-    /// Expect token revocation
     pub async fn expect_revoke(&self) {
         Mock::given(method("POST"))
             .and(path("/oauth/v2/revoke"))
@@ -464,7 +439,6 @@ impl MockZitadel {
             .await;
     }
 
-    /// Expect an authentication error
     pub async fn expect_auth_error(&self, error: &str, description: &str) {
         let response = ErrorResponse {
             error: error.to_string(),
@@ -478,19 +452,16 @@ impl MockZitadel {
             .await;
     }
 
-    /// Expect invalid credentials error
     pub async fn expect_invalid_credentials(&self) {
         self.expect_auth_error("invalid_grant", "Invalid username or password")
             .await;
     }
 
-    /// Expect client authentication error
     pub async fn expect_invalid_client(&self) {
         self.expect_auth_error("invalid_client", "Client authentication failed")
             .await;
     }
 
-    /// Create a mock ID token (not cryptographically valid, for testing only)
     fn create_mock_id_token(&self, user: &TestUser) -> String {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -513,10 +484,10 @@ impl MockZitadel {
         );
         let signature = base64_url_encode("mock-signature");
 
-        format!("{}.{}.{}", header, payload, signature)
+        format!("{header}.{payload}.{signature}")
     }
 
-    /// Generate an access token for a user
+    #[must_use] 
     pub fn generate_token(&self, user: &TestUser) -> String {
         let access_token = format!("test_access_{}", Uuid::new_v4());
         let now = SystemTime::now()
@@ -543,34 +514,32 @@ impl MockZitadel {
         access_token
     }
 
-    /// Invalidate a token
     pub fn invalidate_token(&self, token: &str) {
         if let Some(info) = self.tokens.lock().unwrap().get_mut(token) {
             info.active = false;
         }
     }
 
-    /// Get the server URL
+    #[must_use] 
     pub fn url(&self) -> String {
         format!("http://127.0.0.1:{}", self.port)
     }
 
-    /// Get the issuer URL (same as server URL)
+    #[must_use] 
     pub fn issuer(&self) -> String {
         self.issuer.clone()
     }
 
-    /// Get the port
-    pub fn port(&self) -> u16 {
+    #[must_use] 
+    pub const fn port(&self) -> u16 {
         self.port
     }
 
-    /// Get the OIDC discovery URL
+    #[must_use] 
     pub fn discovery_url(&self) -> String {
         format!("{}/.well-known/openid-configuration", self.url())
     }
 
-    /// Verify all expectations were met
     pub fn verify(&self) -> Result<()> {
         let store = self.expectations.lock().unwrap();
         for (_, exp) in store.iter() {
@@ -579,7 +548,6 @@ impl MockZitadel {
         Ok(())
     }
 
-    /// Reset all mocks
     pub async fn reset(&self) {
         self.server.reset().await;
         self.users.lock().unwrap().clear();
@@ -589,13 +557,11 @@ impl MockZitadel {
         self.setup_jwks_endpoint().await;
     }
 
-    /// Get received requests for inspection
     pub async fn received_requests(&self) -> Vec<wiremock::Request> {
         self.server.received_requests().await.unwrap_or_default()
     }
 }
 
-/// Simple base64 URL encoding (for mock tokens)
 fn base64_url_encode(input: &str) -> String {
     use std::io::Write;
 
@@ -611,11 +577,10 @@ fn base64_url_encode(input: &str) -> String {
         .replace('=', "")
 }
 
-/// Create a base64 encoder
 fn base64_encoder(output: &mut Vec<u8>) -> impl std::io::Write + '_ {
     struct Base64Writer<'a>(&'a mut Vec<u8>);
 
-    impl<'a> std::io::Write for Base64Writer<'a> {
+    impl std::io::Write for Base64Writer<'_> {
         fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
             const ALPHABET: &[u8; 64] =
                 b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -726,7 +691,6 @@ mod tests {
 
         let json = serde_json::to_string(&response).unwrap();
         assert!(json.contains(r#""active":false"#));
-        // Optional fields should be omitted
         assert!(!json.contains("scope"));
     }
 }

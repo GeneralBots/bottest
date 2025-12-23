@@ -38,7 +38,7 @@ impl ConversationBuilder {
         self
     }
 
-    pub fn on_channel(mut self, channel: Channel) -> Self {
+    pub const fn on_channel(mut self, channel: Channel) -> Self {
         self.channel = channel;
         self
     }
@@ -48,7 +48,7 @@ impl ConversationBuilder {
         self
     }
 
-    pub fn with_timeout(mut self, timeout: Duration) -> Self {
+    pub const fn with_timeout(mut self, timeout: Duration) -> Self {
         self.config.response_timeout = timeout;
         self
     }
@@ -58,12 +58,12 @@ impl ConversationBuilder {
         self
     }
 
-    pub fn without_recording(mut self) -> Self {
+    pub const fn without_recording(mut self) -> Self {
         self.config.record = false;
         self
     }
 
-    pub fn with_real_llm(mut self) -> Self {
+    pub const fn with_real_llm(mut self) -> Self {
         self.config.use_mock_llm = false;
         self
     }
@@ -137,7 +137,7 @@ impl ConversationTest {
         Ok(conv)
     }
 
-    pub fn id(&self) -> Uuid {
+    pub const fn id(&self) -> Uuid {
         self.id
     }
 
@@ -145,15 +145,15 @@ impl ConversationTest {
         &self.bot_name
     }
 
-    pub fn customer(&self) -> &Customer {
+    pub const fn customer(&self) -> &Customer {
         &self.customer
     }
 
-    pub fn channel(&self) -> Channel {
+    pub const fn channel(&self) -> Channel {
         self.channel
     }
 
-    pub fn state(&self) -> ConversationState {
+    pub const fn state(&self) -> ConversationState {
         self.state
     }
 
@@ -165,15 +165,15 @@ impl ConversationTest {
         &self.sent_messages
     }
 
-    pub fn last_response(&self) -> Option<&BotResponse> {
+    pub const fn last_response(&self) -> Option<&BotResponse> {
         self.last_response.as_ref()
     }
 
-    pub fn last_latency(&self) -> Option<Duration> {
+    pub const fn last_latency(&self) -> Option<Duration> {
         self.last_latency
     }
 
-    pub fn record(&self) -> &ConversationRecord {
+    pub const fn record(&self) -> &ConversationRecord {
         &self.record
     }
 
@@ -203,7 +203,7 @@ impl ConversationTest {
             self.record.messages.push(RecordedMessage {
                 timestamp: Utc::now(),
                 direction: MessageDirection::Outgoing,
-                content: response.content.clone(),
+                content: response.content,
                 latency_ms: Some(latency.as_millis() as u64),
             });
         }
@@ -242,7 +242,7 @@ impl ConversationTest {
 
         BotResponse {
             id: Uuid::new_v4(),
-            content: format!("Response to: {}", user_message),
+            content: format!("Response to: {user_message}"),
             content_type: ResponseContentType::Text,
             metadata: self.build_response_metadata(),
             latency_ms: start.elapsed().as_millis() as u64,
@@ -269,7 +269,7 @@ impl ConversationTest {
         });
 
         let response = client
-            .post(format!("{}/v1/chat/completions", llm_url))
+            .post(format!("{llm_url}/v1/chat/completions"))
             .header("Content-Type", "application/json")
             .json(&request_body)
             .send()
@@ -309,10 +309,10 @@ impl ConversationTest {
     pub async fn assert_response_contains(&mut self, text: &str) -> &mut Self {
         let result = if let Some(ref response) = self.last_response {
             if response.content.contains(text) {
-                AssertionResult::pass(&format!("Response contains '{}'", text))
+                AssertionResult::pass(&format!("Response contains '{text}'"))
             } else {
                 AssertionResult::fail(
-                    &format!("Response should contain '{}'", text),
+                    &format!("Response should contain '{text}'"),
                     text,
                     &response.content,
                 )
@@ -328,7 +328,7 @@ impl ConversationTest {
     pub async fn assert_response_equals(&mut self, text: &str) -> &mut Self {
         let result = if let Some(ref response) = self.last_response {
             if response.content == text {
-                AssertionResult::pass(&format!("Response equals '{}'", text))
+                AssertionResult::pass(&format!("Response equals '{text}'"))
             } else {
                 AssertionResult::fail(
                     "Response should equal expected text",
@@ -349,17 +349,17 @@ impl ConversationTest {
             match regex::Regex::new(pattern) {
                 Ok(re) => {
                     if re.is_match(&response.content) {
-                        AssertionResult::pass(&format!("Response matches pattern '{}'", pattern))
+                        AssertionResult::pass(&format!("Response matches pattern '{pattern}'"))
                     } else {
                         AssertionResult::fail(
-                            &format!("Response should match pattern '{}'", pattern),
+                            &format!("Response should match pattern '{pattern}'"),
                             pattern,
                             &response.content,
                         )
                     }
                 }
                 Err(e) => AssertionResult::fail(
-                    &format!("Invalid regex pattern: {}", e),
+                    &format!("Invalid regex pattern: {e}"),
                     pattern,
                     "<invalid pattern>",
                 ),
@@ -374,14 +374,14 @@ impl ConversationTest {
 
     pub async fn assert_response_not_contains(&mut self, text: &str) -> &mut Self {
         let result = if let Some(ref response) = self.last_response {
-            if !response.content.contains(text) {
-                AssertionResult::pass(&format!("Response does not contain '{}'", text))
-            } else {
+            if response.content.contains(text) {
                 AssertionResult::fail(
-                    &format!("Response should not contain '{}'", text),
-                    &format!("not containing '{}'", text),
+                    &format!("Response should not contain '{text}'"),
+                    &format!("not containing '{text}'"),
                     &response.content,
                 )
+            } else {
+                AssertionResult::pass(&format!("Response does not contain '{text}'"))
             }
         } else {
             AssertionResult::pass("No response (nothing to contain)")
@@ -396,12 +396,11 @@ impl ConversationTest {
             || self
                 .last_response
                 .as_ref()
-                .map(|r| {
+                .is_some_and(|r| {
                     r.content.to_lowercase().contains("transfer")
                         || r.content.to_lowercase().contains("human")
                         || r.content.to_lowercase().contains("agent")
-                })
-                .unwrap_or(false);
+                });
 
         let result = if is_transferred {
             self.state = ConversationState::Transferred;
@@ -422,11 +421,11 @@ impl ConversationTest {
         let actual = self
             .context
             .get("queue_position")
-            .and_then(|v| v.as_u64())
+            .and_then(serde_json::Value::as_u64)
             .unwrap_or(0) as usize;
 
         let result = if actual == expected {
-            AssertionResult::pass(&format!("Queue position is {}", expected))
+            AssertionResult::pass(&format!("Queue position is {expected}"))
         } else {
             AssertionResult::fail(
                 "Queue position mismatch",
@@ -442,18 +441,18 @@ impl ConversationTest {
     pub async fn assert_response_within(&mut self, max_duration: Duration) -> &mut Self {
         let result = if let Some(latency) = self.last_latency {
             if latency <= max_duration {
-                AssertionResult::pass(&format!("Response within {:?}", max_duration))
+                AssertionResult::pass(&format!("Response within {max_duration:?}"))
             } else {
                 AssertionResult::fail(
                     "Response too slow",
-                    &format!("{:?}", max_duration),
-                    &format!("{:?}", latency),
+                    &format!("{max_duration:?}"),
+                    &format!("{latency:?}"),
                 )
             }
         } else {
             AssertionResult::fail(
                 "No latency recorded",
-                &format!("{:?}", max_duration),
+                &format!("{max_duration:?}"),
                 "<no latency>",
             )
         };
@@ -466,7 +465,7 @@ impl ConversationTest {
         let actual = self.responses.len();
 
         let result = if actual == expected {
-            AssertionResult::pass(&format!("Response count is {}", expected))
+            AssertionResult::pass(&format!("Response count is {expected}"))
         } else {
             AssertionResult::fail(
                 "Response count mismatch",
@@ -482,18 +481,18 @@ impl ConversationTest {
     pub async fn assert_response_type(&mut self, expected: ResponseContentType) -> &mut Self {
         let result = if let Some(ref response) = self.last_response {
             if response.content_type == expected {
-                AssertionResult::pass(&format!("Response type is {:?}", expected))
+                AssertionResult::pass(&format!("Response type is {expected:?}"))
             } else {
                 AssertionResult::fail(
                     "Response type mismatch",
-                    &format!("{:?}", expected),
+                    &format!("{expected:?}"),
                     &format!("{:?}", response.content_type),
                 )
             }
         } else {
             AssertionResult::fail(
                 "No response to check",
-                &format!("{:?}", expected),
+                &format!("{expected:?}"),
                 "<no response>",
             )
         };
@@ -517,7 +516,7 @@ impl ConversationTest {
         self
     }
 
-    pub fn all_passed(&self) -> bool {
+    pub const fn all_passed(&self) -> bool {
         self.record.passed
     }
 

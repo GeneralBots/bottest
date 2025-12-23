@@ -16,7 +16,6 @@ pub struct E2ETestContext {
     browser_service: Option<BrowserService>,
 }
 
-/// Check if a service is running at the given URL
 async fn is_service_running(url: &str) -> bool {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(2))
@@ -24,7 +23,6 @@ async fn is_service_running(url: &str) -> bool {
         .build()
         .unwrap_or_default();
 
-    // Try health endpoint first, then root
     if let Ok(resp) = client.get(&format!("{}/health", url)).send().await {
         if resp.status().is_success() {
             return true;
@@ -38,14 +36,6 @@ async fn is_service_running(url: &str) -> bool {
 
 impl E2ETestContext {
     pub async fn setup() -> anyhow::Result<Self> {
-        // Default strategy: Use main botserver stack at https://localhost:8080
-        // This ensures LLM and all services are properly configured
-        // User should start botserver normally: cd botserver && cargo run
-        //
-        // Override with env vars:
-        //   BOTSERVER_URL=https://localhost:8080
-        //   BOTUI_URL=http://localhost:3000
-        //   FRESH_STACK=1  (to start a new temp stack instead)
 
         let botserver_url =
             std::env::var("BOTSERVER_URL").unwrap_or_else(|_| "https://localhost:8080".to_string());
@@ -55,20 +45,16 @@ impl E2ETestContext {
         let botserver_running = is_service_running(&botserver_url).await;
         let botui_running = is_service_running(&botui_url).await;
 
-        // Always use existing stack context (main stack)
         let ctx = TestHarness::with_existing_stack().await?;
 
-        // Check if botserver is running, if not start it with main stack
         let server = if botserver_running {
             println!("🔗 Using existing BotServer at {}", botserver_url);
             BotServerInstance::existing(&botserver_url)
         } else {
-            // Auto-start botserver with main stack (includes LLM)
             println!("🚀 Auto-starting BotServer with main stack...");
             BotServerInstance::start_with_main_stack().await?
         };
 
-        // Ensure botui is running (required for chat UI)
         let ui = if botui_running {
             println!("🔗 Using existing BotUI at {}", botui_url);
             Some(BotUIInstance::existing(&botui_url))
@@ -100,14 +86,6 @@ impl E2ETestContext {
     }
 
     pub async fn setup_with_browser() -> anyhow::Result<Self> {
-        // Default strategy: Use main botserver stack at https://localhost:8080
-        // This ensures LLM and all services are properly configured
-        // User should start botserver normally: cd botserver && cargo run
-        //
-        // Override with env vars:
-        //   BOTSERVER_URL=https://localhost:8080
-        //   BOTUI_URL=http://localhost:3000
-        //   FRESH_STACK=1  (to start a new temp stack instead)
 
         let botserver_url =
             std::env::var("BOTSERVER_URL").unwrap_or_else(|_| "https://localhost:8080".to_string());
@@ -117,20 +95,16 @@ impl E2ETestContext {
         let botserver_running = is_service_running(&botserver_url).await;
         let botui_running = is_service_running(&botui_url).await;
 
-        // Always use existing stack context (main stack)
         let ctx = TestHarness::with_existing_stack().await?;
 
-        // Check if botserver is running, if not start it with main stack
         let server = if botserver_running {
             println!("🔗 Using existing BotServer at {}", botserver_url);
             BotServerInstance::existing(&botserver_url)
         } else {
-            // Auto-start botserver with main stack (includes LLM)
             println!("🚀 Auto-starting BotServer with main stack...");
             BotServerInstance::start_with_main_stack().await?
         };
 
-        // Ensure botui is running (required for chat UI)
         let ui = if botui_running {
             println!("🔗 Using existing BotUI at {}", botui_url);
             Some(BotUIInstance::existing(&botui_url))
@@ -152,7 +126,6 @@ impl E2ETestContext {
             }
         };
 
-        // Start browser with CDP (no chromedriver needed!)
         let browser_service = match BrowserService::start(DEFAULT_DEBUG_PORT).await {
             Ok(bs) => {
                 log::info!("Browser started with CDP on port {}", DEFAULT_DEBUG_PORT);
@@ -192,7 +165,6 @@ impl E2ETestContext {
         })
     }
 
-    /// Get the base URL for browser tests - uses botui if available, otherwise botserver
     pub fn base_url(&self) -> &str {
         if let Some(ref ui) = self.ui {
             &ui.url
@@ -201,7 +173,6 @@ impl E2ETestContext {
         }
     }
 
-    /// Get the botserver API URL
     pub fn api_url(&self) -> &str {
         &self.server.url
     }
@@ -221,15 +192,12 @@ impl E2ETestContext {
 }
 
 pub fn browser_config() -> BrowserConfig {
-    // Default: SHOW browser window so user can see tests
-    // Set HEADLESS=1 to run without browser window (CI/automation)
     let headless = std::env::var("HEADLESS").is_ok();
     let debug_port = std::env::var("CDP_PORT")
         .ok()
         .and_then(|p| p.parse().ok())
         .unwrap_or(DEFAULT_DEBUG_PORT);
 
-    // Use CDP directly - no chromedriver needed!
     BrowserConfig::default()
         .with_browser(BrowserType::Chrome)
         .with_debug_port(debug_port)
@@ -301,7 +269,6 @@ async fn test_harness_starts_server() {
         return;
     }
 
-    // This test explicitly starts a new server - only run with FRESH_STACK=1
     if std::env::var("FRESH_STACK").is_err() {
         eprintln!("Skipping: test_harness_starts_server requires FRESH_STACK=1 (uses existing stack by default)");
         return;
@@ -335,7 +302,6 @@ async fn test_harness_starts_server() {
 
 #[tokio::test]
 async fn test_full_harness_has_all_services() {
-    // This test checks harness-started services - only meaningful with FRESH_STACK=1
     if std::env::var("FRESH_STACK").is_err() {
         eprintln!("Skipping: test_full_harness_has_all_services requires FRESH_STACK=1 (uses existing stack by default)");
         return;
@@ -349,7 +315,6 @@ async fn test_full_harness_has_all_services() {
         }
     };
 
-    // Check services that are enabled in full() config
     assert!(ctx.postgres().is_some(), "PostgreSQL should be available");
     assert!(ctx.mock_llm().is_some(), "MockLLM should be available");
     assert!(
@@ -357,8 +322,6 @@ async fn test_full_harness_has_all_services() {
         "MockZitadel should be available"
     );
 
-    // MinIO and Redis are disabled in full() config (not in botserver-stack)
-    // so we don't assert they are present
 
     assert!(ctx.data_dir.exists());
     assert!(ctx.data_dir.to_str().unwrap().contains("bottest-"));
@@ -366,8 +329,6 @@ async fn test_full_harness_has_all_services() {
 
 #[tokio::test]
 async fn test_e2e_cleanup() {
-    // This test creates a temp data dir and cleans it up
-    // Safe to run in both modes since it only cleans up its own tmp dir
     let mut ctx = match TestHarness::full().await {
         Ok(ctx) => ctx,
         Err(e) => {
@@ -384,7 +345,6 @@ async fn test_e2e_cleanup() {
     assert!(!data_dir.exists());
 }
 
-/// Test that checks the existing running stack is accessible
 #[tokio::test]
 async fn test_existing_stack_connection() {
     if !should_run_e2e_tests() {
@@ -392,10 +352,8 @@ async fn test_existing_stack_connection() {
         return;
     }
 
-    // Use existing stack by default
     match E2ETestContext::setup().await {
         Ok(ctx) => {
-            // Check botserver is accessible
             let client = reqwest::Client::builder()
                 .danger_accept_invalid_certs(true)
                 .build()

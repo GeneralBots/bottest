@@ -1,7 +1,3 @@
-//! Mock Microsoft Teams Bot Framework server for testing
-//!
-//! Provides a mock server that simulates the Microsoft Bot Framework API
-//! for Teams integration testing, including activities, conversations, and attachments.
 
 use super::{new_expectation_store, ExpectationStore};
 use anyhow::{Context, Result};
@@ -12,7 +8,6 @@ use uuid::Uuid;
 use wiremock::matchers::{method, path, path_regex};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-/// Mock Teams Bot Framework server
 pub struct MockTeams {
     server: MockServer,
     port: u16,
@@ -25,7 +20,6 @@ pub struct MockTeams {
     service_url: String,
 }
 
-/// Bot Framework Activity
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Activity {
@@ -88,7 +82,6 @@ impl Default for Activity {
     }
 }
 
-/// Channel account (user or bot)
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ChannelAccount {
@@ -101,7 +94,6 @@ pub struct ChannelAccount {
     pub role: Option<String>,
 }
 
-/// Conversation account
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ConversationAccount {
@@ -116,7 +108,6 @@ pub struct ConversationAccount {
     pub tenant_id: Option<String>,
 }
 
-/// Attachment in an activity
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Attachment {
@@ -131,7 +122,6 @@ pub struct Attachment {
     pub thumbnail_url: Option<String>,
 }
 
-/// Entity in an activity (mentions, etc.)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Entity {
@@ -145,7 +135,6 @@ pub struct Entity {
     pub additional: HashMap<String, serde_json::Value>,
 }
 
-/// Conversation information stored by the mock
 #[derive(Debug, Clone)]
 pub struct ConversationInfo {
     pub id: String,
@@ -155,13 +144,11 @@ pub struct ConversationInfo {
     pub is_group: bool,
 }
 
-/// Resource response from sending an activity
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResourceResponse {
     pub id: String,
 }
 
-/// Conversations result
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConversationsResult {
@@ -170,14 +157,12 @@ pub struct ConversationsResult {
     pub conversations: Vec<ConversationMembers>,
 }
 
-/// Conversation members
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConversationMembers {
     pub id: String,
     pub members: Vec<ChannelAccount>,
 }
 
-/// Teams channel account (extended)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TeamsChannelAccount {
@@ -198,7 +183,6 @@ pub struct TeamsChannelAccount {
     pub surname: Option<String>,
 }
 
-/// Teams meeting info
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TeamsMeetingInfo {
@@ -209,7 +193,6 @@ pub struct TeamsMeetingInfo {
     pub title: Option<String>,
 }
 
-/// Adaptive card action response
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AdaptiveCardInvokeResponse {
@@ -220,20 +203,17 @@ pub struct AdaptiveCardInvokeResponse {
     pub value: Option<serde_json::Value>,
 }
 
-/// Error response
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: ErrorBody,
 }
 
-/// Error body
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorBody {
     pub code: String,
     pub message: String,
 }
 
-/// Invoke response for bot actions
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InvokeResponse {
@@ -243,22 +223,18 @@ pub struct InvokeResponse {
 }
 
 impl MockTeams {
-    /// Default bot ID for testing
     pub const DEFAULT_BOT_ID: &'static str = "28:test-bot-id";
 
-    /// Default bot name
     pub const DEFAULT_BOT_NAME: &'static str = "TestBot";
 
-    /// Default tenant ID
     pub const DEFAULT_TENANT_ID: &'static str = "test-tenant-id";
 
-    /// Start a new mock Teams server on the specified port
     pub async fn start(port: u16) -> Result<Self> {
-        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{}", port))
+        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{port}"))
             .context("Failed to bind MockTeams port")?;
 
         let server = MockServer::builder().listener(listener).start().await;
-        let service_url = format!("http://127.0.0.1:{}", port);
+        let service_url = format!("http://127.0.0.1:{port}");
 
         let mock = Self {
             server,
@@ -277,18 +253,17 @@ impl MockTeams {
         Ok(mock)
     }
 
-    /// Start with custom bot configuration
     pub async fn start_with_config(
         port: u16,
         bot_id: &str,
         bot_name: &str,
         tenant_id: &str,
     ) -> Result<Self> {
-        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{}", port))
+        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{port}"))
             .context("Failed to bind MockTeams port")?;
 
         let server = MockServer::builder().listener(listener).start().await;
-        let service_url = format!("http://127.0.0.1:{}", port);
+        let service_url = format!("http://127.0.0.1:{port}");
 
         let mock = Self {
             server,
@@ -307,11 +282,9 @@ impl MockTeams {
         Ok(mock)
     }
 
-    /// Set up default API routes
     async fn setup_default_routes(&self) {
         let sent_activities = self.sent_activities.clone();
 
-        // Send to conversation endpoint
         Mock::given(method("POST"))
             .and(path_regex(r"/v3/conversations/.+/activities"))
             .respond_with(move |req: &wiremock::Request| {
@@ -346,7 +319,7 @@ impl MockTeams {
                 sent_activities.lock().unwrap().push(activity.clone());
 
                 let response = ResourceResponse {
-                    id: activity.id.clone(),
+                    id: activity.id,
                 };
 
                 ResponseTemplate::new(200).set_body_json(&response)
@@ -354,7 +327,6 @@ impl MockTeams {
             .mount(&self.server)
             .await;
 
-        // Reply to activity endpoint
         Mock::given(method("POST"))
             .and(path_regex(r"/v3/conversations/.+/activities/.+"))
             .respond_with(|_req: &wiremock::Request| {
@@ -366,7 +338,6 @@ impl MockTeams {
             .mount(&self.server)
             .await;
 
-        // Update activity endpoint
         Mock::given(method("PUT"))
             .and(path_regex(r"/v3/conversations/.+/activities/.+"))
             .respond_with(|_req: &wiremock::Request| {
@@ -378,14 +349,12 @@ impl MockTeams {
             .mount(&self.server)
             .await;
 
-        // Delete activity endpoint
         Mock::given(method("DELETE"))
             .and(path_regex(r"/v3/conversations/.+/activities/.+"))
             .respond_with(ResponseTemplate::new(200))
             .mount(&self.server)
             .await;
 
-        // Get conversation members endpoint
         Mock::given(method("GET"))
             .and(path_regex(r"/v3/conversations/.+/members"))
             .respond_with(|_req: &wiremock::Request| {
@@ -404,7 +373,6 @@ impl MockTeams {
             .mount(&self.server)
             .await;
 
-        // Get single member endpoint
         Mock::given(method("GET"))
             .and(path_regex(r"/v3/conversations/.+/members/.+"))
             .respond_with(|_req: &wiremock::Request| {
@@ -423,7 +391,6 @@ impl MockTeams {
             .mount(&self.server)
             .await;
 
-        // Create conversation endpoint
         Mock::given(method("POST"))
             .and(path("/v3/conversations"))
             .respond_with(|_req: &wiremock::Request| {
@@ -439,7 +406,6 @@ impl MockTeams {
             .mount(&self.server)
             .await;
 
-        // Get conversations endpoint
         Mock::given(method("GET"))
             .and(path("/v3/conversations"))
             .respond_with(|_req: &wiremock::Request| {
@@ -452,7 +418,6 @@ impl MockTeams {
             .mount(&self.server)
             .await;
 
-        // Token endpoint (for bot authentication simulation)
         Mock::given(method("POST"))
             .and(path("/botframework.com/oauth2/v2.0/token"))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
@@ -464,7 +429,7 @@ impl MockTeams {
             .await;
     }
 
-    /// Simulate an incoming message from a user
+    #[must_use] 
     pub fn simulate_message(&self, from_id: &str, from_name: &str, text: &str) -> Activity {
         let conversation_id = format!("conv-{}", Uuid::new_v4());
 
@@ -511,12 +476,12 @@ impl MockTeams {
         }
     }
 
-    /// Simulate an incoming message with a mention
+    #[must_use] 
     pub fn simulate_mention(&self, from_id: &str, from_name: &str, text: &str) -> Activity {
         let mut activity = self.simulate_message(from_id, from_name, text);
 
         let mention_text = format!("<at>{}</at>", self.bot_name);
-        activity.text = Some(format!("{} {}", mention_text, text));
+        activity.text = Some(format!("{mention_text} {text}"));
 
         activity.entities = Some(vec![Entity {
             entity_type: "mention".to_string(),
@@ -533,7 +498,7 @@ impl MockTeams {
         activity
     }
 
-    /// Simulate a conversation update (member added)
+    #[must_use] 
     pub fn simulate_member_added(&self, member_id: &str, member_name: &str) -> Activity {
         let conversation_id = format!("conv-{}", Uuid::new_v4());
 
@@ -581,7 +546,7 @@ impl MockTeams {
         }
     }
 
-    /// Simulate an invoke activity (adaptive card action, etc.)
+    #[must_use] 
     pub fn simulate_invoke(
         &self,
         from_id: &str,
@@ -634,7 +599,7 @@ impl MockTeams {
         }
     }
 
-    /// Simulate an adaptive card action
+    #[must_use] 
     pub fn simulate_adaptive_card_action(
         &self,
         from_id: &str,
@@ -655,7 +620,7 @@ impl MockTeams {
         )
     }
 
-    /// Simulate a message reaction
+    #[must_use] 
     pub fn simulate_reaction(
         &self,
         from_id: &str,
@@ -708,7 +673,6 @@ impl MockTeams {
         }
     }
 
-    /// Expect an error response for the next request
     pub async fn expect_error(&self, code: &str, message: &str) {
         let error_response = ErrorResponse {
             error: ErrorBody {
@@ -724,45 +688,41 @@ impl MockTeams {
             .await;
     }
 
-    /// Expect an unauthorized error
     pub async fn expect_unauthorized(&self) {
         self.expect_error("Unauthorized", "Token validation failed")
             .await;
     }
 
-    /// Expect a not found error
     pub async fn expect_not_found(&self) {
         self.expect_error("NotFound", "Conversation not found")
             .await;
     }
 
-    /// Get all sent activities
+    #[must_use] 
     pub fn sent_activities(&self) -> Vec<Activity> {
         self.sent_activities.lock().unwrap().clone()
     }
 
-    /// Get sent activities with specific text
+    #[must_use] 
     pub fn sent_activities_containing(&self, text: &str) -> Vec<Activity> {
         self.sent_activities
             .lock()
             .unwrap()
             .iter()
-            .filter(|a| a.text.as_ref().map(|t| t.contains(text)).unwrap_or(false))
+            .filter(|a| a.text.as_ref().is_some_and(|t| t.contains(text)))
             .cloned()
             .collect()
     }
 
-    /// Get the last sent activity
+    #[must_use] 
     pub fn last_sent_activity(&self) -> Option<Activity> {
         self.sent_activities.lock().unwrap().last().cloned()
     }
 
-    /// Clear sent activities
     pub fn clear_sent_activities(&self) {
         self.sent_activities.lock().unwrap().clear();
     }
 
-    /// Register a conversation
     pub fn register_conversation(&self, info: ConversationInfo) {
         self.conversations
             .lock()
@@ -770,37 +730,36 @@ impl MockTeams {
             .insert(info.id.clone(), info);
     }
 
-    /// Get the server URL
+    #[must_use] 
     pub fn url(&self) -> String {
         format!("http://127.0.0.1:{}", self.port)
     }
 
-    /// Get the service URL (same as server URL)
+    #[must_use] 
     pub fn service_url(&self) -> String {
         self.service_url.clone()
     }
 
-    /// Get the port
-    pub fn port(&self) -> u16 {
+    #[must_use] 
+    pub const fn port(&self) -> u16 {
         self.port
     }
 
-    /// Get the bot ID
+    #[must_use] 
     pub fn bot_id(&self) -> &str {
         &self.bot_id
     }
 
-    /// Get the bot name
+    #[must_use] 
     pub fn bot_name(&self) -> &str {
         &self.bot_name
     }
 
-    /// Get the tenant ID
+    #[must_use] 
     pub fn tenant_id(&self) -> &str {
         &self.tenant_id
     }
 
-    /// Verify all expectations were met
     pub fn verify(&self) -> Result<()> {
         let store = self.expectations.lock().unwrap();
         for (_, exp) in store.iter() {
@@ -809,7 +768,6 @@ impl MockTeams {
         Ok(())
     }
 
-    /// Reset all mocks
     pub async fn reset(&self) {
         self.server.reset().await;
         self.sent_activities.lock().unwrap().clear();
@@ -818,13 +776,11 @@ impl MockTeams {
         self.setup_default_routes().await;
     }
 
-    /// Get received requests for inspection
     pub async fn received_requests(&self) -> Vec<wiremock::Request> {
         self.server.received_requests().await.unwrap_or_default()
     }
 }
 
-/// Helper to create an adaptive card attachment
 pub fn adaptive_card(content: serde_json::Value) -> Attachment {
     Attachment {
         content_type: "application/vnd.microsoft.card.adaptive".to_string(),
@@ -835,7 +791,6 @@ pub fn adaptive_card(content: serde_json::Value) -> Attachment {
     }
 }
 
-/// Helper to create a hero card attachment
 pub fn hero_card(title: &str, subtitle: Option<&str>, text: Option<&str>) -> Attachment {
     Attachment {
         content_type: "application/vnd.microsoft.card.hero".to_string(),
@@ -850,7 +805,6 @@ pub fn hero_card(title: &str, subtitle: Option<&str>, text: Option<&str>) -> Att
     }
 }
 
-/// Helper to create a thumbnail card attachment
 pub fn thumbnail_card(
     title: &str,
     subtitle: Option<&str>,

@@ -35,7 +35,8 @@ impl Default for TestConfig {
 }
 
 impl TestConfig {
-    pub fn minimal() -> Self {
+    #[must_use] 
+    pub const fn minimal() -> Self {
         Self {
             postgres: false,
             minio: false,
@@ -46,7 +47,8 @@ impl TestConfig {
         }
     }
 
-    pub fn full() -> Self {
+    #[must_use] 
+    pub const fn full() -> Self {
         Self {
             postgres: false, // Botserver will bootstrap its own PostgreSQL
             minio: false,    // Botserver will bootstrap its own MinIO
@@ -57,9 +59,8 @@ impl TestConfig {
         }
     }
 
-    /// Auto-install mode: let botserver bootstrap all services
-    /// No need for pre-installed PostgreSQL binaries
-    pub fn auto_install() -> Self {
+    #[must_use] 
+    pub const fn auto_install() -> Self {
         Self {
             postgres: false, // Botserver will install PostgreSQL
             minio: false,    // Botserver will install MinIO
@@ -70,7 +71,8 @@ impl TestConfig {
         }
     }
 
-    pub fn database_only() -> Self {
+    #[must_use] 
+    pub const fn database_only() -> Self {
         Self {
             postgres: true,
             run_migrations: true,
@@ -78,7 +80,8 @@ impl TestConfig {
         }
     }
 
-    pub fn use_existing_stack() -> Self {
+    #[must_use] 
+    pub const fn use_existing_stack() -> Self {
         Self {
             postgres: false,
             minio: false,
@@ -116,29 +119,24 @@ pub struct TestContext {
 }
 
 impl TestContext {
-    pub fn test_id(&self) -> Uuid {
+    pub const fn test_id(&self) -> Uuid {
         self.test_id
     }
 
     pub fn database_url(&self) -> String {
         if self.use_existing_stack {
-            // For existing stack, use sensible defaults matching botserver's bootstrap
-            // These can be overridden via environment variables if needed
             let host = std::env::var("DB_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
             let port = std::env::var("DB_PORT")
                 .ok()
                 .and_then(|p| p.parse().ok())
                 .unwrap_or(DefaultPorts::POSTGRES);
-            // Default to gbuser/botserver which is what botserver bootstrap creates
             let user = std::env::var("DB_USER").unwrap_or_else(|_| "gbuser".to_string());
             let password = std::env::var("DB_PASSWORD").unwrap_or_else(|_| "gbuser".to_string());
             let database = std::env::var("DB_NAME").unwrap_or_else(|_| "botserver".to_string());
             format!(
-                "postgres://{}:{}@{}:{}/{}",
-                user, password, host, port, database
+                "postgres://{user}:{password}@{host}:{port}/{database}"
             )
         } else {
-            // For test-managed postgres, use test credentials
             format!(
                 "postgres://bottest:bottest@127.0.0.1:{}/bottest",
                 self.ports.postgres
@@ -181,28 +179,28 @@ impl TestContext {
                 Pool::builder()
                     .max_size(5)
                     .build(manager)
-                    .map_err(|e| anyhow::anyhow!("Failed to create pool: {}", e))
+                    .map_err(|e| anyhow::anyhow!("Failed to create pool: {e}"))
             })
             .await
     }
 
-    pub fn mock_zitadel(&self) -> Option<&MockZitadel> {
+    pub const fn mock_zitadel(&self) -> Option<&MockZitadel> {
         self.mock_zitadel.as_ref()
     }
 
-    pub fn mock_llm(&self) -> Option<&MockLLM> {
+    pub const fn mock_llm(&self) -> Option<&MockLLM> {
         self.mock_llm.as_ref()
     }
 
-    pub fn postgres(&self) -> Option<&PostgresService> {
+    pub const fn postgres(&self) -> Option<&PostgresService> {
         self.postgres.as_ref()
     }
 
-    pub fn minio(&self) -> Option<&MinioService> {
+    pub const fn minio(&self) -> Option<&MinioService> {
         self.minio.as_ref()
     }
 
-    pub fn redis(&self) -> Option<&RedisService> {
+    pub const fn redis(&self) -> Option<&RedisService> {
         self.redis.as_ref()
     }
 
@@ -452,11 +450,11 @@ pub struct BotServerInstance {
 }
 
 impl BotServerInstance {
-    /// Create an instance pointing to an already-running botserver
+    #[must_use] 
     pub fn existing(url: &str) -> Self {
         let port = url
             .split(':')
-            .last()
+            .next_back()
             .and_then(|p| p.parse().ok())
             .unwrap_or(8080);
         Self {
@@ -467,9 +465,6 @@ impl BotServerInstance {
         }
     }
 
-    /// Start botserver using the MAIN stack (../botserver/botserver-stack)
-    /// This uses the real stack with LLM, Zitadel, etc. already configured
-    /// For E2E demo tests that need actual bot responses
     pub async fn start_with_main_stack() -> Result<Self> {
         let port = 8080;
         let url = "https://localhost:8080".to_string();
@@ -477,23 +472,20 @@ impl BotServerInstance {
         let botserver_bin = std::env::var("BOTSERVER_BIN")
             .unwrap_or_else(|_| "../botserver/target/debug/botserver".to_string());
 
-        // Check if binary exists
         if !PathBuf::from(&botserver_bin).exists() {
-            log::warn!("Botserver binary not found at: {}", botserver_bin);
+            log::warn!("Botserver binary not found at: {botserver_bin}");
             anyhow::bail!(
-                "Botserver binary not found at: {}. Run: cd ../botserver && cargo build",
-                botserver_bin
+                "Botserver binary not found at: {botserver_bin}. Run: cd ../botserver && cargo build"
             );
         }
 
-        // Get absolute path to botserver directory (where botserver-stack lives)
         let botserver_bin_path =
             std::fs::canonicalize(&botserver_bin).unwrap_or_else(|_| PathBuf::from(&botserver_bin));
         let botserver_dir = botserver_bin_path
             .parent() // target/debug
             .and_then(|p| p.parent()) // target
             .and_then(|p| p.parent()) // botserver
-            .map(|p| p.to_path_buf())
+            .map(std::path::Path::to_path_buf)
             .unwrap_or_else(|| {
                 std::fs::canonicalize("../botserver")
                     .unwrap_or_else(|_| PathBuf::from("../botserver"))
@@ -501,22 +493,17 @@ impl BotServerInstance {
 
         let stack_path = botserver_dir.join("botserver-stack");
 
-        // Check if main stack exists
         if !stack_path.exists() {
             anyhow::bail!(
-                "Main botserver-stack not found at {:?}.\n\
-                 Run botserver once to initialize: cd ../botserver && cargo run",
-                stack_path
+                "Main botserver-stack not found at {stack_path:?}.\n\
+                 Run botserver once to initialize: cd ../botserver && cargo run"
             );
         }
 
-        log::info!("Starting botserver with MAIN stack at {:?}", stack_path);
+        log::info!("Starting botserver with MAIN stack at {stack_path:?}");
         println!("🚀 Starting BotServer with main stack...");
-        println!("   Stack: {:?}", stack_path);
+        println!("   Stack: {stack_path:?}");
 
-        // Start botserver from its directory, using default stack path
-        // NO --stack-path argument = uses ./botserver-stack (the main one)
-        // NO mock env vars = uses real services
         let process = std::process::Command::new(&botserver_bin_path)
             .current_dir(&botserver_dir)
             .arg("--noconsole")
@@ -527,9 +514,8 @@ impl BotServerInstance {
             .ok();
 
         if process.is_some() {
-            // Wait for botserver to be ready (may take time for LLM to load)
             let max_wait = 120; // 2 minutes for LLM
-            log::info!("Waiting for botserver to start (max {}s)...", max_wait);
+            log::info!("Waiting for botserver to start (max {max_wait}s)...");
 
             let client = reqwest::Client::builder()
                 .danger_accept_invalid_certs(true)
@@ -538,10 +524,10 @@ impl BotServerInstance {
                 .unwrap_or_default();
 
             for i in 0..max_wait {
-                if let Ok(resp) = client.get(format!("{}/health", url)).send().await {
+                if let Ok(resp) = client.get(format!("{url}/health")).send().await {
                     if resp.status().is_success() {
-                        log::info!("Botserver ready on port {}", port);
-                        println!("   ✓ BotServer ready at {}", url);
+                        log::info!("Botserver ready on port {port}");
+                        println!("   ✓ BotServer ready at {url}");
                         return Ok(Self {
                             url,
                             port,
@@ -551,8 +537,8 @@ impl BotServerInstance {
                     }
                 }
                 if i % 10 == 0 && i > 0 {
-                    log::info!("Still waiting for botserver... ({}s)", i);
-                    println!("   ... waiting ({}s)", i);
+                    log::info!("Still waiting for botserver... ({i}s)");
+                    println!("   ... waiting ({i}s)");
                 }
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }
@@ -576,11 +562,11 @@ pub struct BotUIInstance {
 }
 
 impl BotUIInstance {
-    /// Create an instance pointing to an already-running botui
+    #[must_use] 
     pub fn existing(url: &str) -> Self {
         let port = url
             .split(':')
-            .last()
+            .next_back()
             .and_then(|p| p.parse().ok())
             .unwrap_or(3000);
         Self {
@@ -594,14 +580,13 @@ impl BotUIInstance {
 impl BotUIInstance {
     pub async fn start(ctx: &TestContext, botserver_url: &str) -> Result<Self> {
         let port = crate::ports::PortAllocator::allocate();
-        let url = format!("http://127.0.0.1:{}", port);
+        let url = format!("http://127.0.0.1:{port}");
 
         let botui_bin = std::env::var("BOTUI_BIN")
             .unwrap_or_else(|_| "../botui/target/debug/botui".to_string());
 
-        // Check if binary exists
         if !PathBuf::from(&botui_bin).exists() {
-            log::warn!("BotUI binary not found at: {}", botui_bin);
+            log::warn!("BotUI binary not found at: {botui_bin}");
             return Ok(Self {
                 url,
                 port,
@@ -609,26 +594,22 @@ impl BotUIInstance {
             });
         }
 
-        // BotUI needs to run from its own directory so it can find ui/ folder
-        // Get absolute path of botui binary and derive working directory
         let botui_bin_path =
             std::fs::canonicalize(&botui_bin).unwrap_or_else(|_| PathBuf::from(&botui_bin));
         let botui_dir = botui_bin_path
             .parent() // target/debug
             .and_then(|p| p.parent()) // target
             .and_then(|p| p.parent()) // botui
-            .map(|p| p.to_path_buf())
+            .map(std::path::Path::to_path_buf)
             .unwrap_or_else(|| {
                 std::fs::canonicalize("../botui").unwrap_or_else(|_| PathBuf::from("../botui"))
             });
 
-        log::info!("Starting botui from: {} on port {}", botui_bin, port);
-        log::info!("  BOTUI_PORT={}", port);
-        log::info!("  BOTSERVER_URL={}", botserver_url);
-        log::info!("  Working directory: {:?}", botui_dir);
+        log::info!("Starting botui from: {botui_bin} on port {port}");
+        log::info!("  BOTUI_PORT={port}");
+        log::info!("  BOTSERVER_URL={botserver_url}");
+        log::info!("  Working directory: {botui_dir:?}");
 
-        // botui uses env vars, not command line args
-        // Must run from botui directory to find ui/ folder
         let process = std::process::Command::new(&botui_bin_path)
             .current_dir(&botui_dir)
             .env("BOTUI_PORT", port.to_string())
@@ -640,25 +621,23 @@ impl BotUIInstance {
             .ok();
 
         if process.is_some() {
-            // Wait for botui to be ready
             let max_wait = 30;
-            log::info!("Waiting for botui to become ready... (max {}s)", max_wait);
+            log::info!("Waiting for botui to become ready... (max {max_wait}s)");
             for i in 0..max_wait {
-                if let Ok(resp) = reqwest::get(&format!("{}/health", url)).await {
+                if let Ok(resp) = reqwest::get(&format!("{url}/health")).await {
                     if resp.status().is_success() {
-                        log::info!("BotUI is ready on port {}", port);
+                        log::info!("BotUI is ready on port {port}");
                         return Ok(Self { url, port, process });
                     }
                 }
-                // Also try root path in case /health isn't implemented
                 if let Ok(resp) = reqwest::get(&url).await {
                     if resp.status().is_success() {
-                        log::info!("BotUI is ready on port {}", port);
+                        log::info!("BotUI is ready on port {port}");
                         return Ok(Self { url, port, process });
                     }
                 }
                 if i % 5 == 0 {
-                    log::info!("Still waiting for botui... ({}s)", i);
+                    log::info!("Still waiting for botui... ({i}s)");
                 }
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }
@@ -672,7 +651,8 @@ impl BotUIInstance {
         })
     }
 
-    pub fn is_running(&self) -> bool {
+    #[must_use] 
+    pub const fn is_running(&self) -> bool {
         self.process.is_some()
     }
 }
@@ -687,24 +667,20 @@ impl Drop for BotUIInstance {
 }
 
 impl BotServerInstance {
-    /// Start botserver, creating a fresh stack from scratch for testing
     pub async fn start(ctx: &TestContext) -> Result<Self> {
         let port = ctx.ports.botserver;
-        let url = format!("http://127.0.0.1:{}", port);
+        let url = format!("http://127.0.0.1:{port}");
 
-        // Create a clean test stack directory for this test run
-        // Use absolute path since we'll change working directory for botserver
         let stack_path = ctx.data_dir.join("botserver-stack");
         std::fs::create_dir_all(&stack_path)?;
         let stack_path = stack_path.canonicalize().unwrap_or(stack_path);
-        log::info!("Created clean test stack at: {:?}", stack_path);
+        log::info!("Created clean test stack at: {stack_path:?}");
 
         let botserver_bin = std::env::var("BOTSERVER_BIN")
             .unwrap_or_else(|_| "../botserver/target/debug/botserver".to_string());
 
-        // Check if binary exists
         if !PathBuf::from(&botserver_bin).exists() {
-            log::warn!("Botserver binary not found at: {}", botserver_bin);
+            log::warn!("Botserver binary not found at: {botserver_bin}");
             return Ok(Self {
                 url,
                 port,
@@ -713,37 +689,27 @@ impl BotServerInstance {
             });
         }
 
-        log::info!("Starting botserver from: {}", botserver_bin);
+        log::info!("Starting botserver from: {botserver_bin}");
 
-        // Determine botserver working directory to find installers in botserver-installers/
-        // The botserver binary is typically at ../botserver/target/release/botserver
-        // We need to run from ../botserver so it finds botserver-installers/ and 3rdparty.toml
         let botserver_bin_path =
             std::fs::canonicalize(&botserver_bin).unwrap_or_else(|_| PathBuf::from(&botserver_bin));
         let botserver_dir = botserver_bin_path
             .parent() // target/release
             .and_then(|p| p.parent()) // target
             .and_then(|p| p.parent()) // botserver
-            .map(|p| p.to_path_buf())
+            .map(std::path::Path::to_path_buf)
             .unwrap_or_else(|| {
                 std::fs::canonicalize("../botserver")
                     .unwrap_or_else(|_| PathBuf::from("../botserver"))
             });
 
-        log::info!("Botserver working directory: {:?}", botserver_dir);
-        log::info!("Stack path (absolute): {:?}", stack_path);
+        log::info!("Botserver working directory: {botserver_dir:?}");
+        log::info!("Stack path (absolute): {stack_path:?}");
 
-        // Start botserver with test configuration
-        // - Uses test harness PostgreSQL
-        // - Uses mock Zitadel for auth
-        // - Uses mock LLM
-        // Env vars align with SecretsManager fallbacks (see botserver/src/core/secrets/mod.rs)
-        // Use absolute path for binary since we're changing working directory
 
-        // Point to local installers directory to avoid downloads
         let installers_path = botserver_dir.join("botserver-installers");
         let installers_path = installers_path.canonicalize().unwrap_or(installers_path);
-        log::info!("Using installers from: {:?}", installers_path);
+        log::info!("Using installers from: {installers_path:?}");
 
         let process = std::process::Command::new(&botserver_bin_path)
             .current_dir(&botserver_dir) // Run from botserver dir to find installers
@@ -753,36 +719,27 @@ impl BotServerInstance {
             .arg(port.to_string())
             .arg("--noconsole")
             .env_remove("RUST_LOG") // Remove to avoid logger conflict
-            // Use local installers - DO NOT download
             .env("BOTSERVER_INSTALLERS_PATH", &installers_path)
-            // Database - DATABASE_URL is the standard fallback
             .env("DATABASE_URL", ctx.database_url())
-            // Directory (Zitadel) - use SecretsManager fallback env vars
             .env("DIRECTORY_URL", ctx.zitadel_url())
             .env("ZITADEL_CLIENT_ID", "test-client-id")
             .env("ZITADEL_CLIENT_SECRET", "test-client-secret")
-            // Drive (MinIO) - use SecretsManager fallback env vars
             .env("DRIVE_ACCESSKEY", "minioadmin")
             .env("DRIVE_SECRET", "minioadmin")
-            // Always let botserver bootstrap services (PostgreSQL, MinIO, Redis, etc.)
-            // No BOTSERVER_SKIP_INSTALL - we want full bootstrap
             .stdout(std::process::Stdio::inherit())
             .stderr(std::process::Stdio::inherit())
             .spawn()
             .ok();
 
         if process.is_some() {
-            // Give time for botserver bootstrap (needs to download Vault, PostgreSQL, etc.)
             let max_wait = 600;
             log::info!(
-                "Waiting for botserver to bootstrap and become ready... (max {}s)",
-                max_wait
+                "Waiting for botserver to bootstrap and become ready... (max {max_wait}s)"
             );
-            // Give more time for botserver to bootstrap services
             for i in 0..max_wait {
-                if let Ok(resp) = reqwest::get(&format!("{}/health", url)).await {
+                if let Ok(resp) = reqwest::get(&format!("{url}/health")).await {
                     if resp.status().is_success() {
-                        log::info!("Botserver is ready on port {}", port);
+                        log::info!("Botserver is ready on port {port}");
                         return Ok(Self {
                             url,
                             port,
@@ -792,7 +749,7 @@ impl BotServerInstance {
                     }
                 }
                 if i % 10 == 0 {
-                    log::info!("Still waiting for botserver... ({}s)", i);
+                    log::info!("Still waiting for botserver... ({i}s)");
                 }
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }
@@ -807,17 +764,15 @@ impl BotServerInstance {
         })
     }
 
-    pub fn is_running(&self) -> bool {
+    #[must_use] 
+    pub const fn is_running(&self) -> bool {
         self.process.is_some()
     }
 
-    /// Setup minimal config files so botserver thinks services are configured
     fn setup_test_stack_config(stack_path: &PathBuf, ctx: &TestContext) -> Result<()> {
-        // Create directory config path
         let directory_conf = stack_path.join("conf/directory");
         std::fs::create_dir_all(&directory_conf)?;
 
-        // Create zitadel.yaml pointing to our mock Zitadel
         let zitadel_config = format!(
             r#"Log:
   Level: info
@@ -842,27 +797,22 @@ ExternalPort: {}
         std::fs::write(directory_conf.join("zitadel.yaml"), zitadel_config)?;
         log::info!("Created test zitadel.yaml config");
 
-        // Create system certificates directory
         let certs_dir = stack_path.join("conf/system/certificates");
         std::fs::create_dir_all(&certs_dir)?;
 
-        // Generate minimal self-signed certificates for API
         Self::generate_test_certificates(&certs_dir)?;
 
         Ok(())
     }
 
-    /// Generate minimal test certificates
     fn generate_test_certificates(certs_dir: &PathBuf) -> Result<()> {
         use std::process::Command;
 
         let api_dir = certs_dir.join("api");
         std::fs::create_dir_all(&api_dir)?;
 
-        // Check if openssl is available
         let openssl_check = Command::new("which").arg("openssl").output();
         if openssl_check.map(|o| o.status.success()).unwrap_or(false) {
-            // Generate self-signed certificate using openssl
             let key_path = api_dir.join("server.key");
             let cert_path = api_dir.join("server.crt");
 
@@ -914,12 +864,9 @@ impl TestHarness {
         Self::setup_internal(TestConfig::use_existing_stack(), true).await
     }
 
-    /// Kill all processes that might interfere with tests
-    /// This ensures a clean slate before starting test infrastructure
     fn cleanup_existing_processes() {
         log::info!("Cleaning up any existing stack processes before test...");
 
-        // List of process patterns to kill
         let patterns = [
             "botserver",
             "botui",
@@ -936,24 +883,19 @@ impl TestHarness {
         ];
 
         for pattern in patterns {
-            // Use pkill to kill processes matching pattern
-            // Ignore errors - process might not exist
             let _ = std::process::Command::new("pkill")
                 .args(["-9", "-f", pattern])
                 .output();
         }
 
-        // Clean up browser profile directories using shell rm
         let _ = std::process::Command::new("rm")
             .args(["-rf", "/tmp/browser-test-*"])
             .output();
 
-        // Clean up old test data directories (older than 1 hour)
         let _ = std::process::Command::new("sh")
             .args(["-c", "find ./tmp -maxdepth 1 -name 'bottest-*' -type d -mmin +60 -exec rm -rf {} + 2>/dev/null"])
             .output();
 
-        // Give processes time to terminate
         std::thread::sleep(std::time::Duration::from_millis(1000));
 
         log::info!("Process cleanup completed");
@@ -962,14 +904,12 @@ impl TestHarness {
     async fn setup_internal(config: TestConfig, use_existing_stack: bool) -> Result<TestContext> {
         let _ = env_logger::builder().is_test(true).try_init();
 
-        // Clean up any existing processes that might interfere
-        // Skip if using existing stack (user wants to connect to running services)
         if !use_existing_stack {
             Self::cleanup_existing_processes();
         }
 
         let test_id = Uuid::new_v4();
-        let data_dir = PathBuf::from("./tmp").join(format!("bottest-{}", test_id));
+        let data_dir = PathBuf::from("./tmp").join(format!("bottest-{test_id}"));
 
         std::fs::create_dir_all(&data_dir)?;
 
@@ -987,11 +927,7 @@ impl TestHarness {
         };
 
         log::info!(
-            "Test {} allocated ports: {:?}, data_dir: {:?}, use_existing_stack: {}",
-            test_id,
-            ports,
-            data_dir,
-            use_existing_stack
+            "Test {test_id} allocated ports: {ports:?}, data_dir: {data_dir:?}, use_existing_stack: {use_existing_stack}"
         );
 
         let data_dir_str = data_dir.to_str().unwrap().to_string();
@@ -1050,11 +986,7 @@ impl TestHarness {
         Self::setup(TestConfig::default()).await
     }
 
-    /// Setup for full E2E tests - connects to existing running services by default
-    /// Set FRESH_STACK=1 env var to bootstrap a fresh stack instead
     pub async fn full() -> Result<TestContext> {
-        // Default: use existing stack (user already has botserver running)
-        // Set FRESH_STACK=1 to bootstrap fresh stack from scratch
         if std::env::var("FRESH_STACK").is_ok() {
             Self::setup(TestConfig::full()).await
         } else {
@@ -1062,7 +994,6 @@ impl TestHarness {
         }
     }
 
-    /// Setup with botserver auto-installing all services
     pub async fn with_auto_install() -> Result<TestContext> {
         Self::setup(TestConfig::auto_install()).await
     }

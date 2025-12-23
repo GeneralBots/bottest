@@ -1,13 +1,9 @@
-//! Data fixtures for tests
-//!
-//! Provides sample test data including JSON payloads, configurations,
-//! and pre-defined data sets for various test scenarios.
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
-/// Sample configuration data
+#[must_use] 
 pub fn sample_config() -> HashMap<String, String> {
     let mut config = HashMap::new();
     config.insert("llm-model".to_string(), "gpt-4".to_string());
@@ -20,7 +16,7 @@ pub fn sample_config() -> HashMap<String, String> {
     config
 }
 
-/// Sample bot configuration as JSON
+#[must_use] 
 pub fn sample_bot_config() -> Value {
     json!({
         "name": "test-bot",
@@ -53,7 +49,7 @@ pub fn sample_bot_config() -> Value {
     })
 }
 
-/// Sample WhatsApp webhook payload for incoming text message
+#[must_use] 
 pub fn whatsapp_text_message(from: &str, text: &str) -> Value {
     json!({
         "object": "whatsapp_business_account",
@@ -74,7 +70,7 @@ pub fn whatsapp_text_message(from: &str, text: &str) -> Value {
                     }],
                     "messages": [{
                         "from": from,
-                        "id": format!("wamid.{}", uuid::Uuid::new_v4().to_string().replace("-", "")),
+                        "id": format!("wamid.{}", uuid::Uuid::new_v4().to_string().replace('-', "")),
                         "timestamp": chrono::Utc::now().timestamp().to_string(),
                         "type": "text",
                         "text": {
@@ -88,7 +84,7 @@ pub fn whatsapp_text_message(from: &str, text: &str) -> Value {
     })
 }
 
-/// Sample WhatsApp webhook payload for button reply
+#[must_use] 
 pub fn whatsapp_button_reply(from: &str, button_id: &str, button_text: &str) -> Value {
     json!({
         "object": "whatsapp_business_account",
@@ -109,7 +105,7 @@ pub fn whatsapp_button_reply(from: &str, button_id: &str, button_text: &str) -> 
                     }],
                     "messages": [{
                         "from": from,
-                        "id": format!("wamid.{}", uuid::Uuid::new_v4().to_string().replace("-", "")),
+                        "id": format!("wamid.{}", uuid::Uuid::new_v4().to_string().replace('-', "")),
                         "timestamp": chrono::Utc::now().timestamp().to_string(),
                         "type": "interactive",
                         "interactive": {
@@ -127,7 +123,7 @@ pub fn whatsapp_button_reply(from: &str, button_id: &str, button_text: &str) -> 
     })
 }
 
-/// Sample Teams activity for incoming message
+#[must_use] 
 pub fn teams_message_activity(from_id: &str, from_name: &str, text: &str) -> Value {
     json!({
         "type": "message",
@@ -160,7 +156,7 @@ pub fn teams_message_activity(from_id: &str, from_name: &str, text: &str) -> Val
     })
 }
 
-/// Sample OpenAI chat completion request
+#[must_use] 
 pub fn openai_chat_request(messages: Vec<(&str, &str)>) -> Value {
     let msgs: Vec<Value> = messages
         .into_iter()
@@ -180,7 +176,7 @@ pub fn openai_chat_request(messages: Vec<(&str, &str)>) -> Value {
     })
 }
 
-/// Sample OpenAI chat completion response
+#[must_use] 
 pub fn openai_chat_response(content: &str) -> Value {
     json!({
         "id": format!("chatcmpl-{}", uuid::Uuid::new_v4()),
@@ -203,7 +199,7 @@ pub fn openai_chat_response(content: &str) -> Value {
     })
 }
 
-/// Sample OpenAI embedding response
+#[must_use] 
 pub fn openai_embedding_response(dimensions: usize) -> Value {
     let embedding: Vec<f64> = (0..dimensions)
         .map(|i| (i as f64) / (dimensions as f64))
@@ -224,7 +220,7 @@ pub fn openai_embedding_response(dimensions: usize) -> Value {
     })
 }
 
-/// Sample knowledge base entries
+#[must_use] 
 pub fn sample_kb_entries() -> Vec<KBEntry> {
     vec![
         KBEntry {
@@ -258,7 +254,6 @@ pub fn sample_kb_entries() -> Vec<KBEntry> {
     ]
 }
 
-/// Knowledge base entry
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KBEntry {
     pub id: String,
@@ -268,7 +263,7 @@ pub struct KBEntry {
     pub tags: Vec<String>,
 }
 
-/// Sample product data
+#[must_use] 
 pub fn sample_products() -> Vec<Product> {
     vec![
         Product {
@@ -298,7 +293,6 @@ pub fn sample_products() -> Vec<Product> {
     ]
 }
 
-/// Product data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Product {
     pub sku: String,
@@ -309,7 +303,7 @@ pub struct Product {
     pub category: String,
 }
 
-/// Sample FAQ data
+#[must_use] 
 pub fn sample_faqs() -> Vec<FAQ> {
     vec![
         FAQ {
@@ -339,7 +333,6 @@ pub fn sample_faqs() -> Vec<FAQ> {
     ]
 }
 
-/// FAQ data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FAQ {
     pub id: u32,
@@ -348,10 +341,10 @@ pub struct FAQ {
     pub category: String,
 }
 
-/// Sample error responses
 pub mod errors {
     use serde_json::{json, Value};
 
+    #[must_use] 
     pub fn validation_error(field: &str, message: &str) -> Value {
         json!({
             "error": {
@@ -365,6 +358,7 @@ pub mod errors {
         })
     }
 
+    #[must_use] 
     pub fn not_found(resource: &str, id: &str) -> Value {
         json!({
             "error": {
@@ -374,6 +368,7 @@ pub mod errors {
         })
     }
 
+    #[must_use] 
     pub fn unauthorized() -> Value {
         json!({
             "error": {
@@ -383,6 +378,7 @@ pub mod errors {
         })
     }
 
+    #[must_use] 
     pub fn forbidden() -> Value {
         json!({
             "error": {
@@ -392,6 +388,7 @@ pub mod errors {
         })
     }
 
+    #[must_use] 
     pub fn rate_limited(retry_after: u32) -> Value {
         json!({
             "error": {
@@ -402,6 +399,7 @@ pub mod errors {
         })
     }
 
+    #[must_use] 
     pub fn internal_error() -> Value {
         json!({
             "error": {

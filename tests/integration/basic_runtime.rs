@@ -1,13 +1,10 @@
 use rhai::Engine;
 use std::sync::{Arc, Mutex};
 
-// Test Utilities
 
-/// Create a Rhai engine with BASIC-like functions registered
 fn create_basic_engine() -> Engine {
     let mut engine = Engine::new();
 
-    // Register string functions
     engine.register_fn("INSTR", |haystack: &str, needle: &str| -> i64 {
         if haystack.is_empty() || needle.is_empty() {
             return 0;
@@ -47,7 +44,6 @@ fn create_basic_engine() -> Engine {
         s.replace(find, replace)
     });
 
-    // Register math functions
     engine.register_fn("ABS", |n: i64| -> i64 { n.abs() });
     engine.register_fn("ABS", |n: f64| -> f64 { n.abs() });
     engine.register_fn("ROUND", |n: f64| -> i64 { n.round() as i64 });
@@ -70,14 +66,12 @@ fn create_basic_engine() -> Engine {
     engine.register_fn("TAN", |n: f64| -> f64 { n.tan() });
     engine.register_fn("PI", || -> f64 { std::f64::consts::PI });
 
-    // Register type conversion
     engine.register_fn("VAL", |s: &str| -> f64 {
         s.trim().parse::<f64>().unwrap_or(0.0)
     });
     engine.register_fn("STR", |n: i64| -> String { n.to_string() });
     engine.register_fn("STR", |n: f64| -> String { n.to_string() });
 
-    // Register type checking
     engine.register_fn("IS_NUMERIC", |value: &str| -> bool {
         let trimmed = value.trim();
         if trimmed.is_empty() {
@@ -89,7 +83,6 @@ fn create_basic_engine() -> Engine {
     engine
 }
 
-/// Mock output collector for TALK commands
 #[derive(Clone, Default)]
 struct OutputCollector {
     messages: Arc<Mutex<Vec<String>>>,
@@ -112,7 +105,6 @@ impl OutputCollector {
     }
 }
 
-/// Mock input provider for HEAR commands
 #[derive(Clone)]
 struct InputProvider {
     inputs: Arc<Mutex<Vec<String>>>,
@@ -140,23 +132,19 @@ impl InputProvider {
     }
 }
 
-/// Create an engine with TALK/HEAR simulation
 fn create_conversation_engine(output: OutputCollector, input: InputProvider) -> Engine {
     let mut engine = create_basic_engine();
 
-    // Register TALK function
     let output_clone = output.clone();
     engine.register_fn("TALK", move |msg: &str| {
         output_clone.add_message(msg.to_string());
     });
 
-    // Register HEAR function
     engine.register_fn("HEAR", move || -> String { input.next_input() });
 
     engine
 }
 
-// String Function Tests with Engine
 
 #[test]
 fn test_string_concatenation_in_engine() {
@@ -172,11 +160,9 @@ fn test_string_concatenation_in_engine() {
 fn test_string_functions_chain() {
     let engine = create_basic_engine();
 
-    // Test chained operations: UPPER(TRIM("  hello  "))
     let result: String = engine.eval(r#"UPPER(TRIM("  hello  "))"#).unwrap();
     assert_eq!(result, "HELLO");
 
-    // Test LEN(TRIM("  test  "))
     let result: i64 = engine.eval(r#"LEN(TRIM("  test  "))"#).unwrap();
     assert_eq!(result, 4);
 }
@@ -185,15 +171,12 @@ fn test_string_functions_chain() {
 fn test_substring_extraction() {
     let engine = create_basic_engine();
 
-    // LEFT
     let result: String = engine.eval(r#"LEFT("Hello World", 5)"#).unwrap();
     assert_eq!(result, "Hello");
 
-    // RIGHT
     let result: String = engine.eval(r#"RIGHT("Hello World", 5)"#).unwrap();
     assert_eq!(result, "World");
 
-    // MID
     let result: String = engine.eval(r#"MID("Hello World", 7, 5)"#).unwrap();
     assert_eq!(result, "World");
 }
@@ -225,17 +208,14 @@ fn test_replace_function() {
     assert_eq!(result, "bbb");
 }
 
-// Math Function Tests with Engine
 
 #[test]
 fn test_math_operations_chain() {
     let engine = create_basic_engine();
 
-    // SQRT(ABS(-16))
     let result: f64 = engine.eval("SQRT(ABS(-16.0))").unwrap();
     assert!((result - 4.0).abs() < f64::EPSILON);
 
-    // MAX(ABS(-5), ABS(-10))
     let result: i64 = engine.eval("MAX(ABS(-5), ABS(-10))").unwrap();
     assert_eq!(result, 10);
 }
@@ -244,21 +224,18 @@ fn test_math_operations_chain() {
 fn test_rounding_functions() {
     let engine = create_basic_engine();
 
-    // ROUND
     let result: i64 = engine.eval("ROUND(3.7)").unwrap();
     assert_eq!(result, 4);
 
     let result: i64 = engine.eval("ROUND(3.2)").unwrap();
     assert_eq!(result, 3);
 
-    // FLOOR
     let result: i64 = engine.eval("FLOOR(3.9)").unwrap();
     assert_eq!(result, 3);
 
     let result: i64 = engine.eval("FLOOR(-3.1)").unwrap();
     assert_eq!(result, -4);
 
-    // CEIL
     let result: i64 = engine.eval("CEIL(3.1)").unwrap();
     assert_eq!(result, 4);
 
@@ -294,7 +271,6 @@ fn test_val_function() {
     assert!((result - 0.0).abs() < f64::EPSILON);
 }
 
-// TALK/HEAR Conversation Tests
 
 #[test]
 fn test_talk_output() {
@@ -414,11 +390,9 @@ fn test_keyword_detection() {
 
     let messages = output.get_messages();
     assert_eq!(messages.len(), 1);
-    // Should match "HELP" first since it appears before "ORDER" in the conditions
     assert_eq!(messages[0], "I can help you! What do you need?");
 }
 
-// Variable and Expression Tests
 
 #[test]
 fn test_variable_assignment() {
@@ -458,19 +432,16 @@ fn test_string_variables() {
 fn test_numeric_expressions() {
     let engine = create_basic_engine();
 
-    // Order of operations
     let result: i64 = engine.eval("2 + 3 * 4").unwrap();
     assert_eq!(result, 14);
 
     let result: i64 = engine.eval("(2 + 3) * 4").unwrap();
     assert_eq!(result, 20);
 
-    // Using functions in expressions
     let result: i64 = engine.eval("ABS(-5) + MAX(3, 7)").unwrap();
     assert_eq!(result, 12);
 }
 
-// Loop and Control Flow Tests
 
 #[test]
 fn test_for_loop() {
@@ -515,13 +486,11 @@ fn test_while_loop() {
     assert_eq!(result, 10); // 0 + 1 + 2 + 3 + 4 = 10
 }
 
-// Error Handling Tests
 
 #[test]
 fn test_division_by_zero() {
     let engine = create_basic_engine();
 
-    // Rhai handles division by zero differently for int vs float
     let result = engine.eval::<f64>("10.0 / 0.0");
     match result {
         Ok(val) => assert!(val.is_infinite() || val.is_nan()),
@@ -533,7 +502,6 @@ fn test_division_by_zero() {
 fn test_invalid_function_call() {
     let engine = create_basic_engine();
 
-    // Calling undefined function should error
     let result = engine.eval::<String>(r#"UNDEFINED_FUNCTION("test")"#);
     assert!(result.is_err());
 }
@@ -542,12 +510,10 @@ fn test_invalid_function_call() {
 fn test_type_mismatch() {
     let engine = create_basic_engine();
 
-    // Trying to use string where number expected
     let result = engine.eval::<i64>(r#"ABS("not a number")"#);
     assert!(result.is_err());
 }
 
-// Script Fixture Tests
 
 #[test]
 fn test_greeting_script_logic() {
@@ -555,7 +521,6 @@ fn test_greeting_script_logic() {
     let input = InputProvider::new(vec!["HELP".to_string()]);
     let engine = create_conversation_engine(output.clone(), input);
 
-    // Simulated greeting script logic
     engine
         .eval::<()>(
             r#"
@@ -643,7 +608,6 @@ fn test_echo_bot_logic() {
     assert_eq!(messages[2], "You said: How are you?");
 }
 
-// Complex Scenario Tests
 
 #[test]
 fn test_order_lookup_simulation() {
@@ -657,7 +621,6 @@ fn test_order_lookup_simulation() {
         TALK("Please enter your order number:");
         let order_num = HEAR();
 
-        // Simulate order lookup
         let is_valid = INSTR(order_num, "ORD-") == 1 && LEN(order_num) >= 9;
 
         if is_valid {
@@ -705,6 +668,5 @@ fn test_price_calculation() {
     let messages = output.get_messages();
     assert_eq!(messages.len(), 5);
     assert!(messages[0].contains("29.99"));
-    // Subtotal should be 89.97
     assert!(messages[2].contains("89.97"));
 }

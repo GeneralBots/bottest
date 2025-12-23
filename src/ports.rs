@@ -1,6 +1,3 @@
-//! Port allocation for parallel test execution
-//!
-//! Ensures each test gets unique ports to avoid conflicts
 
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicU16, Ordering};
@@ -29,6 +26,7 @@ impl PortAllocator {
         }
     }
 
+    #[must_use] 
     pub fn allocate_range(count: usize) -> Vec<u16> {
         (0..count).map(|_| Self::allocate()).collect()
     }
@@ -71,8 +69,6 @@ impl TestPorts {
 
 impl Drop for TestPorts {
     fn drop(&mut self) {
-        // Only release dynamically allocated ports (>= 15000)
-        // Fixed ports from existing stack should not be released
         if self.postgres >= 15000 {
             PortAllocator::release(self.postgres);
         }

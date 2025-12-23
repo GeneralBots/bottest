@@ -1,7 +1,3 @@
-//! Redis service management for test infrastructure
-//!
-//! Starts and manages a Redis instance for caching and pub/sub testing.
-//! Provides connection management and common operations.
 
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
 use anyhow::{Context, Result};
@@ -12,7 +8,6 @@ use std::process::{Child, Command, Stdio};
 use std::time::Duration;
 use tokio::time::sleep;
 
-/// Redis service for test environments
 pub struct RedisService {
     port: u16,
     data_dir: PathBuf,
@@ -21,7 +16,6 @@ pub struct RedisService {
 }
 
 impl RedisService {
-    /// Start a new Redis instance on the specified port
     pub async fn start(port: u16, data_dir: &str) -> Result<Self> {
         let data_path = PathBuf::from(data_dir).join("redis");
         ensure_dir(&data_path)?;
@@ -39,7 +33,6 @@ impl RedisService {
         Ok(service)
     }
 
-    /// Start Redis with password authentication
     pub async fn start_with_password(port: u16, data_dir: &str, password: &str) -> Result<Self> {
         let data_path = PathBuf::from(data_dir).join("redis");
         ensure_dir(&data_path)?;
@@ -57,7 +50,6 @@ impl RedisService {
         Ok(service)
     }
 
-    /// Start the Redis server process
     async fn start_server(&mut self) -> Result<()> {
         log::info!("Starting Redis on port {}", self.port);
 
@@ -72,12 +64,10 @@ impl RedisService {
             self.data_dir.to_str().unwrap().to_string(),
             "--daemonize".to_string(),
             "no".to_string(),
-            // Disable persistence for faster testing
             "--save".to_string(),
-            "".to_string(),
+            String::new(),
             "--appendonly".to_string(),
             "no".to_string(),
-            // Reduce memory usage
             "--maxmemory".to_string(),
             "64mb".to_string(),
             "--maxmemory-policy".to_string(),
@@ -100,7 +90,6 @@ impl RedisService {
         Ok(())
     }
 
-    /// Wait for Redis to be ready
     async fn wait_ready(&self) -> Result<()> {
         log::info!("Waiting for Redis to be ready...");
 
@@ -110,7 +99,6 @@ impl RedisService {
         .await
         .context("Redis failed to start in time")?;
 
-        // Additional check using redis-cli PING
         if let Ok(redis_cli) = Self::find_cli_binary() {
             for _ in 0..30 {
                 let mut cmd = Command::new(&redis_cli);
@@ -137,7 +125,6 @@ impl RedisService {
         Ok(())
     }
 
-    /// Execute a Redis command and return the result
     pub async fn execute(&self, args: &[&str]) -> Result<String> {
         let redis_cli = Self::find_cli_binary()?;
 
@@ -154,26 +141,23 @@ impl RedisService {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            anyhow::bail!("Redis command failed: {}", stderr);
+            anyhow::bail!("Redis command failed: {stderr}");
         }
 
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
 
-    /// Set a key-value pair
     pub async fn set(&self, key: &str, value: &str) -> Result<()> {
         self.execute(&["SET", key, value]).await?;
         Ok(())
     }
 
-    /// Set a key-value pair with expiration (seconds)
     pub async fn setex(&self, key: &str, seconds: u64, value: &str) -> Result<()> {
         self.execute(&["SETEX", key, &seconds.to_string(), value])
             .await?;
         Ok(())
     }
 
-    /// Get a value by key
     pub async fn get(&self, key: &str) -> Result<Option<String>> {
         let result = self.execute(&["GET", key]).await?;
         if result.is_empty() || result == "(nil)" {
@@ -183,38 +167,32 @@ impl RedisService {
         }
     }
 
-    /// Delete a key
     pub async fn del(&self, key: &str) -> Result<()> {
         self.execute(&["DEL", key]).await?;
         Ok(())
     }
 
-    /// Check if a key exists
     pub async fn exists(&self, key: &str) -> Result<bool> {
         let result = self.execute(&["EXISTS", key]).await?;
         Ok(result == "1" || result == "(integer) 1")
     }
 
-    /// Get all keys matching a pattern
     pub async fn keys(&self, pattern: &str) -> Result<Vec<String>> {
         let result = self.execute(&["KEYS", pattern]).await?;
         if result.is_empty() || result == "(empty list or set)" {
             Ok(Vec::new())
         } else {
-            Ok(result.lines().map(|s| s.to_string()).collect())
+            Ok(result.lines().map(std::string::ToString::to_string).collect())
         }
     }
 
-    /// Flush all data
     pub async fn flushall(&self) -> Result<()> {
         self.execute(&["FLUSHALL"]).await?;
         Ok(())
     }
 
-    /// Publish a message to a channel
     pub async fn publish(&self, channel: &str, message: &str) -> Result<i64> {
         let result = self.execute(&["PUBLISH", channel, message]).await?;
-        // Parse "(integer) N" format
         let count = result
             .replace("(integer) ", "")
             .parse::<i64>()
@@ -222,19 +200,16 @@ impl RedisService {
         Ok(count)
     }
 
-    /// Push to a list (left)
     pub async fn lpush(&self, key: &str, value: &str) -> Result<()> {
         self.execute(&["LPUSH", key, value]).await?;
         Ok(())
     }
 
-    /// Push to a list (right)
     pub async fn rpush(&self, key: &str, value: &str) -> Result<()> {
         self.execute(&["RPUSH", key, value]).await?;
         Ok(())
     }
 
-    /// Pop from a list (left)
     pub async fn lpop(&self, key: &str) -> Result<Option<String>> {
         let result = self.execute(&["LPOP", key]).await?;
         if result.is_empty() || result == "(nil)" {
@@ -244,7 +219,6 @@ impl RedisService {
         }
     }
 
-    /// Pop from a list (right)
     pub async fn rpop(&self, key: &str) -> Result<Option<String>> {
         let result = self.execute(&["RPOP", key]).await?;
         if result.is_empty() || result == "(nil)" {
@@ -254,7 +228,6 @@ impl RedisService {
         }
     }
 
-    /// Get list length
     pub async fn llen(&self, key: &str) -> Result<i64> {
         let result = self.execute(&["LLEN", key]).await?;
         let len = result
@@ -264,13 +237,11 @@ impl RedisService {
         Ok(len)
     }
 
-    /// Set hash field
     pub async fn hset(&self, key: &str, field: &str, value: &str) -> Result<()> {
         self.execute(&["HSET", key, field, value]).await?;
         Ok(())
     }
 
-    /// Get hash field
     pub async fn hget(&self, key: &str, field: &str) -> Result<Option<String>> {
         let result = self.execute(&["HGET", key, field]).await?;
         if result.is_empty() || result == "(nil)" {
@@ -280,7 +251,6 @@ impl RedisService {
         }
     }
 
-    /// Get all hash fields and values
     pub async fn hgetall(&self, key: &str) -> Result<Vec<(String, String)>> {
         let result = self.execute(&["HGETALL", key]).await?;
         if result.is_empty() || result == "(empty list or set)" {
@@ -299,7 +269,6 @@ impl RedisService {
         Ok(pairs)
     }
 
-    /// Increment a value
     pub async fn incr(&self, key: &str) -> Result<i64> {
         let result = self.execute(&["INCR", key]).await?;
         let val = result
@@ -309,7 +278,6 @@ impl RedisService {
         Ok(val)
     }
 
-    /// Decrement a value
     pub async fn decr(&self, key: &str) -> Result<i64> {
         let result = self.execute(&["DECR", key]).await?;
         let val = result
@@ -319,7 +287,7 @@ impl RedisService {
         Ok(val)
     }
 
-    /// Get the connection string
+    #[must_use] 
     pub fn connection_string(&self) -> String {
         match &self.password {
             Some(pw) => format!("redis://:{}@127.0.0.1:{}", pw, self.port),
@@ -327,22 +295,21 @@ impl RedisService {
         }
     }
 
-    /// Get the connection URL (alias for connection_string)
+    #[must_use] 
     pub fn url(&self) -> String {
         self.connection_string()
     }
 
-    /// Get the port
-    pub fn port(&self) -> u16 {
+    #[must_use] 
+    pub const fn port(&self) -> u16 {
         self.port
     }
 
-    /// Get host and port tuple
-    pub fn host_port(&self) -> (&str, u16) {
+    #[must_use] 
+    pub const fn host_port(&self) -> (&str, u16) {
         ("127.0.0.1", self.port)
     }
 
-    /// Find the Redis server binary
     fn find_binary() -> Result<PathBuf> {
         let common_paths = [
             "/usr/bin/redis-server",
@@ -362,7 +329,6 @@ impl RedisService {
             .context("redis-server binary not found in PATH or common locations")
     }
 
-    /// Find the Redis CLI binary
     fn find_cli_binary() -> Result<PathBuf> {
         let common_paths = [
             "/usr/bin/redis-cli",
@@ -381,12 +347,10 @@ impl RedisService {
         which::which("redis-cli").context("redis-cli binary not found")
     }
 
-    /// Stop the Redis server
     pub async fn stop(&mut self) -> Result<()> {
         if let Some(ref mut child) = self.process {
             log::info!("Stopping Redis...");
 
-            // Try graceful shutdown via SHUTDOWN command first
             if let Ok(redis_cli) = Self::find_cli_binary() {
                 let mut cmd = Command::new(&redis_cli);
                 cmd.args(["-h", "127.0.0.1", "-p", &self.port.to_string()]);
@@ -401,7 +365,6 @@ impl RedisService {
                 let _ = cmd.output();
             }
 
-            // Wait for process to exit
             for _ in 0..30 {
                 match child.try_wait() {
                     Ok(Some(_)) => {
@@ -413,7 +376,6 @@ impl RedisService {
                 }
             }
 
-            // Force kill if still running
             let pid = Pid::from_raw(child.id() as i32);
             let _ = kill(pid, Signal::SIGTERM);
 
@@ -436,7 +398,6 @@ impl RedisService {
         Ok(())
     }
 
-    /// Clean up data directory
     pub fn cleanup(&self) -> Result<()> {
         if self.data_dir.exists() {
             std::fs::remove_dir_all(&self.data_dir)?;
@@ -448,7 +409,6 @@ impl RedisService {
 impl Drop for RedisService {
     fn drop(&mut self) {
         if let Some(ref mut child) = self.process {
-            // Try graceful shutdown
             if let Ok(redis_cli) = Self::find_cli_binary() {
                 let mut cmd = Command::new(&redis_cli);
                 cmd.args(["-h", "127.0.0.1", "-p", &self.port.to_string()]);
@@ -463,7 +423,6 @@ impl Drop for RedisService {
                 std::thread::sleep(Duration::from_millis(200));
             }
 
-            // Force kill if needed
             let pid = Pid::from_raw(child.id() as i32);
             let _ = kill(pid, Signal::SIGTERM);
 

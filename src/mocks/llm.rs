@@ -167,7 +167,7 @@ struct ErrorDetail {
 
 impl MockLLM {
     pub async fn start(port: u16) -> Result<Self> {
-        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{}", port))
+        let listener = std::net::TcpListener::bind(format!("127.0.0.1:{port}"))
             .context("Failed to bind MockLLM port")?;
 
         let server = MockServer::builder().listener(listener).start().await;
@@ -221,8 +221,8 @@ impl MockLLM {
 
         let mut store = self.expectations.lock().unwrap();
         store.insert(
-            format!("completion:{}", prompt_contains),
-            Expectation::new(&format!("completion containing '{}'", prompt_contains)),
+            format!("completion:{prompt_contains}"),
+            Expectation::new(&format!("completion containing '{prompt_contains}'")),
         );
 
         let response_text = response.to_string();
@@ -274,7 +274,7 @@ impl MockLLM {
             prompt_contains: Some(prompt_contains.to_string()),
             response: chunks.join(""),
             stream: true,
-            chunks: chunks.iter().map(|s| s.to_string()).collect(),
+            chunks: chunks.iter().map(|s| (*s).to_string()).collect(),
             tool_calls: Vec::new(),
         };
 
@@ -318,7 +318,7 @@ impl MockLLM {
                     index: 0,
                     delta: StreamDelta {
                         role: None,
-                        content: Some(chunk_text.to_string()),
+                        content: Some((*chunk_text).to_string()),
                     },
                     finish_reason: None,
                 }],
@@ -470,7 +470,7 @@ impl MockLLM {
             error: ErrorDetail {
                 message: message.to_string(),
                 r#type: "error".to_string(),
-                code: format!("error_{}", status),
+                code: format!("error_{status}"),
             },
         };
 
@@ -563,11 +563,13 @@ impl MockLLM {
             .await;
     }
 
+    #[must_use] 
     pub fn url(&self) -> String {
         format!("http://127.0.0.1:{}", self.port)
     }
 
-    pub fn port(&self) -> u16 {
+    #[must_use] 
+    pub const fn port(&self) -> u16 {
         self.port
     }
 
@@ -597,16 +599,14 @@ impl MockLLM {
         self.server
             .received_requests()
             .await
-            .map(|r| r.len())
-            .unwrap_or(0)
+            .map_or(0, |r| r.len())
     }
 
     pub async fn assert_called_times(&self, expected: usize) {
         let actual = self.call_count().await;
         assert_eq!(
             actual, expected,
-            "Expected {} calls to MockLLM, but got {}",
-            expected, actual
+            "Expected {expected} calls to MockLLM, but got {actual}"
         );
     }
 
@@ -620,7 +620,7 @@ impl MockLLM {
 
     pub async fn assert_not_called(&self) {
         let count = self.call_count().await;
-        assert_eq!(count, 0, "Expected no calls to MockLLM, but got {}", count);
+        assert_eq!(count, 0, "Expected no calls to MockLLM, but got {count}");
     }
 }
 

@@ -759,8 +759,6 @@ async fn test_with_fixtures() {
         return;
     }
 
-    // This test inserts fixtures into DB - requires direct DB connection
-    // When using existing stack, we connect to the existing database
     let ctx = match E2ETestContext::setup().await {
         Ok(ctx) => ctx,
         Err(e) => {
@@ -773,7 +771,6 @@ async fn test_with_fixtures() {
     let bot = bot_with_kb("e2e-test-bot");
     let customer = customer("+15551234567");
 
-    // Try to insert - may fail if DB schema doesn't match or DB not accessible
     match ctx.ctx.insert_user(&user).await {
         Ok(_) => println!("Inserted test user: {}", user.email),
         Err(e) => eprintln!("Could not insert user (DB may not be directly accessible): {}", e),
@@ -799,9 +796,6 @@ async fn test_mock_services_available() {
         return;
     }
 
-    // This test checks for harness-started mock services
-    // When using existing stack (default), harness mocks are started but PostgreSQL is not
-    // (we connect to the existing PostgreSQL instead)
     let ctx = match E2ETestContext::setup().await {
         Ok(ctx) => ctx,
         Err(e) => {
@@ -810,7 +804,6 @@ async fn test_mock_services_available() {
         }
     };
 
-    // Mock services are started by harness in both modes
     if ctx.ctx.mock_llm().is_some() {
         println!("✓ MockLLM is available");
     } else {
@@ -823,17 +816,13 @@ async fn test_mock_services_available() {
         eprintln!("MockZitadel not available");
     }
 
-    // PostgreSQL: only started by harness with FRESH_STACK=1
-    // In existing stack mode, postgres() returns None (we use external DB)
     if ctx.ctx.use_existing_stack {
         println!("Using existing stack - PostgreSQL is external (not managed by harness)");
-        // Verify we can connect to the existing database
         match ctx.ctx.db_pool().await {
             Ok(_pool) => println!("✓ Connected to existing PostgreSQL"),
             Err(e) => eprintln!("Could not connect to existing PostgreSQL: {}", e),
         }
     } else {
-        // Fresh stack mode - harness starts PostgreSQL
         if ctx.ctx.postgres().is_some() {
             println!("✓ PostgreSQL is managed by harness");
         } else {

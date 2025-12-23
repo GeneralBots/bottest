@@ -1,11 +1,7 @@
-//! BASIC script fixtures for testing bot behavior
-//!
-//! Provides sample BASIC scripts that can be used to test
-//! the BASIC interpreter and bot conversation flows.
 
 use std::collections::HashMap;
 
-/// Get a script fixture by name
+#[must_use] 
 pub fn get_script(name: &str) -> Option<&'static str> {
     match name {
         "greeting" => Some(GREETING_SCRIPT),
@@ -22,7 +18,7 @@ pub fn get_script(name: &str) -> Option<&'static str> {
     }
 }
 
-/// Get all available script names
+#[must_use] 
 pub fn available_scripts() -> Vec<&'static str> {
     vec![
         "greeting",
@@ -38,7 +34,7 @@ pub fn available_scripts() -> Vec<&'static str> {
     ]
 }
 
-/// Get all scripts as a map
+#[must_use] 
 pub fn all_scripts() -> HashMap<&'static str, &'static str> {
     let mut scripts = HashMap::new();
     for name in available_scripts() {
@@ -49,7 +45,6 @@ pub fn all_scripts() -> HashMap<&'static str, &'static str> {
     scripts
 }
 
-/// Simple greeting flow script
 pub const GREETING_SCRIPT: &str = r#"
 ' Greeting Flow Script
 ' Simple greeting and response pattern
@@ -72,7 +67,6 @@ ELSE
 END IF
 "#;
 
-/// Knowledge base search script
 pub const KB_SEARCH_SCRIPT: &str = r#"
 ' Knowledge Base Search Script
 ' Demonstrates searching the knowledge base
@@ -98,7 +92,6 @@ ELSE
 END IF
 "#;
 
-/// Human handoff / attendance flow script
 pub const ATTENDANCE_SCRIPT: &str = r#"
 ' Attendance / Human Handoff Script
 ' Demonstrates transferring to human agents
@@ -130,7 +123,6 @@ ELSE
 END IF
 "#;
 
-/// Error handling patterns script
 pub const ERROR_HANDLING_SCRIPT: &str = r#"
 ' Error Handling Script
 ' Demonstrates ON ERROR RESUME NEXT patterns
@@ -167,7 +159,6 @@ TALK "Processing your request: " + LEFT$(userInput$, 50) + "..."
 retry_input:
 "#;
 
-/// LLM with tools script
 pub const LLM_TOOLS_SCRIPT: &str = r#"
 ' LLM Tools Script
 ' Demonstrates LLM with function calling / tools
@@ -209,7 +200,6 @@ TALK llm.response
 GOTO conversation_loop
 "#;
 
-/// Data operations script
 pub const DATA_OPERATIONS_SCRIPT: &str = r#"
 ' Data Operations Script
 ' Demonstrates FIND, SAVE, UPDATE, DELETE operations
@@ -251,7 +241,6 @@ BEGIN TRANSACTION
 COMMIT TRANSACTION
 "#;
 
-/// HTTP integration script
 pub const HTTP_INTEGRATION_SCRIPT: &str = r#"
 ' HTTP Integration Script
 ' Demonstrates POST, GET, GRAPHQL, SOAP calls
@@ -286,7 +275,6 @@ soap_response = SOAP "https://api.example.com/soap" ACTION "GetProduct" BODY soa
 TALK "Product: " + soap_response.ProductName
 "#;
 
-/// Menu-driven conversation flow
 pub const MENU_FLOW_SCRIPT: &str = r#"
 ' Menu Flow Script
 ' Demonstrates interactive menu-based conversation
@@ -364,7 +352,6 @@ return_item:
     RETURN
 "#;
 
-/// Simple echo script for basic testing
 pub const SIMPLE_ECHO_SCRIPT: &str = r#"
 ' Simple Echo Script
 ' Echoes back whatever the user says
@@ -383,7 +370,6 @@ TALK "You said: " + input$
 GOTO echo_loop
 "#;
 
-/// Variables and expressions script
 pub const VARIABLES_SCRIPT: &str = r#"
 ' Variables and Expressions Script
 ' Demonstrates variable types and operations

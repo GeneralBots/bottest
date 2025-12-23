@@ -1,7 +1,3 @@
-//! Test fixtures and data factories
-//!
-//! Provides pre-built test data and factories for creating test objects
-//! including users, customers, bots, sessions, and conversations.
 
 pub mod data;
 pub mod scripts;
@@ -11,9 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-// Re-export common fixtures
 
-/// A test user
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: Uuid,
@@ -39,7 +33,6 @@ impl Default for User {
     }
 }
 
-/// User role
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
@@ -55,7 +48,6 @@ impl Default for Role {
     }
 }
 
-/// A customer (end user interacting with bot)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Customer {
     pub id: Uuid,
@@ -85,7 +77,6 @@ impl Default for Customer {
     }
 }
 
-/// Communication channel
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Channel {
@@ -103,7 +94,6 @@ impl Default for Channel {
     }
 }
 
-/// A bot configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bot {
     pub id: Uuid,
@@ -135,7 +125,6 @@ impl Default for Bot {
     }
 }
 
-/// A conversation session
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Session {
     pub id: Uuid,
@@ -165,7 +154,6 @@ impl Default for Session {
     }
 }
 
-/// Session state
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SessionState {
@@ -181,7 +169,6 @@ impl Default for SessionState {
     }
 }
 
-/// A conversation message
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
     pub id: Uuid,
@@ -207,7 +194,6 @@ impl Default for Message {
     }
 }
 
-/// Message direction
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MessageDirection {
@@ -215,7 +201,6 @@ pub enum MessageDirection {
     Outgoing,
 }
 
-/// Content type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ContentType {
@@ -235,7 +220,6 @@ impl Default for ContentType {
     }
 }
 
-/// Queue entry for attendance
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueueEntry {
     pub id: Uuid,
@@ -263,7 +247,6 @@ impl Default for QueueEntry {
     }
 }
 
-/// Queue priority
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Priority {
@@ -279,7 +262,6 @@ impl Default for Priority {
     }
 }
 
-/// Queue status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum QueueStatus {
@@ -296,9 +278,8 @@ impl Default for QueueStatus {
     }
 }
 
-// Factory Functions
 
-/// Create an admin user
+#[must_use] 
 pub fn admin_user() -> User {
     User {
         email: "admin@test.com".to_string(),
@@ -308,7 +289,7 @@ pub fn admin_user() -> User {
     }
 }
 
-/// Create an attendant user
+#[must_use] 
 pub fn attendant_user() -> User {
     User {
         email: "attendant@test.com".to_string(),
@@ -318,7 +299,7 @@ pub fn attendant_user() -> User {
     }
 }
 
-/// Create a regular user
+#[must_use] 
 pub fn regular_user() -> User {
     User {
         email: "user@test.com".to_string(),
@@ -328,7 +309,7 @@ pub fn regular_user() -> User {
     }
 }
 
-/// Create a user with specific email
+#[must_use] 
 pub fn user_with_email(email: &str) -> User {
     User {
         email: email.to_string(),
@@ -337,7 +318,7 @@ pub fn user_with_email(email: &str) -> User {
     }
 }
 
-/// Create a customer with a phone number
+#[must_use] 
 pub fn customer(phone: &str) -> Customer {
     Customer {
         phone: Some(phone.to_string()),
@@ -346,7 +327,7 @@ pub fn customer(phone: &str) -> Customer {
     }
 }
 
-/// Create a customer for a specific channel
+#[must_use] 
 pub fn customer_on_channel(channel: Channel) -> Customer {
     Customer {
         channel,
@@ -354,7 +335,7 @@ pub fn customer_on_channel(channel: Channel) -> Customer {
     }
 }
 
-/// Create a Teams customer
+#[must_use] 
 pub fn teams_customer() -> Customer {
     Customer {
         channel: Channel::Teams,
@@ -363,7 +344,7 @@ pub fn teams_customer() -> Customer {
     }
 }
 
-/// Create a web customer
+#[must_use] 
 pub fn web_customer() -> Customer {
     Customer {
         channel: Channel::Web,
@@ -372,7 +353,7 @@ pub fn web_customer() -> Customer {
     }
 }
 
-/// Create a basic bot
+#[must_use] 
 pub fn basic_bot(name: &str) -> Bot {
     Bot {
         name: name.to_string(),
@@ -382,7 +363,7 @@ pub fn basic_bot(name: &str) -> Bot {
     }
 }
 
-/// Create a bot with knowledge base enabled
+#[must_use] 
 pub fn bot_with_kb(name: &str) -> Bot {
     Bot {
         name: name.to_string(),
@@ -392,7 +373,7 @@ pub fn bot_with_kb(name: &str) -> Bot {
     }
 }
 
-/// Create a bot without LLM (rule-based only)
+#[must_use] 
 pub fn rule_based_bot(name: &str) -> Bot {
     Bot {
         name: name.to_string(),
@@ -403,7 +384,7 @@ pub fn rule_based_bot(name: &str) -> Bot {
     }
 }
 
-/// Create a session for a bot and customer
+#[must_use] 
 pub fn session_for(bot: &Bot, customer: &Customer) -> Session {
     Session {
         bot_id: bot.id,
@@ -413,7 +394,7 @@ pub fn session_for(bot: &Bot, customer: &Customer) -> Session {
     }
 }
 
-/// Create an active session
+#[must_use] 
 pub fn active_session() -> Session {
     Session {
         state: SessionState::Active,
@@ -421,7 +402,7 @@ pub fn active_session() -> Session {
     }
 }
 
-/// Create an incoming message
+#[must_use] 
 pub fn incoming_message(content: &str) -> Message {
     Message {
         direction: MessageDirection::Incoming,
@@ -430,7 +411,7 @@ pub fn incoming_message(content: &str) -> Message {
     }
 }
 
-/// Create an outgoing message
+#[must_use] 
 pub fn outgoing_message(content: &str) -> Message {
     Message {
         direction: MessageDirection::Outgoing,
@@ -439,7 +420,7 @@ pub fn outgoing_message(content: &str) -> Message {
     }
 }
 
-/// Create a message in a session
+#[must_use] 
 pub fn message_in_session(
     session: &Session,
     content: &str,
@@ -453,7 +434,7 @@ pub fn message_in_session(
     }
 }
 
-/// Create a queue entry for a customer
+#[must_use] 
 pub fn queue_entry_for(customer: &Customer, session: &Session) -> QueueEntry {
     QueueEntry {
         customer_id: customer.id,
@@ -462,7 +443,7 @@ pub fn queue_entry_for(customer: &Customer, session: &Session) -> QueueEntry {
     }
 }
 
-/// Create a high priority queue entry
+#[must_use] 
 pub fn high_priority_queue_entry() -> QueueEntry {
     QueueEntry {
         priority: Priority::High,
@@ -470,7 +451,7 @@ pub fn high_priority_queue_entry() -> QueueEntry {
     }
 }
 
-/// Create an urgent queue entry
+#[must_use] 
 pub fn urgent_queue_entry() -> QueueEntry {
     QueueEntry {
         priority: Priority::Urgent,

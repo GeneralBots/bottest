@@ -1,7 +1,3 @@
-//! Bot conversation testing module
-//!
-//! Provides tools for simulating and testing bot conversations
-//! including message exchanges, flow validation, and response assertions.
 
 mod conversation;
 mod runner;
@@ -12,7 +8,6 @@ use std::collections::HashMap;
 use std::time::Duration;
 use uuid::Uuid;
 
-/// Response from the bot
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BotResponse {
     pub id: Uuid,
@@ -22,7 +17,6 @@ pub struct BotResponse {
     pub latency_ms: u64,
 }
 
-/// Type of response content
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ResponseContentType {
@@ -43,7 +37,6 @@ impl Default for ResponseContentType {
     }
 }
 
-/// Assertion result for conversation tests
 #[derive(Debug, Clone)]
 pub struct AssertionResult {
     pub passed: bool,
@@ -53,6 +46,7 @@ pub struct AssertionResult {
 }
 
 impl AssertionResult {
+    #[must_use] 
     pub fn pass(message: &str) -> Self {
         Self {
             passed: true,
@@ -62,6 +56,7 @@ impl AssertionResult {
         }
     }
 
+    #[must_use] 
     pub fn fail(message: &str, expected: &str, actual: &str) -> Self {
         Self {
             passed: false,
@@ -72,16 +67,11 @@ impl AssertionResult {
     }
 }
 
-/// Configuration for conversation tests
 #[derive(Debug, Clone)]
 pub struct ConversationConfig {
-    /// Maximum time to wait for a response
     pub response_timeout: Duration,
-    /// Whether to record the conversation for later analysis
     pub record: bool,
-    /// Whether to use the mock LLM
     pub use_mock_llm: bool,
-    /// Custom variables to inject into the conversation
     pub variables: HashMap<String, String>,
 }
 
@@ -96,7 +86,6 @@ impl Default for ConversationConfig {
     }
 }
 
-/// Recorded conversation for analysis
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConversationRecord {
     pub id: Uuid,
@@ -108,7 +97,6 @@ pub struct ConversationRecord {
     pub passed: bool,
 }
 
-/// Recorded message in a conversation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecordedMessage {
     pub timestamp: chrono::DateTime<chrono::Utc>,
@@ -117,7 +105,6 @@ pub struct RecordedMessage {
     pub latency_ms: Option<u64>,
 }
 
-/// Recorded assertion
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AssertionRecord {
     pub timestamp: chrono::DateTime<chrono::Utc>,
@@ -126,20 +113,13 @@ pub struct AssertionRecord {
     pub message: String,
 }
 
-/// State of a conversation flow
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConversationState {
-    /// Initial state, conversation not started
     Initial,
-    /// Waiting for user input
     WaitingForUser,
-    /// Waiting for bot response
     WaitingForBot,
-    /// Conversation transferred to human
     Transferred,
-    /// Conversation ended normally
     Ended,
-    /// Conversation ended with error
     Error,
 }
 

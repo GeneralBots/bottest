@@ -1,10 +1,3 @@
-//! Mock servers for testing external service integrations
-//!
-//! Provides mock implementations of:
-//! - LLM API (OpenAI-compatible)
-//! - WhatsApp Business API
-//! - Microsoft Teams Bot Framework
-//! - Zitadel Auth/OIDC
 
 mod llm;
 mod teams;
@@ -20,7 +13,6 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-/// Registry of all mock servers for a test
 pub struct MockRegistry {
     pub llm: Option<MockLLM>,
     pub whatsapp: Option<MockWhatsApp>,
@@ -29,8 +21,8 @@ pub struct MockRegistry {
 }
 
 impl MockRegistry {
-    /// Create an empty registry
-    pub fn new() -> Self {
+    #[must_use] 
+    pub const fn new() -> Self {
         Self {
             llm: None,
             whatsapp: None,
@@ -39,27 +31,26 @@ impl MockRegistry {
         }
     }
 
-    /// Get the LLM mock, panics if not configured
-    pub fn llm(&self) -> &MockLLM {
+    #[must_use] 
+    pub const fn llm(&self) -> &MockLLM {
         self.llm.as_ref().expect("LLM mock not configured")
     }
 
-    /// Get the WhatsApp mock, panics if not configured
-    pub fn whatsapp(&self) -> &MockWhatsApp {
+    #[must_use] 
+    pub const fn whatsapp(&self) -> &MockWhatsApp {
         self.whatsapp.as_ref().expect("WhatsApp mock not configured")
     }
 
-    /// Get the Teams mock, panics if not configured
-    pub fn teams(&self) -> &MockTeams {
+    #[must_use] 
+    pub const fn teams(&self) -> &MockTeams {
         self.teams.as_ref().expect("Teams mock not configured")
     }
 
-    /// Get the Zitadel mock, panics if not configured
-    pub fn zitadel(&self) -> &MockZitadel {
+    #[must_use] 
+    pub const fn zitadel(&self) -> &MockZitadel {
         self.zitadel.as_ref().expect("Zitadel mock not configured")
     }
 
-    /// Verify all mock expectations were met
     pub fn verify_all(&self) -> Result<()> {
         if let Some(ref llm) = self.llm {
             llm.verify()?;
@@ -76,7 +67,6 @@ impl MockRegistry {
         Ok(())
     }
 
-    /// Reset all mock servers
     pub async fn reset_all(&self) {
         if let Some(ref llm) = self.llm {
             llm.reset().await;
@@ -99,7 +89,6 @@ impl Default for MockRegistry {
     }
 }
 
-/// Expectation tracking for mock verification
 #[derive(Debug, Clone)]
 pub struct Expectation {
     pub name: String,
@@ -109,6 +98,7 @@ pub struct Expectation {
 }
 
 impl Expectation {
+    #[must_use] 
     pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
@@ -118,12 +108,13 @@ impl Expectation {
         }
     }
 
-    pub fn times(mut self, n: usize) -> Self {
+    #[must_use] 
+    pub const fn times(mut self, n: usize) -> Self {
         self.expected_calls = Some(n);
         self
     }
 
-    pub fn record_call(&mut self) {
+    pub const fn record_call(&mut self) {
         self.actual_calls += 1;
         self.matched = true;
     }
@@ -143,10 +134,9 @@ impl Expectation {
     }
 }
 
-/// Shared state for tracking expectations across async handlers
 pub type ExpectationStore = Arc<Mutex<HashMap<String, Expectation>>>;
 
-/// Create a new expectation store
+#[must_use] 
 pub fn new_expectation_store() -> ExpectationStore {
     Arc::new(Mutex::new(HashMap::new()))
 }

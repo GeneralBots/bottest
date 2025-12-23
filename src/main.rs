@@ -36,11 +36,11 @@ impl std::str::FromStr for TestSuite {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "unit" => Ok(TestSuite::Unit),
-            "integration" | "int" => Ok(TestSuite::Integration),
-            "e2e" | "end-to-end" => Ok(TestSuite::E2E),
-            "all" => Ok(TestSuite::All),
-            _ => Err(format!("Unknown test suite: {}", s)),
+            "unit" => Ok(Self::Unit),
+            "integration" | "int" => Ok(Self::Integration),
+            "e2e" | "end-to-end" => Ok(Self::E2E),
+            "all" => Ok(Self::All),
+            _ => Err(format!("Unknown test suite: {s}")),
         }
     }
 }
@@ -156,10 +156,10 @@ fn parse_args() -> Result<(RunnerConfig, bool, bool)> {
                 config.headed = true;
             }
             arg if !arg.starts_with('-') => {
-                config.suite = arg.parse().map_err(|e| anyhow::anyhow!("{}", e))?;
+                config.suite = arg.parse().map_err(|e| anyhow::anyhow!("{e}"))?;
             }
             other => {
-                anyhow::bail!("Unknown argument: {}", other);
+                anyhow::bail!("Unknown argument: {other}");
             }
         }
         i += 1;
@@ -193,6 +193,7 @@ pub struct TestResults {
 }
 
 impl TestResults {
+    #[must_use] 
     pub fn new(suite: &str) -> Self {
         Self {
             suite: suite.to_string(),
@@ -204,7 +205,8 @@ impl TestResults {
         }
     }
 
-    pub fn success(&self) -> bool {
+    #[must_use] 
+    pub const fn success(&self) -> bool {
         self.failed == 0 && self.errors.is_empty()
     }
 }
@@ -215,7 +217,7 @@ fn get_cache_dir() -> PathBuf {
 }
 
 fn get_chromedriver_path(version: &str) -> PathBuf {
-    get_cache_dir().join(format!("chromedriver-{}", version))
+    get_cache_dir().join(format!("chromedriver-{version}"))
 }
 
 fn get_chrome_path() -> PathBuf {
@@ -264,8 +266,7 @@ fn detect_browser_version(browser_path: &str) -> Option<String> {
             && part
                 .chars()
                 .next()
-                .map(|c| c.is_ascii_digit())
-                .unwrap_or(false)
+                .is_some_and(|c| c.is_ascii_digit())
         {
             let major = part.split('.').next()?;
             return Some(major.to_string());
@@ -276,7 +277,7 @@ fn detect_browser_version(browser_path: &str) -> Option<String> {
 }
 
 fn detect_chromedriver_for_version(major_version: &str) -> Option<PathBuf> {
-    let pattern = format!("chromedriver-{}", major_version);
+    let pattern = format!("chromedriver-{major_version}");
     let cache_dir = get_cache_dir();
 
     if let Ok(entries) = std::fs::read_dir(&cache_dir) {
@@ -353,8 +354,7 @@ async fn extract_zip(zip_path: &PathBuf, dest_dir: &PathBuf) -> Result<()> {
 
 async fn get_chromedriver_version_for_browser(major_version: &str) -> Result<String> {
     let url = format!(
-        "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_{}",
-        major_version
+        "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_{major_version}"
     );
 
     info!("Fetching ChromeDriver version for Chrome {}", major_version);
@@ -390,8 +390,7 @@ async fn setup_chromedriver(browser_path: &str) -> Result<PathBuf> {
     let chrome_version = get_chromedriver_version_for_browser(&major_version).await?;
 
     let chromedriver_url = format!(
-        "{}/{}/linux64/chromedriver-linux64.zip",
-        CHROMEDRIVER_URL, chrome_version
+        "{CHROMEDRIVER_URL}/{chrome_version}/linux64/chromedriver-linux64.zip"
     );
 
     let zip_path = cache_dir.join("chromedriver.zip");
@@ -442,8 +441,7 @@ async fn setup_chrome_for_testing() -> Result<PathBuf> {
         .unwrap_or_else(|_| "131.0.6778.204".to_string());
 
     let chrome_url = format!(
-        "{}/{}/linux64/chrome-linux64.zip",
-        CHROMEDRIVER_URL, chrome_version
+        "{CHROMEDRIVER_URL}/{chrome_version}/linux64/chrome-linux64.zip"
     );
 
     let zip_path = cache_dir.join("chrome.zip");
@@ -485,7 +483,7 @@ async fn start_chromedriver(chromedriver_path: &PathBuf, port: u16) -> Result<st
     info!("Starting ChromeDriver on port {}...", port);
 
     let child = std::process::Command::new(chromedriver_path)
-        .arg(format!("--port={}", port))
+        .arg(format!("--port={port}"))
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()?;
@@ -502,7 +500,7 @@ async fn start_chromedriver(chromedriver_path: &PathBuf, port: u16) -> Result<st
 }
 
 async fn check_webdriver_available(port: u16) -> bool {
-    let url = format!("http://localhost:{}/status", port);
+    let url = format!("http://localhost:{port}/status");
 
     let client = match reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(2))
@@ -518,13 +516,12 @@ async fn check_webdriver_available(port: u16) -> bool {
 async fn run_browser_demo() -> Result<()> {
     info!("Running browser demo...");
 
-    // Use CDP directly via BrowserService
     let debug_port = 9222u16;
 
     let mut browser_service = match services::BrowserService::start(debug_port).await {
         Ok(bs) => bs,
         Err(e) => {
-            anyhow::bail!("Failed to start browser: {}", e);
+            anyhow::bail!("Failed to start browser: {e}");
         }
     };
 
@@ -540,7 +537,7 @@ async fn run_browser_demo() -> Result<()> {
         Ok(b) => b,
         Err(e) => {
             let _ = browser_service.stop().await;
-            anyhow::bail!("Failed to connect to browser CDP: {}", e);
+            anyhow::bail!("Failed to connect to browser CDP: {e}");
         }
     };
 
@@ -575,7 +572,7 @@ fn discover_test_files(test_dir: &str) -> Vec<String> {
     if let Ok(entries) = std::fs::read_dir(&path) {
         for entry in entries.flatten() {
             let file_path = entry.path();
-            if file_path.extension().map(|e| e == "rs").unwrap_or(false) {
+            if file_path.extension().is_some_and(|e| e == "rs") {
                 if let Some(name) = file_path.file_stem() {
                     let name_str = name.to_string_lossy().to_string();
                     if name_str != "mod" {
@@ -626,7 +623,7 @@ fn run_cargo_test(
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
-    let combined = format!("{}\n{}", stdout, stderr);
+    let combined = format!("{stdout}\n{stderr}");
 
     let mut passed = 0usize;
     let mut failed = 0usize;
@@ -679,7 +676,7 @@ async fn run_unit_tests(config: &RunnerConfig) -> Result<TestResults> {
         Err(e) => {
             results
                 .errors
-                .push(format!("Failed to run unit tests: {}", e));
+                .push(format!("Failed to run unit tests: {e}"));
             results.failed = 1;
         }
     }
@@ -712,7 +709,7 @@ async fn run_integration_tests(config: &RunnerConfig) -> Result<TestResults> {
         Err(e) => {
             error!("Failed to set up test harness: {}", e);
             results.failed = 1;
-            results.errors.push(format!("Harness setup failed: {}", e));
+            results.errors.push(format!("Harness setup failed: {e}"));
             return Ok(results);
         }
     };
@@ -761,16 +758,16 @@ async fn run_integration_tests(config: &RunnerConfig) -> Result<TestResults> {
         Err(e) => {
             results
                 .errors
-                .push(format!("Failed to run integration tests: {}", e));
+                .push(format!("Failed to run integration tests: {e}"));
             results.failed = 1;
         }
     }
 
-    if !config.keep_env {
-        info!("Cleaning up test environment...");
-    } else {
+    if config.keep_env {
         info!("Keeping test environment for inspection (KEEP_ENV=1)");
         info!("  Data dir: {:?}", ctx.data_dir);
+    } else {
+        info!("Cleaning up test environment...");
     }
 
     results.duration_ms = start.elapsed().as_millis() as u64;
@@ -837,7 +834,7 @@ async fn run_e2e_tests(config: &RunnerConfig) -> Result<TestResults> {
                 results.failed = 1;
                 results
                     .errors
-                    .push(format!("ChromeDriver start failed: {}", e));
+                    .push(format!("ChromeDriver start failed: {e}"));
                 return Ok(results);
             }
         }
@@ -852,7 +849,7 @@ async fn run_e2e_tests(config: &RunnerConfig) -> Result<TestResults> {
                 let _ = child.kill();
             }
             results.failed = 1;
-            results.errors.push(format!("Harness setup failed: {}", e));
+            results.errors.push(format!("Harness setup failed: {e}"));
             return Ok(results);
         }
     };
@@ -869,7 +866,7 @@ async fn run_e2e_tests(config: &RunnerConfig) -> Result<TestResults> {
             results.failed = 1;
             results
                 .errors
-                .push(format!("Botserver start failed: {}", e));
+                .push(format!("Botserver start failed: {e}"));
             return Ok(results);
         }
     };
@@ -898,7 +895,7 @@ async fn run_e2e_tests(config: &RunnerConfig) -> Result<TestResults> {
     let directory_url = ctx.zitadel_url();
     let server_url = server.url.clone();
     let chrome_binary = chrome_path.to_string_lossy().to_string();
-    let webdriver_url = format!("http://localhost:{}", webdriver_port);
+    let webdriver_url = format!("http://localhost:{webdriver_port}");
 
     let env_vars: Vec<(&str, &str)> = vec![
         ("DATABASE_URL", &db_url),
@@ -922,7 +919,7 @@ async fn run_e2e_tests(config: &RunnerConfig) -> Result<TestResults> {
         Err(e) => {
             results
                 .errors
-                .push(format!("Failed to run E2E tests: {}", e));
+                .push(format!("Failed to run E2E tests: {e}"));
             results.failed = 1;
         }
     }
@@ -933,12 +930,12 @@ async fn run_e2e_tests(config: &RunnerConfig) -> Result<TestResults> {
         let _ = child.wait();
     }
 
-    if !config.keep_env {
-        info!("Cleaning up test environment...");
-    } else {
+    if config.keep_env {
         info!("Keeping test environment for inspection (KEEP_ENV=1)");
         info!("  Server URL: {}", server.url);
         info!("  Data dir: {:?}", ctx.data_dir);
+    } else {
+        info!("Cleaning up test environment...");
     }
 
     results.duration_ms = start.elapsed().as_millis() as u64;
@@ -968,7 +965,7 @@ fn print_summary(results: &[TestResults]) {
         );
 
         for error in &result.errors {
-            println!("  ERROR: {}", error);
+            println!("  ERROR: {error}");
         }
 
         total_passed += result.passed;
@@ -979,8 +976,7 @@ fn print_summary(results: &[TestResults]) {
 
     println!("\n{}", "-".repeat(60));
     println!(
-        "TOTAL: {} passed, {} failed, {} skipped ({} ms)",
-        total_passed, total_failed, total_skipped, total_duration
+        "TOTAL: {total_passed} passed, {total_failed} failed, {total_skipped} skipped ({total_duration} ms)"
     );
     println!("{}", "=".repeat(60));
 
@@ -996,7 +992,7 @@ async fn main() -> ExitCode {
     let (config, setup_only, demo_mode) = match parse_args() {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("Error: {e}");
             print_usage();
             return ExitCode::from(1);
         }
@@ -1014,12 +1010,12 @@ async fn main() -> ExitCode {
         match setup_test_dependencies().await {
             Ok((chromedriver, chrome)) => {
                 println!("\n✅ Dependencies installed successfully!");
-                println!("  ChromeDriver: {:?}", chromedriver);
-                println!("  Browser: {:?}", chrome);
+                println!("  ChromeDriver: {chromedriver:?}");
+                println!("  Browser: {chrome:?}");
                 return ExitCode::SUCCESS;
             }
             Err(e) => {
-                eprintln!("\n❌ Setup failed: {}", e);
+                eprintln!("\n❌ Setup failed: {e}");
                 return ExitCode::from(1);
             }
         }
@@ -1028,12 +1024,12 @@ async fn main() -> ExitCode {
     if demo_mode {
         info!("Running browser demo...");
         match run_browser_demo().await {
-            Ok(_) => {
+            Ok(()) => {
                 println!("\n✅ Browser demo completed successfully!");
                 return ExitCode::SUCCESS;
             }
             Err(e) => {
-                eprintln!("\n❌ Browser demo failed: {}", e);
+                eprintln!("\n❌ Browser demo failed: {e}");
                 return ExitCode::from(1);
             }
         }
@@ -1086,7 +1082,7 @@ async fn main() -> ExitCode {
 
     print_summary(&all_results);
 
-    let all_passed = all_results.iter().all(|r| r.success());
+    let all_passed = all_results.iter().all(TestResults::success);
     if all_passed {
         ExitCode::SUCCESS
     } else {

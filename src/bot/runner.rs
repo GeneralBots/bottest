@@ -1,7 +1,3 @@
-//! Bot runner for executing tests
-//!
-//! Provides a test runner that can execute BASIC scripts and simulate
-//! bot behavior for integration testing.
 
 use super::{BotResponse, ConversationState, ResponseContentType};
 use crate::fixtures::{Bot, Channel, Customer, Session};
@@ -13,20 +9,13 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
-/// Configuration for the bot runner
 #[derive(Debug, Clone)]
 pub struct BotRunnerConfig {
-    /// Working directory for the bot
     pub working_dir: PathBuf,
-    /// Maximum execution time for a single request
     pub timeout: Duration,
-    /// Whether to use mock services
     pub use_mocks: bool,
-    /// Environment variables to set
     pub env_vars: HashMap<String, String>,
-    /// Whether to capture logs
     pub capture_logs: bool,
-    /// Log level
     pub log_level: LogLevel,
 }
 
@@ -43,7 +32,6 @@ impl Default for BotRunnerConfig {
     }
 }
 
-/// Log level for bot runner
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LogLevel {
     Trace,
@@ -59,7 +47,6 @@ impl Default for LogLevel {
     }
 }
 
-/// Bot runner for executing bot scripts and simulating conversations
 pub struct BotRunner {
     config: BotRunnerConfig,
     bot: Option<Bot>,
@@ -68,7 +55,6 @@ pub struct BotRunner {
     metrics: Arc<Mutex<RunnerMetrics>>,
 }
 
-/// Internal session state
 struct SessionState {
     session: Session,
     customer: Customer,
@@ -79,7 +65,6 @@ struct SessionState {
     started_at: Instant,
 }
 
-/// Metrics collected by the runner
 #[derive(Debug, Default, Clone)]
 pub struct RunnerMetrics {
     pub total_requests: u64,
@@ -93,8 +78,7 @@ pub struct RunnerMetrics {
 }
 
 impl RunnerMetrics {
-    /// Get average latency in milliseconds
-    pub fn avg_latency_ms(&self) -> u64 {
+    pub const fn avg_latency_ms(&self) -> u64 {
         if self.total_requests > 0 {
             self.total_latency_ms / self.total_requests
         } else {
@@ -102,7 +86,6 @@ impl RunnerMetrics {
         }
     }
 
-    /// Get success rate as percentage
     pub fn success_rate(&self) -> f64 {
         if self.total_requests > 0 {
             (self.successful_requests as f64 / self.total_requests as f64) * 100.0
@@ -112,7 +95,6 @@ impl RunnerMetrics {
     }
 }
 
-/// Result of a bot execution
 #[derive(Debug, Clone)]
 pub struct ExecutionResult {
     pub session_id: Uuid,
@@ -123,7 +105,6 @@ pub struct ExecutionResult {
     pub error: Option<String>,
 }
 
-/// A log entry captured during execution
 #[derive(Debug, Clone)]
 pub struct LogEntry {
     pub timestamp: chrono::DateTime<chrono::Utc>,
@@ -133,12 +114,10 @@ pub struct LogEntry {
 }
 
 impl BotRunner {
-    /// Create a new bot runner with default configuration
     pub fn new() -> Self {
         Self::with_config(BotRunnerConfig::default())
     }
 
-    /// Create a new bot runner with custom configuration
     pub fn with_config(config: BotRunnerConfig) -> Self {
         Self {
             config,
@@ -149,18 +128,15 @@ impl BotRunner {
         }
     }
 
-    /// Create a bot runner with a test context
     pub fn with_context(_ctx: &TestContext, config: BotRunnerConfig) -> Self {
         Self::with_config(config)
     }
 
-    /// Set the bot to run
     pub fn set_bot(&mut self, bot: Bot) -> &mut Self {
         self.bot = Some(bot);
         self
     }
 
-    /// Load a BASIC script
     pub fn load_script(&mut self, name: &str, content: &str) -> &mut Self {
         self.script_cache
             .lock()
@@ -169,10 +145,9 @@ impl BotRunner {
         self
     }
 
-    /// Load a script from a file
     pub fn load_script_file(&mut self, name: &str, path: &PathBuf) -> Result<&mut Self> {
         let content = std::fs::read_to_string(path)
-            .with_context(|| format!("Failed to read script file: {:?}", path))?;
+            .with_context(|| format!("Failed to read script file: {path:?}"))?;
         self.script_cache
             .lock()
             .unwrap()
@@ -180,10 +155,9 @@ impl BotRunner {
         Ok(self)
     }
 
-    /// Start a new session
     pub fn start_session(&mut self, customer: Customer) -> Result<Uuid> {
         let session_id = Uuid::new_v4();
-        let bot_id = self.bot.as_ref().map(|b| b.id).unwrap_or_else(Uuid::new_v4);
+        let bot_id = self.bot.as_ref().map_or_else(Uuid::new_v4, |b| b.id);
 
         let session = Session {
             id: session_id,
@@ -208,13 +182,11 @@ impl BotRunner {
         Ok(session_id)
     }
 
-    /// End a session
     pub fn end_session(&mut self, session_id: Uuid) -> Result<()> {
         self.sessions.lock().unwrap().remove(&session_id);
         Ok(())
     }
 
-    /// Process a message in a session
     pub async fn process_message(
         &mut self,
         session_id: Uuid,
@@ -223,13 +195,11 @@ impl BotRunner {
         let start = Instant::now();
         let mut logs = Vec::new();
 
-        // Update metrics
         {
             let mut metrics = self.metrics.lock().unwrap();
             metrics.total_requests += 1;
         }
 
-        // Get session state
         let state = {
             let sessions = self.sessions.lock().unwrap();
             sessions.get(&session_id).cloned()
@@ -253,17 +223,15 @@ impl BotRunner {
             logs.push(LogEntry {
                 timestamp: chrono::Utc::now(),
                 level: LogLevel::Debug,
-                message: format!("Processing message: {}", message),
+                message: format!("Processing message: {message}"),
                 context: HashMap::new(),
             });
         }
 
-        // Execute bot logic (placeholder - would call actual bot runtime)
         let response = self.execute_bot_logic(session_id, message, &state).await;
 
         let execution_time = start.elapsed();
 
-        // Update metrics
         {
             let mut metrics = self.metrics.lock().unwrap();
             let latency_ms = execution_time.as_millis() as u64;
@@ -283,7 +251,6 @@ impl BotRunner {
             }
         }
 
-        // Update session state
         {
             let mut sessions = self.sessions.lock().unwrap();
             if let Some(session_state) = sessions.get_mut(&session_id) {
@@ -339,11 +306,11 @@ impl BotRunner {
         };
 
         let response_content = if script_content.is_empty() {
-            format!("Received: {}", message)
+            format!("Received: {message}")
         } else {
             self.evaluate_basic_script(&script_content, message, &state.context)
                 .await
-                .unwrap_or_else(|e| format!("Error: {}", e))
+                .unwrap_or_else(|e| format!("Error: {e}"))
         };
 
         let latency = start.elapsed().as_millis() as u64;
@@ -412,7 +379,7 @@ impl BotRunner {
         }
 
         if output.is_empty() {
-            output = format!("Processed: {}", input);
+            output = format!("Processed: {input}");
         }
 
         Ok(output)
@@ -421,14 +388,13 @@ impl BotRunner {
     fn expand_variables(&self, text: &str, variables: &HashMap<String, String>) -> String {
         let mut result = text.to_string();
         for (key, value) in variables {
-            result = result.replace(&format!("{{{}}}", key), value);
-            result = result.replace(&format!("${}", key), value);
+            result = result.replace(&format!("{{{key}}}"), value);
+            result = result.replace(&format!("${key}"), value);
             result = result.replace(key, value);
         }
         result
     }
 
-    /// Execute a BASIC script directly
     pub async fn execute_script(
         &mut self,
         script_name: &str,
@@ -438,7 +404,6 @@ impl BotRunner {
         let start = Instant::now();
         let mut logs = Vec::new();
 
-        // Get script from cache
         let script = {
             let cache = self.script_cache.lock().unwrap();
             cache.get(script_name).cloned()
@@ -453,7 +418,7 @@ impl BotRunner {
                     state: ConversationState::Error,
                     execution_time: start.elapsed(),
                     logs,
-                    error: Some(format!("Script '{}' not found", script_name)),
+                    error: Some(format!("Script '{script_name}' not found")),
                 });
             }
         };
@@ -462,12 +427,11 @@ impl BotRunner {
             logs.push(LogEntry {
                 timestamp: chrono::Utc::now(),
                 level: LogLevel::Debug,
-                message: format!("Executing script: {}", script_name),
+                message: format!("Executing script: {script_name}"),
                 context: HashMap::new(),
             });
         }
 
-        // Update metrics
         {
             let mut metrics = self.metrics.lock().unwrap();
             metrics.script_executions += 1;
@@ -508,22 +472,18 @@ impl BotRunner {
         self.evaluate_basic_script(script, input, &context).await
     }
 
-    /// Get current metrics
     pub fn metrics(&self) -> RunnerMetrics {
         self.metrics.lock().unwrap().clone()
     }
 
-    /// Reset metrics
     pub fn reset_metrics(&mut self) {
         *self.metrics.lock().unwrap() = RunnerMetrics::default();
     }
 
-    /// Get active session count
     pub fn active_session_count(&self) -> usize {
         self.sessions.lock().unwrap().len()
     }
 
-    /// Get session info
     pub fn get_session_info(&self, session_id: Uuid) -> Option<SessionInfo> {
         let sessions = self.sessions.lock().unwrap();
         sessions.get(&session_id).map(|s| SessionInfo {
@@ -536,7 +496,6 @@ impl BotRunner {
         })
     }
 
-    /// Set environment variable for bot execution
     pub fn set_env(&mut self, key: &str, value: &str) -> &mut Self {
         self.config
             .env_vars
@@ -544,8 +503,7 @@ impl BotRunner {
         self
     }
 
-    /// Set timeout
-    pub fn set_timeout(&mut self, timeout: Duration) -> &mut Self {
+    pub const fn set_timeout(&mut self, timeout: Duration) -> &mut Self {
         self.config.timeout = timeout;
         self
     }
@@ -557,7 +515,6 @@ impl Default for BotRunner {
     }
 }
 
-/// Information about a session
 #[derive(Debug, Clone)]
 pub struct SessionInfo {
     pub session_id: Uuid,
@@ -568,7 +525,6 @@ pub struct SessionInfo {
     pub duration: Duration,
 }
 
-// Implement Clone for SessionState
 impl Clone for SessionState {
     fn clone(&self) -> Self {
         Self {
@@ -721,7 +677,6 @@ mod tests {
     fn test_reset_metrics() {
         let mut runner = BotRunner::new();
 
-        // Manually update metrics
         {
             let mut metrics = runner.metrics.lock().unwrap();
             metrics.total_requests = 100;

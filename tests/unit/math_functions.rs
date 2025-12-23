@@ -1,11 +1,6 @@
-//! Unit tests for BASIC math functions from botserver
-//!
-//! These tests create a Rhai engine, register math functions the same way
-//! botserver does, and verify they work correctly.
 
 use rhai::Engine;
 
-// ABS Function Tests
 
 #[test]
 fn test_abs_positive() {
@@ -44,7 +39,6 @@ fn test_abs_float() {
     assert!((result - 3.14).abs() < f64::EPSILON);
 }
 
-// ROUND Function Tests
 
 #[test]
 fn test_round_up() {
@@ -82,7 +76,6 @@ fn test_round_negative() {
     assert_eq!(result, -4);
 }
 
-// INT / FIX Function Tests (Truncation)
 
 #[test]
 fn test_int_positive() {
@@ -111,7 +104,6 @@ fn test_fix_alias() {
     assert_eq!(result, 7);
 }
 
-// FLOOR / CEIL Function Tests
 
 #[test]
 fn test_floor_positive() {
@@ -149,7 +141,6 @@ fn test_ceil_negative() {
     assert_eq!(result, -3);
 }
 
-// MIN / MAX Function Tests
 
 #[test]
 fn test_max_basic() {
@@ -214,7 +205,6 @@ fn test_min_negative() {
     assert_eq!(result, -10);
 }
 
-// MOD Function Tests
 
 #[test]
 fn test_mod_basic() {
@@ -243,7 +233,6 @@ fn test_mod_smaller_dividend() {
     assert_eq!(result, 3);
 }
 
-// SGN Function Tests
 
 #[test]
 fn test_sgn_positive() {
@@ -272,7 +261,6 @@ fn test_sgn_zero() {
     assert_eq!(result, 0);
 }
 
-// SQRT / SQR Function Tests
 
 #[test]
 fn test_sqrt_perfect_square() {
@@ -301,7 +289,6 @@ fn test_sqr_alias() {
     assert!((result - 5.0).abs() < f64::EPSILON);
 }
 
-// POW Function Tests
 
 #[test]
 fn test_pow_basic() {
@@ -330,7 +317,6 @@ fn test_pow_square_root() {
     assert!((result - 3.0).abs() < 0.00001);
 }
 
-// LOG / LOG10 / EXP Function Tests
 
 #[test]
 fn test_log_e() {
@@ -369,7 +355,6 @@ fn test_exp_one() {
     assert!((result - std::f64::consts::E).abs() < 0.00001);
 }
 
-// Trigonometric Function Tests
 
 #[test]
 fn test_sin_zero() {
@@ -407,7 +392,6 @@ fn test_pi_constant() {
     assert!((result - std::f64::consts::PI).abs() < f64::EPSILON);
 }
 
-// VAL Function Tests (String to Number)
 
 #[test]
 fn test_val_integer() {
@@ -464,7 +448,6 @@ fn test_val_with_whitespace() {
     assert!((result - 42.0).abs() < f64::EPSILON);
 }
 
-// Combined Math Expression Tests
 
 #[test]
 fn test_combined_abs_sqrt() {
@@ -472,7 +455,6 @@ fn test_combined_abs_sqrt() {
     engine.register_fn("ABS", |n: f64| -> f64 { n.abs() });
     engine.register_fn("SQRT", |n: f64| -> f64 { n.sqrt() });
 
-    // SQRT(ABS(-16)) should be 4
     let result: f64 = engine.eval("SQRT(ABS(-16.0))").unwrap();
     assert!((result - 4.0).abs() < f64::EPSILON);
 }
@@ -482,7 +464,6 @@ fn test_combined_round_after_division() {
     let mut engine = Engine::new();
     engine.register_fn("ROUND", |n: f64| -> i64 { n.round() as i64 });
 
-    // ROUND(10.0 / 3.0) should be 3
     let result: i64 = engine.eval("ROUND(10.0 / 3.0)").unwrap();
     assert_eq!(result, 3);
 }
@@ -493,7 +474,6 @@ fn test_combined_max_of_abs() {
     engine.register_fn("ABS", |n: i64| -> i64 { n.abs() });
     engine.register_fn("MAX", |a: i64, b: i64| -> i64 { a.max(b) });
 
-    // MAX(ABS(-5), ABS(-10)) should be 10
     let result: i64 = engine.eval("MAX(ABS(-5), ABS(-10))").unwrap();
     assert_eq!(result, 10);
 }
@@ -502,7 +482,6 @@ fn test_combined_max_of_abs() {
 fn test_arithmetic_expression() {
     let engine = Engine::new();
 
-    // Test standard arithmetic without custom functions
     let result: i64 = engine.eval("2 + 3 * 4").unwrap();
     assert_eq!(result, 14); // Verify operator precedence
 

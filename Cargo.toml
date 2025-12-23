@@ -10,8 +10,9 @@ keywords = ["testing", "bot", "integration-testing", "e2e", "general-bots"]
 categories = ["development-tools::testing"]
 
 [dependencies]
-# The server we're testing - include drive and cache for required deps
-botserver = { path = "../botserver", default-features = false, features = ["chat", "llm", "automation", "tasks", "directory", "drive", "cache"] }
+# The server we're testing - enable all working features for testing
+# NOTE: vectordb, compliance, timeseries have compilation issues in botserver
+botserver = { path = "../botserver", features = ["full"] }
 botlib = { path = "../botlib", features = ["database"] }
 
 # Async runtime
@@ -109,19 +110,5 @@ required-features = ["e2e"]
 name = "bottest"
 path = "src/main.rs"
 
-[lints.rust]
-unused_imports = "warn"
-unused_variables = "warn"
-unused_mut = "warn"
-unsafe_code = "deny"
-missing_debug_implementations = "warn"
-
-[lints.clippy]
-all = "warn"
-pedantic = "warn"
-nursery = "warn"
-cargo = "warn"
-unwrap_used = "warn"
-expect_used = "warn"
-panic = "warn"
-todo = "warn"
+[lints]
+workspace = true
