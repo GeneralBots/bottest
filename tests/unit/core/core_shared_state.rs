@@ -1,10 +1,10 @@
-//! Unit tests migrated from src/core/shared/state.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[tokio::test]
     async fn test_extensions_insert_and_get() {

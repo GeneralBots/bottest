@@ -1,4 +1,4 @@
-//! Tests for basic module
+
 mod basic_compiler_goto_transform;
 mod basic_keywords_a2a_protocol;
 mod basic_keywords_add_bot;

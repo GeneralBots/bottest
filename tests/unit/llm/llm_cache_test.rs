@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/llm/cache_test.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,14 +7,14 @@
 
 use serde_json;
 
-// use super::super::...; - internal import removed
-// use super::super::...; - internal import removed
+
+
     use async_trait::async_trait;
     use serde_json::json;
     use std::sync::Arc;
     use tokio::sync::mpsc;
 
-    // Mock LLM provider for testing
+
     struct MockLLMProvider {
         response: String,
         call_count: std::sync::atomic::AtomicUsize,
@@ -69,7 +69,7 @@ use serde_json;
         }
     }
 
-    // Mock embedding service for testing
+
     struct MockEmbeddingService;
 
     #[async_trait]
@@ -78,7 +78,7 @@ use serde_json;
             &self,
             text: &str,
         ) -> Result<Vec<f32>, Box<dyn std::error::Error + Send + Sync>> {
-            // Return a simple hash-based embedding for testing
+
             let hash = text.bytes().fold(0u32, |acc, b| acc.wrapping_add(b as u32));
             Ok(vec![hash as f32 / 255.0; 10])
         }
@@ -88,7 +88,7 @@ use serde_json;
                 return 0.0;
             }
 
-            // Simple similarity based on difference
+
             let diff: f32 = embedding1
                 .iter()
                 .zip(embedding2.iter())
@@ -101,7 +101,7 @@ use serde_json;
 
     #[tokio::test]
     async fn test_exact_cache_hit() {
-        // Setup
+
         let mock_provider = Arc::new(MockLLMProvider::new("Test response"));
         let cache_client = Arc::new(redis::Client::open("redis://127.0.0.1/").unwrap());
 
@@ -121,7 +121,7 @@ use serde_json;
         let model = "test-model";
         let key = "test-key";
 
-        // First call should hit the underlying provider
+
         let result1 = cached_provider
             .generate(prompt, &messages, model, key)
             .await
@@ -129,18 +129,18 @@ use serde_json;
         assert_eq!(result1, "Test response");
         assert_eq!(mock_provider.get_call_count(), 1);
 
-        // Second call with same parameters should hit cache
+
         let result2 = cached_provider
             .generate(prompt, &messages, model, key)
             .await
             .unwrap();
         assert_eq!(result2, "Test response");
-        assert_eq!(mock_provider.get_call_count(), 1); // Should not increase
+        assert_eq!(mock_provider.get_call_count(), 1);
     }
 
     #[tokio::test]
     async fn test_semantic_cache_hit() {
-        // Setup
+
         let mock_provider = Arc::new(MockLLMProvider::new("Weather is sunny"));
         let cache_client = Arc::new(redis::Client::open("redis://127.0.0.1/").unwrap());
 
@@ -164,7 +164,7 @@ use serde_json;
         let model = "test-model";
         let key = "test-key";
 
-        // First call with one prompt
+
         let result1 = cached_provider
             .generate("What's the weather?", &messages, model, key)
             .await
@@ -172,22 +172,22 @@ use serde_json;
         assert_eq!(result1, "Weather is sunny");
         assert_eq!(mock_provider.get_call_count(), 1);
 
-        // Second call with similar prompt should hit semantic cache
+
         let result2 = cached_provider
             .generate("What is the weather?", &messages, model, key)
             .await
             .unwrap();
-        // With our mock embedding service, similar strings should match
-        // In a real scenario, this would depend on actual semantic similarity
-        // For this test, we're checking that the provider is called twice
-        // (since our mock embedding is too simple for real semantic matching)
+
+
+
+
         assert_eq!(result2, "Weather is sunny");
         assert_eq!(mock_provider.get_call_count(), 2);
     }
 
     #[tokio::test]
     async fn test_cache_miss_different_model() {
-        // Setup
+
         let mock_provider = Arc::new(MockLLMProvider::new("Response"));
         let cache_client = Arc::new(redis::Client::open("redis://127.0.0.1/").unwrap());
 
@@ -199,14 +199,14 @@ use serde_json;
         let messages = json!([{"role": "user", "content": prompt}]);
         let key = "test-key";
 
-        // First call with model1
+
         let _ = cached_provider
             .generate(prompt, &messages, "model1", key)
             .await
             .unwrap();
         assert_eq!(mock_provider.get_call_count(), 1);
 
-        // Second call with different model should miss cache
+
         let _ = cached_provider
             .generate(prompt, &messages, "model2", key)
             .await
@@ -216,7 +216,7 @@ use serde_json;
 
     #[tokio::test]
     async fn test_cache_statistics() {
-        // Setup
+
         let mock_provider = Arc::new(MockLLMProvider::new("Response"));
         let cache_client = Arc::new(redis::Client::open("redis://127.0.0.1/").unwrap());
 
@@ -230,10 +230,10 @@ use serde_json;
 
         let cached_provider = CachedLLMProvider::new(mock_provider, cache_client, config, None);
 
-        // Clear any existing cache
+
         let _ = cached_provider.clear_cache(None).await;
 
-        // Generate some cache entries
+
         let messages = json!([]);
         for i in 0..5 {
             let _ = cached_provider
@@ -241,14 +241,14 @@ use serde_json;
                 .await;
         }
 
-        // Hit some cache entries
+
         for i in 0..3 {
             let _ = cached_provider
                 .generate(&format!("prompt_{}", i), &messages, "model", "key")
                 .await;
         }
 
-        // Get statistics
+
         let stats = cached_provider.get_cache_stats().await.unwrap();
         assert_eq!(stats.total_entries, 5);
         assert_eq!(stats.total_hits, 3);
@@ -258,7 +258,7 @@ use serde_json;
 
     #[tokio::test]
     async fn test_stream_generation_with_cache() {
-        // Setup
+
         let mock_provider = Arc::new(MockLLMProvider::new("Streamed response"));
         let cache_client = Arc::new(redis::Client::open("redis://127.0.0.1/").unwrap());
 
@@ -278,7 +278,7 @@ use serde_json;
         let model = "test-model";
         let key = "test-key";
 
-        // First stream call
+
         let (tx1, mut rx1) = mpsc::channel(100);
         cached_provider
             .generate_stream(prompt, &messages, tx1, model, key)
@@ -292,7 +292,7 @@ use serde_json;
         assert_eq!(result1, "Streamed response");
         assert_eq!(mock_provider.get_call_count(), 1);
 
-        // Second stream call should use cache
+
         let (tx2, mut rx2) = mpsc::channel(100);
         cached_provider
             .generate_stream(prompt, &messages, tx2, model, key)
@@ -304,19 +304,19 @@ use serde_json;
             result2.push_str(&chunk);
         }
         assert!(result2.contains("Streamed response"));
-        assert_eq!(mock_provider.get_call_count(), 1); // Should still be 1
+        assert_eq!(mock_provider.get_call_count(), 1);
     }
 
     #[test]
 
-    
+
     fn test_cosine_similarity_calculation() {
         let service = LocalEmbeddingService::new(
             "http://localhost:8082".to_string(),
             "test-model".to_string(),
         );
 
-        // Test identical vectors
+
         let vec1 = vec![0.5, 0.5, 0.5];
         let vec2 = vec![0.5, 0.5, 0.5];
         let similarity = tokio::runtime::Runtime::new()
@@ -324,7 +324,7 @@ use serde_json;
             .block_on(service.compute_similarity(&vec1, &vec2));
         assert_eq!(similarity, 1.0);
 
-        // Test orthogonal vectors
+
         let vec3 = vec![1.0, 0.0];
         let vec4 = vec![0.0, 1.0];
         let similarity = tokio::runtime::Runtime::new()
@@ -332,7 +332,7 @@ use serde_json;
             .block_on(service.compute_similarity(&vec3, &vec4));
         assert_eq!(similarity, 0.0);
 
-        // Test opposite vectors
+
         let vec5 = vec![1.0, 1.0];
         let vec6 = vec![-1.0, -1.0];
         let similarity = tokio::runtime::Runtime::new()

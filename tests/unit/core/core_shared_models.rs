@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/core/shared/models.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_trigger_kind_conversion() {
         assert_eq!(TriggerKind::from_i32(0), Some(TriggerKind::Scheduled));
         assert_eq!(TriggerKind::from_i32(1), Some(TriggerKind::TableUpdate));
@@ -23,7 +23,7 @@
 
     #[test]
 
-    
+
     fn test_trigger_kind_as_i32() {
         assert_eq!(TriggerKind::Scheduled as i32, 0);
         assert_eq!(TriggerKind::TableUpdate as i32, 1);

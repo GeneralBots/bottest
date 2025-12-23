@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/datetime/now.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_create_datetime_map() {
         let now = Local::now();
         let map = create_datetime_map(now);
@@ -28,7 +28,7 @@
 
     #[test]
 
-    
+
     fn test_year_extraction() {
         let now = Local::now();
         let map = create_datetime_map(now);
@@ -39,7 +39,7 @@
 
     #[test]
 
-    
+
     fn test_month_range() {
         let now = Local::now();
         let map = create_datetime_map(now);
@@ -50,7 +50,7 @@
 
     #[test]
 
-    
+
     fn test_hour12_range() {
         let now = Local::now();
         let map = create_datetime_map(now);
@@ -61,7 +61,7 @@
 
     #[test]
 
-    
+
     fn test_quarter_calculation() {
         let now = Local::now();
         let map = create_datetime_map(now);

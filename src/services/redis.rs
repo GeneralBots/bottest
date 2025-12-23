@@ -287,7 +287,7 @@ impl RedisService {
         Ok(val)
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn connection_string(&self) -> String {
         match &self.password {
             Some(pw) => format!("redis://:{}@127.0.0.1:{}", pw, self.port),
@@ -295,17 +295,17 @@ impl RedisService {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn url(&self) -> String {
         self.connection_string()
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn port(&self) -> u16 {
         self.port
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn host_port(&self) -> (&str, u16) {
         ("127.0.0.1", self.port)
     }

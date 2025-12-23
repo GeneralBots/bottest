@@ -1,41 +1,41 @@
-//! Unit tests migrated from src/core/kb/document_processor.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_chunk_creation() {
         let processor = DocumentProcessor::default();
         let text = "This is a test document with some content that needs to be chunked properly. "
             .repeat(20);
         let chunks = processor.create_chunks(&text, Path::new("test.txt"));
 
-        // Verify chunks are created
+
         assert!(!chunks.is_empty());
 
-        // Verify chunk size
+
         for chunk in &chunks {
             assert!(chunk.content.len() <= processor.chunk_size);
         }
 
-        // Verify overlap exists
+
         if chunks.len() > 1 {
             let first_end = &chunks[0].content[chunks[0].content.len().saturating_sub(100)..];
             let second_start = &chunks[1].content[..100.min(chunks[1].content.len())];
 
-            // There should be some overlap
+
             assert!(first_end.chars().any(|c| second_start.contains(c)));
         }
     }
 
     #[test]
 
-    
+
     fn test_format_detection() {
         assert_eq!(
             DocumentFormat::from_extension(Path::new("test.pdf")),
@@ -61,7 +61,7 @@
 
     #[test]
 
-    
+
     fn test_text_cleaning() {
         let processor = DocumentProcessor::default();
         let dirty_text = "  This   is\n\n\na    test\r\nwith  multiple    spaces  ";

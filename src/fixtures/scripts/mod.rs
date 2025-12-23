@@ -1,7 +1,7 @@
 
 use std::collections::HashMap;
 
-#[must_use] 
+#[must_use]
 pub fn get_script(name: &str) -> Option<&'static str> {
     match name {
         "greeting" => Some(GREETING_SCRIPT),
@@ -18,7 +18,7 @@ pub fn get_script(name: &str) -> Option<&'static str> {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn available_scripts() -> Vec<&'static str> {
     vec![
         "greeting",
@@ -34,7 +34,7 @@ pub fn available_scripts() -> Vec<&'static str> {
     ]
 }
 
-#[must_use] 
+#[must_use]
 pub fn all_scripts() -> HashMap<&'static str, &'static str> {
     let mut scripts = HashMap::new();
     for name in available_scripts() {

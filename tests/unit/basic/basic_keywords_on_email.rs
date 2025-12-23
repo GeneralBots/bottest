@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/on_email.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_email_monitor_struct() {
         let monitor = EmailMonitor {
             id: Uuid::new_v4(),
@@ -28,7 +28,7 @@
 
     #[test]
 
-    
+
     fn test_email_monitor_with_filters() {
         let monitor = EmailMonitor {
             id: Uuid::new_v4(),
@@ -47,7 +47,7 @@
 
     #[test]
 
-    
+
     fn test_email_attachment_struct() {
         let attachment = EmailAttachment {
             filename: "document.pdf".to_string(),
@@ -62,7 +62,7 @@
 
     #[test]
 
-    
+
     fn test_email_received_event_struct() {
         let event = EmailReceivedEvent {
             id: Uuid::new_v4(),
@@ -89,7 +89,7 @@
 
     #[test]
 
-    
+
     fn test_parse_email_path_basic() {
         let result = parse_email_path("email://user@gmail.com");
         assert!(result.is_some());
@@ -100,7 +100,7 @@
 
     #[test]
 
-    
+
     fn test_parse_email_path_with_folder() {
         let result = parse_email_path("email://user@gmail.com/INBOX");
         assert!(result.is_some());
@@ -111,7 +111,7 @@
 
     #[test]
 
-    
+
     fn test_parse_email_path_invalid() {
         assert!(parse_email_path("user@gmail.com").is_none());
         assert!(parse_email_path("mailto:user@gmail.com").is_none());
@@ -120,7 +120,7 @@
 
     #[test]
 
-    
+
     fn test_is_email_path() {
         assert!(is_email_path("email://user@gmail.com"));
         assert!(is_email_path("email://user@company.com/INBOX"));
@@ -131,7 +131,7 @@
 
     #[test]
 
-    
+
     fn test_sanitize_email_for_filename() {
         assert_eq!(
             sanitize_email_for_filename("user@gmail.com"),
@@ -149,7 +149,7 @@
 
     #[test]
 
-    
+
     fn test_email_event_without_attachments() {
         let event = EmailReceivedEvent {
             id: Uuid::new_v4(),
@@ -170,7 +170,7 @@
 
     #[test]
 
-    
+
     fn test_multiple_to_addresses() {
         let event = EmailReceivedEvent {
             id: Uuid::new_v4(),
@@ -196,7 +196,7 @@
 
     #[test]
 
-    
+
     fn test_multiple_attachments() {
         let attachments = vec![
             EmailAttachment {

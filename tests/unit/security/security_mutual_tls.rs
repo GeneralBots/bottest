@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/security/mutual_tls.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_mtls_config_default() {
         let config = MtlsConfig::default();
         assert!(!config.enabled);
@@ -19,7 +19,7 @@
 
     #[test]
 
-    
+
     fn test_mtls_config_new() {
         let config = MtlsConfig::new(
             Some("ca_cert".to_string()),
@@ -32,7 +32,7 @@
 
     #[test]
 
-    
+
     fn test_mtls_config_partial() {
         let config = MtlsConfig::new(Some("ca_cert".to_string()), None, None);
         assert!(!config.enabled);
@@ -41,7 +41,7 @@
 
     #[test]
 
-    
+
     fn test_mtls_manager_validation() {
         let config = MtlsConfig {
             enabled: true,
@@ -61,7 +61,7 @@
 
     #[test]
 
-    
+
     fn test_mtls_manager_invalid_cert() {
         let config = MtlsConfig {
             enabled: true,

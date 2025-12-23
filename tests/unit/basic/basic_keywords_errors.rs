@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/errors/mod.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -12,7 +12,7 @@ use rhai::Dynamic;
     #[test]
 
 
-    
+
     fn test_error_map() {
         use rhai::{Dynamic, Map};
 

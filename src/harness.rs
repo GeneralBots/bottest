@@ -35,7 +35,7 @@ impl Default for TestConfig {
 }
 
 impl TestConfig {
-    #[must_use] 
+    #[must_use]
     pub const fn minimal() -> Self {
         Self {
             postgres: false,
@@ -47,31 +47,31 @@ impl TestConfig {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn full() -> Self {
         Self {
-            postgres: false, // Botserver will bootstrap its own PostgreSQL
-            minio: false,    // Botserver will bootstrap its own MinIO
-            redis: false,    // Botserver will bootstrap its own Redis
+            postgres: false,
+            minio: false,
+            redis: false,
             mock_zitadel: true,
             mock_llm: true,
-            run_migrations: false, // Let botserver run its own migrations
+            run_migrations: false,
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn auto_install() -> Self {
         Self {
-            postgres: false, // Botserver will install PostgreSQL
-            minio: false,    // Botserver will install MinIO
-            redis: false,    // Botserver will install Redis
+            postgres: false,
+            minio: false,
+            redis: false,
             mock_zitadel: true,
             mock_llm: true,
-            run_migrations: false, // Botserver handles migrations
+            run_migrations: false,
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn database_only() -> Self {
         Self {
             postgres: true,
@@ -80,7 +80,7 @@ impl TestConfig {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn use_existing_stack() -> Self {
         Self {
             postgres: false,
@@ -450,7 +450,7 @@ pub struct BotServerInstance {
 }
 
 impl BotServerInstance {
-    #[must_use] 
+    #[must_use]
     pub fn existing(url: &str) -> Self {
         let port = url
             .split(':')
@@ -482,9 +482,9 @@ impl BotServerInstance {
         let botserver_bin_path =
             std::fs::canonicalize(&botserver_bin).unwrap_or_else(|_| PathBuf::from(&botserver_bin));
         let botserver_dir = botserver_bin_path
-            .parent() // target/debug
-            .and_then(|p| p.parent()) // target
-            .and_then(|p| p.parent()) // botserver
+            .parent()
+            .and_then(|p| p.parent())
+            .and_then(|p| p.parent())
             .map(std::path::Path::to_path_buf)
             .unwrap_or_else(|| {
                 std::fs::canonicalize("../botserver")
@@ -514,7 +514,7 @@ impl BotServerInstance {
             .ok();
 
         if process.is_some() {
-            let max_wait = 120; // 2 minutes for LLM
+            let max_wait = 120;
             log::info!("Waiting for botserver to start (max {max_wait}s)...");
 
             let client = reqwest::Client::builder()
@@ -562,7 +562,7 @@ pub struct BotUIInstance {
 }
 
 impl BotUIInstance {
-    #[must_use] 
+    #[must_use]
     pub fn existing(url: &str) -> Self {
         let port = url
             .split(':')
@@ -597,9 +597,9 @@ impl BotUIInstance {
         let botui_bin_path =
             std::fs::canonicalize(&botui_bin).unwrap_or_else(|_| PathBuf::from(&botui_bin));
         let botui_dir = botui_bin_path
-            .parent() // target/debug
-            .and_then(|p| p.parent()) // target
-            .and_then(|p| p.parent()) // botui
+            .parent()
+            .and_then(|p| p.parent())
+            .and_then(|p| p.parent())
             .map(std::path::Path::to_path_buf)
             .unwrap_or_else(|| {
                 std::fs::canonicalize("../botui").unwrap_or_else(|_| PathBuf::from("../botui"))
@@ -651,7 +651,7 @@ impl BotUIInstance {
         })
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn is_running(&self) -> bool {
         self.process.is_some()
     }
@@ -694,9 +694,9 @@ impl BotServerInstance {
         let botserver_bin_path =
             std::fs::canonicalize(&botserver_bin).unwrap_or_else(|_| PathBuf::from(&botserver_bin));
         let botserver_dir = botserver_bin_path
-            .parent() // target/release
-            .and_then(|p| p.parent()) // target
-            .and_then(|p| p.parent()) // botserver
+            .parent()
+            .and_then(|p| p.parent())
+            .and_then(|p| p.parent())
             .map(std::path::Path::to_path_buf)
             .unwrap_or_else(|| {
                 std::fs::canonicalize("../botserver")
@@ -712,13 +712,13 @@ impl BotServerInstance {
         log::info!("Using installers from: {installers_path:?}");
 
         let process = std::process::Command::new(&botserver_bin_path)
-            .current_dir(&botserver_dir) // Run from botserver dir to find installers
+            .current_dir(&botserver_dir)
             .arg("--stack-path")
             .arg(&stack_path)
             .arg("--port")
             .arg(port.to_string())
             .arg("--noconsole")
-            .env_remove("RUST_LOG") // Remove to avoid logger conflict
+            .env_remove("RUST_LOG")
             .env("BOTSERVER_INSTALLERS_PATH", &installers_path)
             .env("DATABASE_URL", ctx.database_url())
             .env("DIRECTORY_URL", ctx.zitadel_url())
@@ -764,7 +764,7 @@ impl BotServerInstance {
         })
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn is_running(&self) -> bool {
         self.process.is_some()
     }
@@ -1032,12 +1032,12 @@ mod tests {
     #[test]
     fn test_config_full() {
         let config = TestConfig::full();
-        assert!(!config.postgres); // Botserver handles PostgreSQL
-        assert!(!config.minio); // Botserver handles MinIO
-        assert!(!config.redis); // Botserver handles Redis
+        assert!(!config.postgres);
+        assert!(!config.minio);
+        assert!(!config.redis);
         assert!(config.mock_zitadel);
         assert!(config.mock_llm);
-        assert!(!config.run_migrations); // Botserver handles migrations
+        assert!(!config.run_migrations);
     }
 
     #[test]

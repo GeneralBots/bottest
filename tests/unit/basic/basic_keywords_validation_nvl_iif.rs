@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/validation/nvl_iif.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -9,7 +9,7 @@
     #[test]
 
 
-    
+
     fn test_nvl_logic() {
         let value = "";
         let default = "default";
@@ -19,7 +19,7 @@
 
     #[test]
 
-    
+
     fn test_nvl_with_value() {
         let value = "actual";
         let default = "default";
@@ -29,7 +29,7 @@
 
     #[test]
 
-    
+
     fn test_iif_true() {
         let condition = true;
         let result = if condition { "yes" } else { "no" };
@@ -38,7 +38,7 @@
 
     #[test]
 
-    
+
     fn test_iif_false() {
         let condition = false;
         let result = if condition { "yes" } else { "no" };
@@ -47,7 +47,7 @@
 
     #[test]
 
-    
+
     fn test_choose() {
         let index = 2;
         let values = vec!["first", "second", "third"];

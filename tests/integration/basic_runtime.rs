@@ -186,13 +186,13 @@ fn test_instr_function() {
     let engine = create_basic_engine();
 
     let result: i64 = engine.eval(r#"INSTR("Hello World", "World")"#).unwrap();
-    assert_eq!(result, 7); // 1-based index
+    assert_eq!(result, 7);
 
     let result: i64 = engine.eval(r#"INSTR("Hello World", "xyz")"#).unwrap();
-    assert_eq!(result, 0); // Not found
+    assert_eq!(result, 0);
 
     let result: i64 = engine.eval(r#"INSTR("Hello World", "o")"#).unwrap();
-    assert_eq!(result, 5); // First occurrence
+    assert_eq!(result, 5);
 }
 
 #[test]
@@ -483,7 +483,7 @@ fn test_while_loop() {
     "#,
         )
         .unwrap();
-    assert_eq!(result, 10); // 0 + 1 + 2 + 3 + 4 = 10
+    assert_eq!(result, 10);
 }
 
 
@@ -494,7 +494,7 @@ fn test_division_by_zero() {
     let result = engine.eval::<f64>("10.0 / 0.0");
     match result {
         Ok(val) => assert!(val.is_infinite() || val.is_nan()),
-        Err(_) => (), // Division by zero error is also acceptable
+        Err(_) => (),
     }
 }
 

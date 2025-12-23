@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/agent_reflection.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_reflection_type_from_str() {
         assert_eq!(
             ReflectionType::from("conversation_quality"),
@@ -30,7 +30,7 @@
 
     #[test]
 
-    
+
     fn test_reflection_config_default() {
         let config = ReflectionConfig::default();
         assert!(!config.enabled);
@@ -40,7 +40,7 @@
 
     #[test]
 
-    
+
     fn test_reflection_result_new() {
         let bot_id = Uuid::new_v4();
         let session_id = Uuid::new_v4();
@@ -54,7 +54,7 @@
 
     #[test]
 
-    
+
     fn test_reflection_result_from_json() {
         let json_response = r#"{
             "score": 7.5,
@@ -79,7 +79,7 @@
 
     #[test]
 
-    
+
     fn test_reflection_result_needs_improvement() {
         let mut result =
             ReflectionResult::new(Uuid::new_v4(), Uuid::new_v4(), ReflectionType::Performance);
@@ -93,7 +93,7 @@
 
     #[test]
 
-    
+
     fn test_extract_insights_from_text() {
         let text = "Here are some insights:\n\
                     1. Users prefer short responses\n\
@@ -107,7 +107,7 @@
 
     #[test]
 
-    
+
     fn test_reflection_type_prompt_template() {
         let template = ReflectionType::ConversationQuality.prompt_template();
         assert!(template.contains("{conversation}"));
@@ -116,7 +116,7 @@
 
     #[test]
 
-    
+
     fn test_reflection_result_summary() {
         let mut result =
             ReflectionResult::new(Uuid::new_v4(), Uuid::new_v4(), ReflectionType::Performance);
@@ -128,6 +128,6 @@
         let summary = result.summary();
         assert!(summary.contains("7.5"));
         assert!(summary.contains("15"));
-        assert!(summary.contains("2")); // insights count
-        assert!(summary.contains("1")); // improvements count
+        assert!(summary.contains("2"));
+        assert!(summary.contains("1"));
     }

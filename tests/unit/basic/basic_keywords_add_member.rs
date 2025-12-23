@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/add_member.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_validate_role() {
         assert_eq!(validate_role("admin"), "admin");
         assert_eq!(validate_role("ADMIN"), "admin");
@@ -19,7 +19,7 @@
 
     #[test]
 
-    
+
     fn test_get_permissions_for_role() {
         let admin_perms = get_permissions_for_role("admin");
         assert!(admin_perms.get("read").unwrap().as_bool().unwrap());

@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/send_mail.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_apply_template_variables() {
         let template = "Hello {{name}}, your order {{order_id}} is ready!";
         let vars = json!({
@@ -23,7 +23,7 @@
 
     #[test]
 
-    
+
     fn test_extract_template_subject() {
         let content = "Subject: Welcome to our service\n\nHello there!";
         let subject = extract_template_subject(content);

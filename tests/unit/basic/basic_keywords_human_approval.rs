@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/human_approval.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use serde_json;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_default_config() {
         let config = ApprovalConfig::default();
         assert!(config.enabled);
@@ -21,7 +21,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_create_request() {
         let manager = ApprovalManager::new(ApprovalConfig::default());
         let request = manager.create_request(
@@ -44,7 +44,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_is_expired() {
         let manager = ApprovalManager::new(ApprovalConfig::default());
         let mut request = manager.create_request(
@@ -56,20 +56,20 @@ use serde_json;
             "test@example.com",
             serde_json::json!({}),
             "Test",
-            Some(1), // 1 second timeout
+            Some(1),
             None,
         );
 
         assert!(!manager.is_expired(&request));
 
-        // Manually set expired time
+
         request.expires_at = Utc::now() - Duration::seconds(10);
         assert!(manager.is_expired(&request));
     }
 
     #[test]
 
-    
+
     fn test_process_decision() {
         let manager = ApprovalManager::new(ApprovalConfig::default());
         let mut request = manager.create_request(
@@ -100,7 +100,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_evaluate_condition() {
         let manager = ApprovalManager::new(ApprovalConfig::default());
         let context = serde_json::json!({
@@ -121,7 +121,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_handle_timeout_with_default() {
         let manager = ApprovalManager::new(ApprovalConfig::default());
         let mut request = manager.create_request(
@@ -146,7 +146,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_request_to_dynamic() {
         let manager = ApprovalManager::new(ApprovalConfig::default());
         let request = manager.create_request(

@@ -483,7 +483,7 @@ fn test_arithmetic_expression() {
     let engine = Engine::new();
 
     let result: i64 = engine.eval("2 + 3 * 4").unwrap();
-    assert_eq!(result, 14); // Verify operator precedence
+    assert_eq!(result, 14);
 
     let result: i64 = engine.eval("(2 + 3) * 4").unwrap();
     assert_eq!(result, 20);

@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/table_definition.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_parse_table_definition() {
         let source = r#"
 TABLE Contacts ON maria
@@ -38,7 +38,7 @@ END TABLE
 
     #[test]
 
-    
+
     fn test_parse_field_with_precision() {
         let field = parse_field_definition("Preco double(10,2)", 0).unwrap();
         assert_eq!(field.name, "Preco");
@@ -49,7 +49,7 @@ END TABLE
 
     #[test]
 
-    
+
     fn test_generate_create_table_sql() {
         let table = TableDefinition {
             name: "TestTable".to_string(),
@@ -89,7 +89,7 @@ END TABLE
 
     #[test]
 
-    
+
     fn test_map_types() {
         let field = FieldDefinition {
             name: "test".to_string(),
@@ -121,7 +121,7 @@ END TABLE
 
     #[test]
 
-    
+
     fn test_sanitize_identifier() {
         assert_eq!(sanitize_identifier("valid_name"), "valid_name");
         assert_eq!(sanitize_identifier("DROP TABLE; --"), "DROPTABLE");
@@ -130,7 +130,7 @@ END TABLE
 
     #[test]
 
-    
+
     fn test_build_connection_string() {
         let conn = ExternalConnection {
             name: "test".to_string(),

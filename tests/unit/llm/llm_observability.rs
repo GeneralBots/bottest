@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/llm/observability.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_default_config() {
         let config = ObservabilityConfig::default();
         assert!(config.enabled);
@@ -18,26 +18,26 @@
 
     #[test]
 
-    
+
     fn test_calculate_cost() {
         let manager = ObservabilityManager::new(ObservabilityConfig::default());
 
-        // GPT-4 cost
+
         let cost = manager.calculate_cost("gpt-4", 1000, 500);
         assert!(cost > 0.0);
 
-        // Local model (free)
+
         let cost = manager.calculate_cost("local", 1000, 500);
         assert_eq!(cost, 0.0);
 
-        // Unknown model defaults to free
+
         let cost = manager.calculate_cost("unknown-model", 1000, 500);
         assert_eq!(cost, 0.0);
     }
 
     #[test]
 
-    
+
     fn test_quick_stats() {
         let manager = ObservabilityManager::new(ObservabilityConfig::default());
         let stats = manager.get_quick_stats();
@@ -49,7 +49,7 @@
 
     #[test]
 
-    
+
     fn test_start_span() {
         let manager = ObservabilityManager::new(ObservabilityConfig::default());
         let trace_id = Uuid::new_v4();
@@ -63,13 +63,13 @@
 
     #[test]
 
-    
+
     fn test_end_span() {
         let manager = ObservabilityManager::new(ObservabilityConfig::default());
         let trace_id = Uuid::new_v4();
         let mut span = manager.start_span(trace_id, "test_operation", "test_component", None);
 
-        // Simulate some work
+
         std::thread::sleep(std::time::Duration::from_millis(10));
 
         manager.end_span(&mut span, TraceStatus::Ok, None);
@@ -93,18 +93,18 @@
     async fn test_budget_check() {
         let manager = ObservabilityManager::new(ObservabilityConfig::default());
 
-        // Small cost should be OK
+
         let result = manager.check_budget(1.0).await;
         assert_eq!(result, BudgetCheckResult::Ok);
 
-        // Large cost should exceed daily
+
         let result = manager.check_budget(150.0).await;
         assert_eq!(result, BudgetCheckResult::DailyExceeded);
     }
 
     #[test]
 
-    
+
     fn test_metrics_to_dynamic() {
         let metrics = LLMRequestMetrics {
             request_id: Uuid::new_v4(),

@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/crm/attendance.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 use botserver::basic::keywords::crm::attendance::create_fallback_tips;
 use rhai::Map;

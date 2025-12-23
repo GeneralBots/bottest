@@ -343,32 +343,32 @@ impl MinioService {
         Ok(())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn endpoint(&self) -> String {
         format!("http://127.0.0.1:{}", self.api_port)
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn console_url(&self) -> String {
         format!("http://127.0.0.1:{}", self.console_port)
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn api_port(&self) -> u16 {
         self.api_port
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn console_port(&self) -> u16 {
         self.console_port
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn credentials(&self) -> (String, String) {
         (self.access_key.clone(), self.secret_key.clone())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn s3_config(&self) -> HashMap<String, String> {
         let mut config = HashMap::new();
         config.insert("endpoint_url".to_string(), self.endpoint());

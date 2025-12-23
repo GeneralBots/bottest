@@ -1,4 +1,4 @@
-//! Tests for core module
+
 mod core_bot_manager;
 mod core_config_model_routing_config;
 mod core_config_sse_config;

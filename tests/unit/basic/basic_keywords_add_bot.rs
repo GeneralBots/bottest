@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/add_bot.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_trigger_from_keywords() {
         let trigger = BotTrigger::from_keywords(vec!["finance".to_string(), "money".to_string()]);
         assert_eq!(trigger.trigger_type, TriggerType::Keyword);
@@ -17,7 +17,7 @@
 
     #[test]
 
-    
+
     fn test_match_bot_triggers() {
         let bots = vec![
             SessionBot {
@@ -57,7 +57,7 @@
 
     #[test]
 
-    
+
     fn test_match_tool_triggers() {
         let bots = vec![SessionBot {
             id: Uuid::new_v4(),

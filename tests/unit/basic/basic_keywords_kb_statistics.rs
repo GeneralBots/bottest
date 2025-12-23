@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/kb_statistics.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use serde_json;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_collection_stats_serialization() {
         let stats = CollectionStats {
             name: "test_collection".to_string(),
@@ -31,7 +31,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_kb_statistics_serialization() {
         let stats = KBStatistics {
             total_collections: 3,

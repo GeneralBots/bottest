@@ -1,21 +1,21 @@
-//! Unit tests migrated from src/basic/keywords/set_schedule.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_every_minute() {
         assert_eq!(parse_natural_schedule("every minute").unwrap(), "* * * * *");
     }
 
     #[test]
 
-    
+
     fn test_every_n_minutes() {
         assert_eq!(
             parse_natural_schedule("every 5 minutes").unwrap(),
@@ -33,7 +33,7 @@
 
     #[test]
 
-    
+
     fn test_every_hour() {
         assert_eq!(parse_natural_schedule("every hour").unwrap(), "0 * * * *");
         assert_eq!(parse_natural_schedule("hourly").unwrap(), "0 * * * *");
@@ -41,7 +41,7 @@
 
     #[test]
 
-    
+
     fn test_every_n_hours() {
         assert_eq!(
             parse_natural_schedule("every 2 hours").unwrap(),
@@ -55,7 +55,7 @@
 
     #[test]
 
-    
+
     fn test_every_day() {
         assert_eq!(parse_natural_schedule("every day").unwrap(), "0 0 * * *");
         assert_eq!(parse_natural_schedule("daily").unwrap(), "0 0 * * *");
@@ -63,7 +63,7 @@
 
     #[test]
 
-    
+
     fn test_every_week() {
         assert_eq!(parse_natural_schedule("every week").unwrap(), "0 0 * * 0");
         assert_eq!(parse_natural_schedule("weekly").unwrap(), "0 0 * * 0");
@@ -71,7 +71,7 @@
 
     #[test]
 
-    
+
     fn test_every_month() {
         assert_eq!(parse_natural_schedule("every month").unwrap(), "0 0 1 * *");
         assert_eq!(parse_natural_schedule("monthly").unwrap(), "0 0 1 * *");
@@ -79,7 +79,7 @@
 
     #[test]
 
-    
+
     fn test_at_time() {
         assert_eq!(parse_natural_schedule("at 9am").unwrap(), "0 9 * * *");
         assert_eq!(parse_natural_schedule("at 9:30am").unwrap(), "30 9 * * *");
@@ -91,7 +91,7 @@
 
     #[test]
 
-    
+
     fn test_day_of_week() {
         assert_eq!(parse_natural_schedule("every monday").unwrap(), "0 0 * * 1");
         assert_eq!(parse_natural_schedule("every friday").unwrap(), "0 0 * * 5");
@@ -100,7 +100,7 @@
 
     #[test]
 
-    
+
     fn test_day_with_time() {
         assert_eq!(
             parse_natural_schedule("every monday at 9am").unwrap(),
@@ -114,7 +114,7 @@
 
     #[test]
 
-    
+
     fn test_weekdays() {
         assert_eq!(parse_natural_schedule("weekdays").unwrap(), "0 0 * * 1-5");
         assert_eq!(
@@ -129,7 +129,7 @@
 
     #[test]
 
-    
+
     fn test_weekends() {
         assert_eq!(parse_natural_schedule("weekends").unwrap(), "0 0 * * 0,6");
         assert_eq!(
@@ -140,7 +140,7 @@
 
     #[test]
 
-    
+
     fn test_combined() {
         assert_eq!(
             parse_natural_schedule("every day at 9am").unwrap(),
@@ -154,7 +154,7 @@
 
     #[test]
 
-    
+
     fn test_hour_range() {
         assert_eq!(
             parse_natural_schedule("every hour from 9 to 17").unwrap(),
@@ -164,7 +164,7 @@
 
     #[test]
 
-    
+
     fn test_business_hours() {
         assert_eq!(
             parse_natural_schedule("business hours").unwrap(),
@@ -182,7 +182,7 @@
 
     #[test]
 
-    
+
     fn test_raw_cron_passthrough() {
         assert_eq!(parse_natural_schedule("0 * * * *").unwrap(), "0 * * * *");
         assert_eq!(
@@ -197,8 +197,8 @@
 
     #[test]
 
-    
+
     fn test_invalid_input() {
         assert!(parse_natural_schedule("potato salad").is_err());
-        assert!(parse_natural_schedule("every 100 minutes").is_err()); // > 59
+        assert!(parse_natural_schedule("every 100 minutes").is_err());
     }

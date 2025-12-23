@@ -46,7 +46,7 @@ pub struct AssertionResult {
 }
 
 impl AssertionResult {
-    #[must_use] 
+    #[must_use]
     pub fn pass(message: &str) -> Self {
         Self {
             passed: true,
@@ -56,7 +56,7 @@ impl AssertionResult {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn fail(message: &str, expected: &str, actual: &str) -> Self {
         Self {
             passed: false,

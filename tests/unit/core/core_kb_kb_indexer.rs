@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/core/kb/kb_indexer.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_collection_name_generation() {
         let bot_name = "mybot";
         let kb_name = "docs";
@@ -18,7 +18,7 @@
 
     #[test]
 
-    
+
     fn test_qdrant_point_creation() {
         let chunk = TextChunk {
             content: "Test content".to_string(),

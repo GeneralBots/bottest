@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/episodic_memory.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use serde_json;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_default_config() {
         let config = EpisodicMemoryConfig::default();
         assert!(config.enabled);
@@ -22,7 +22,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_should_summarize() {
         let manager = EpisodicMemoryManager::new(EpisodicMemoryConfig {
             enabled: true,
@@ -39,20 +39,20 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_extract_json() {
-        // Test with code block
+
         let response = "Here's the summary:\n```json\n{\"summary\": \"test\"}\n```\n";
         assert!(extract_json(response).is_ok());
 
-        // Test with raw JSON
+
         let response = "The result is {\"summary\": \"test\"}";
         assert!(extract_json(response).is_ok());
     }
 
     #[test]
 
-    
+
     fn test_generate_summary_prompt() {
         let manager = EpisodicMemoryManager::new(EpisodicMemoryConfig::default());
         let messages = vec![ConversationMessage {
@@ -69,7 +69,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_parse_summary_response() {
         let manager = EpisodicMemoryManager::new(EpisodicMemoryConfig::default());
         let response = r#"{
@@ -105,7 +105,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_episode_to_dynamic() {
         let episode = Episode {
             id: Uuid::new_v4(),

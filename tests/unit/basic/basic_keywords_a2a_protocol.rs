@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/a2a_protocol.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use serde_json;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_a2a_message_creation() {
         let msg = A2AMessage::new(
             "bot_a",
@@ -29,7 +29,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_a2a_message_response() {
         let original = A2AMessage::new(
             "bot_a",
@@ -50,7 +50,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_message_type_display() {
         assert_eq!(A2AMessageType::Request.to_string(), "request");
         assert_eq!(A2AMessageType::Response.to_string(), "response");
@@ -60,7 +60,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_message_type_from_str() {
         assert_eq!(A2AMessageType::from("request"), A2AMessageType::Request);
         assert_eq!(A2AMessageType::from("RESPONSE"), A2AMessageType::Response);
@@ -69,7 +69,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_a2a_config_default() {
         let config = A2AConfig::default();
         assert!(config.enabled);
@@ -80,7 +80,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_message_not_expired() {
         let msg = A2AMessage::new(
             "bot_a",
@@ -95,7 +95,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_max_hops_not_exceeded() {
         let msg = A2AMessage::new(
             "bot_a",
@@ -110,7 +110,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_max_hops_exceeded() {
         let mut msg = A2AMessage::new(
             "bot_a",

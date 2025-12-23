@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/email/stalwart_sync.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -8,11 +8,11 @@
 use botserver::email::stalwart_client::RuleAction;
 use botserver::email::stalwart_client::RuleCondition;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_new_distribution_list() {
         let list = NewDistributionList {
             bot_id: Uuid::new_v4(),
@@ -32,7 +32,7 @@ use botserver::email::stalwart_client::RuleCondition;
 
     #[test]
 
-    
+
     fn test_new_auto_responder() {
         let responder = NewAutoResponder {
             bot_id: Uuid::new_v4(),
@@ -50,7 +50,7 @@ use botserver::email::stalwart_client::RuleCondition;
 
     #[test]
 
-    
+
     fn test_new_email_rule() {
         let rule = NewEmailRule {
             bot_id: Uuid::new_v4(),
@@ -78,7 +78,7 @@ use botserver::email::stalwart_client::RuleCondition;
 
     #[test]
 
-    
+
     fn test_distribution_list_dto() {
         let dto = DistributionListDto {
             id: Uuid::new_v4(),

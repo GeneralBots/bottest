@@ -386,8 +386,8 @@ unix_socket_directories = '{}'
                 &self.username,
                 "-d",
                 &self.database_name,
-                "-t", // tuples only
-                "-A", // unaligned
+                "-t",
+                "-A",
                 "-c",
                 sql,
             ])
@@ -401,12 +401,12 @@ unix_socket_directories = '{}'
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn connection_string(&self) -> String {
         self.connection_string.clone()
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn port(&self) -> u16 {
         self.port
     }

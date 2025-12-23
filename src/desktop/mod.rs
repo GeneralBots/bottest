@@ -38,13 +38,13 @@ impl DesktopConfig {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn with_args(mut self, args: Vec<String>) -> Self {
         self.args = args;
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn with_env(mut self, key: &str, value: &str) -> Self {
         self.env_vars.insert(key.to_string(), value.to_string());
         self
@@ -55,7 +55,7 @@ impl DesktopConfig {
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
@@ -70,7 +70,7 @@ pub enum Platform {
 }
 
 impl Platform {
-    #[must_use] 
+    #[must_use]
     pub const fn current() -> Self {
         #[cfg(target_os = "windows")]
         return Platform::Windows;
@@ -91,7 +91,7 @@ pub struct DesktopApp {
 }
 
 impl DesktopApp {
-    #[must_use] 
+    #[must_use]
     pub const fn new(config: DesktopConfig) -> Self {
         Self {
             config,
@@ -161,12 +161,12 @@ impl DesktopApp {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn pid(&self) -> Option<u32> {
         self.pid
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn platform(&self) -> Platform {
         self.platform
     }
@@ -269,22 +269,22 @@ pub enum ElementLocator {
 }
 
 impl ElementLocator {
-    #[must_use] 
+    #[must_use]
     pub fn accessibility_id(id: &str) -> Self {
         Self::AccessibilityId(id.to_string())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn name(name: &str) -> Self {
         Self::Name(name.to_string())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn role(role: &str) -> Self {
         Self::Role(role.to_string())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn path(path: &str) -> Self {
         Self::Path(path.to_string())
     }
@@ -322,12 +322,12 @@ impl Element {
         anyhow::bail!("Element clear not yet implemented")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn text(&self) -> Option<&str> {
         self.value.as_deref()
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn is_displayed(&self) -> bool {
         self.bounds.width > 0 && self.bounds.height > 0
     }

@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/core/bot/manager.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_sanitize_bot_name() {
         let manager = BotManager::new("", "", "", "", PathBuf::new());
 
@@ -21,7 +21,7 @@
 
     #[test]
 
-    
+
     fn test_bot_config_default() {
         let settings = BotSettings::default();
         assert!(settings.knowledge_bases.is_empty());
@@ -30,7 +30,7 @@
 
     #[test]
 
-    
+
     fn test_bot_status_display() {
         assert_eq!(format!("{}", BotStatus::Active), "Active");
         assert_eq!(format!("{}", BotStatus::Creating), "Creating");
@@ -38,7 +38,7 @@
 
     #[test]
 
-    
+
     fn test_bot_route_from_config() {
         let config = BotConfig {
             id: Uuid::new_v4(),

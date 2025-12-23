@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/card.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_card_style_from_string() {
         assert!(matches!(CardStyle::from("minimal"), CardStyle::Minimal));
         assert!(matches!(CardStyle::from("VIBRANT"), CardStyle::Vibrant));
@@ -18,7 +18,7 @@
 
     #[test]
 
-    
+
     fn test_card_dimensions_for_style() {
         let story_dims = CardDimensions::for_style(&CardStyle::Story);
         assert_eq!(story_dims.width, 1080);
@@ -31,7 +31,7 @@
 
     #[test]
 
-    
+
     fn test_card_config_default() {
         let config = CardConfig::default();
         assert!(matches!(config.style, CardStyle::Modern));

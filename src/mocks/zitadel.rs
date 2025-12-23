@@ -215,7 +215,7 @@ impl MockZitadel {
             .await;
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn create_test_user(&self, email: &str) -> TestUser {
         let user = TestUser {
             id: Uuid::new_v4().to_string(),
@@ -232,7 +232,7 @@ impl MockZitadel {
         user
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn create_user(&self, user: TestUser) -> TestUser {
         self.users
             .lock()
@@ -487,7 +487,7 @@ impl MockZitadel {
         format!("{header}.{payload}.{signature}")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn generate_token(&self, user: &TestUser) -> String {
         let access_token = format!("test_access_{}", Uuid::new_v4());
         let now = SystemTime::now()
@@ -520,22 +520,22 @@ impl MockZitadel {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn url(&self) -> String {
         format!("http://127.0.0.1:{}", self.port)
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn issuer(&self) -> String {
         self.issuer.clone()
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn port(&self) -> u16 {
         self.port
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn discovery_url(&self) -> String {
         format!("{}/.well-known/openid-configuration", self.url())
     }
@@ -652,7 +652,7 @@ mod tests {
         assert!(json.contains("access_token"));
         assert!(json.contains("Bearer"));
         assert!(json.contains("refresh_token"));
-        assert!(!json.contains("id_token")); // Should be skipped when None
+        assert!(!json.contains("id_token"));
     }
 
     #[test]

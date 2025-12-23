@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/code_sandbox.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_sandbox_config_default() {
         let config = SandboxConfig::default();
         assert!(config.enabled);
@@ -19,7 +19,7 @@
 
     #[test]
 
-    
+
     fn test_execution_result_success() {
         let result = ExecutionResult::success("Hello, World!".to_string(), String::new(), 100);
         assert!(result.is_success());
@@ -28,7 +28,7 @@
 
     #[test]
 
-    
+
     fn test_execution_result_error() {
         let result = ExecutionResult::error("Something went wrong");
         assert!(!result.is_success());
@@ -37,7 +37,7 @@
 
     #[test]
 
-    
+
     fn test_execution_result_timeout() {
         let result = ExecutionResult::timeout();
         assert!(!result.is_success());
@@ -46,7 +46,7 @@
 
     #[test]
 
-    
+
     fn test_code_language_from_str() {
         assert_eq!(CodeLanguage::from("python"), CodeLanguage::Python);
         assert_eq!(CodeLanguage::from("PYTHON"), CodeLanguage::Python);
@@ -59,7 +59,7 @@
 
     #[test]
 
-    
+
     fn test_code_language_file_extension() {
         assert_eq!(CodeLanguage::Python.file_extension(), "py");
         assert_eq!(CodeLanguage::JavaScript.file_extension(), "js");
@@ -68,7 +68,7 @@
 
     #[test]
 
-    
+
     fn test_code_language_interpreter() {
         assert_eq!(CodeLanguage::Python.interpreter(), "python3");
         assert_eq!(CodeLanguage::JavaScript.interpreter(), "node");
@@ -77,7 +77,7 @@
 
     #[test]
 
-    
+
     fn test_sandbox_runtime_from_str() {
         assert_eq!(SandboxRuntime::from("lxc"), SandboxRuntime::LXC);
         assert_eq!(SandboxRuntime::from("docker"), SandboxRuntime::Docker);
@@ -90,7 +90,7 @@
 
     #[test]
 
-    
+
     fn test_lxc_config_generation() {
         let python_config = generate_python_lxc_config();
         assert!(python_config.contains("gb-sandbox-python"));

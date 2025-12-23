@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/procedures.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,7 +7,7 @@
 
 use rhai::Dynamic;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     fn setup() {
         clear_procedures();
@@ -15,7 +15,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_preprocess_sub() {
         setup();
 
@@ -29,13 +29,13 @@ y = 2
 
         let result = preprocess_subs(input);
 
-        // SUB should be extracted
+
         assert!(!result.contains("SUB MySub"));
         assert!(!result.contains("END SUB"));
         assert!(result.contains("x = 1"));
         assert!(result.contains("y = 2"));
 
-        // Procedure should be registered
+
         assert!(has_procedure("MYSUB"));
         let proc = get_procedure("MYSUB").unwrap();
         assert_eq!(proc.params.len(), 2);
@@ -44,7 +44,7 @@ y = 2
 
     #[test]
 
-    
+
     fn test_preprocess_function() {
         setup();
 
@@ -57,12 +57,12 @@ result = Add(1, 2)
 
         let result = preprocess_functions(input);
 
-        // FUNCTION should be extracted
+
         assert!(!result.contains("FUNCTION Add"));
         assert!(!result.contains("END FUNCTION"));
         assert!(result.contains("result = Add(1, 2)"));
 
-        // Procedure should be registered
+
         assert!(has_procedure("ADD"));
         let proc = get_procedure("ADD").unwrap();
         assert!(proc.is_function);
@@ -70,7 +70,7 @@ result = Add(1, 2)
 
     #[test]
 
-    
+
     fn test_preprocess_sub_no_params() {
         setup();
 
@@ -89,11 +89,11 @@ END SUB
 
     #[test]
 
-    
+
     fn test_preprocess_call() {
         setup();
 
-        // First register a SUB
+
         let sub_input = r#"
 SUB Greet(name)
     TALK "Hello " + name
@@ -101,18 +101,18 @@ END SUB
 "#;
         preprocess_subs(sub_input);
 
-        // Then preprocess CALL
+
         let call_input = "CALL Greet(\"World\")";
         let result = preprocess_calls(call_input);
 
-        // Should contain parameter assignment and body
+
         assert!(result.contains("let name = \"World\""));
         assert!(result.contains("TALK \"Hello \" + name"));
     }
 
     #[test]
 
-    
+
     fn test_eval_bool_condition() {
         assert!(eval_bool_condition(&Dynamic::from(true)));
         assert!(!eval_bool_condition(&Dynamic::from(false)));
@@ -128,7 +128,7 @@ END SUB
 
     #[test]
 
-    
+
     fn test_clear_procedures() {
         setup();
 
@@ -144,7 +144,7 @@ END SUB
 
     #[test]
 
-    
+
     fn test_full_pipeline() {
         setup();
 
@@ -165,17 +165,17 @@ total = Calculate(5, 3)
 
         let result = preprocess_procedures(input);
 
-        // Should have inlined the CALL
+
         assert!(result.contains("let name = \"User\""));
         assert!(result.contains("let greeting = \"Hello\""));
 
-        // Original definitions should be gone
+
         assert!(!result.contains("SUB SendGreeting"));
         assert!(!result.contains("END SUB"));
         assert!(!result.contains("FUNCTION Calculate"));
         assert!(!result.contains("END FUNCTION"));
 
-        // Both should be registered
+
         assert!(has_procedure("SENDGREETING"));
         assert!(has_procedure("CALCULATE"));
     }

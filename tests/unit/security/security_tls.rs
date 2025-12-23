@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/security/tls.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_tls_config_default() {
         let config = TlsConfig::default();
         assert!(config.enabled);
@@ -18,7 +18,7 @@
 
     #[test]
 
-    
+
     fn test_service_tls_config() {
         let config = ServiceTlsConfig::new("test-service", 8443).with_mtls();
 
@@ -29,14 +29,14 @@
 
     #[test]
 
-    
+
     fn test_tls_registry() {
         let mut registry = TlsRegistry::new();
         registry.register_defaults();
 
         assert!(!registry.services().is_empty());
 
-        // Check if main services are registered
+
         let service_names: Vec<&str> = registry
             .services()
             .iter()

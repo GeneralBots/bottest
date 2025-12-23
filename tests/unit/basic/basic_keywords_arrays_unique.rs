@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/arrays/unique.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,12 +7,12 @@
 
 use rhai::Dynamic;
 
-// Original: use super::*; - tests used internal functions from botserver
+
     use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_unique_integers() {
         let mut arr = Array::new();
         arr.push(Dynamic::from(1_i64));
@@ -29,7 +29,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_unique_strings() {
         let mut arr = Array::new();
         arr.push(Dynamic::from("Alice"));
@@ -43,7 +43,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_unique_preserves_order() {
         let mut arr = Array::new();
         arr.push(Dynamic::from("C"));
@@ -61,7 +61,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_unique_empty_array() {
         let arr = Array::new();
         let result = unique_array(arr);
@@ -70,7 +70,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_unique_single_element() {
         let mut arr = Array::new();
         arr.push(Dynamic::from(42_i64));
@@ -81,7 +81,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_unique_all_same() {
         let mut arr = Array::new();
         arr.push(Dynamic::from(1_i64));
@@ -94,7 +94,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_unique_mixed_types() {
         let mut arr = Array::new();
         arr.push(Dynamic::from(1_i64));
@@ -102,7 +102,7 @@ use rhai::Dynamic;
         arr.push(Dynamic::from(1_i64));
 
         let result = unique_array(arr);
-        // "1" (int) and "1" (string) may have same string representation
-        // so behavior depends on Dynamic::to_string() implementation
+
+
         assert!(result.len() >= 1 && result.len() <= 2);
     }

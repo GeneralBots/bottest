@@ -1,4 +1,4 @@
-//! Unit tests for botserver modules
+
 
 mod attendance;
 mod basic;

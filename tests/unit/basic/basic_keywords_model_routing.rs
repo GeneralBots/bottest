@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/model_routing.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_model_router_new() {
         let router = ModelRouter::new();
         assert_eq!(router.default_model, "default");
@@ -18,7 +18,7 @@
 
     #[test]
 
-    
+
     fn test_auto_routing_code() {
         let mut router = ModelRouter::new();
         router.models.insert(
@@ -40,7 +40,7 @@
 
     #[test]
 
-    
+
     fn test_auto_routing_quality() {
         let mut router = ModelRouter::new();
         router.models.insert(
@@ -63,7 +63,7 @@
 
     #[test]
 
-    
+
     fn test_auto_routing_fast() {
         let mut router = ModelRouter::new();
         router.models.insert(
@@ -85,7 +85,7 @@
 
     #[test]
 
-    
+
     fn test_routing_strategy_default() {
         let strategy = RoutingStrategy::default();
         assert_eq!(strategy, RoutingStrategy::Manual);

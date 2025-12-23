@@ -1,4 +1,4 @@
-//! Tests for security module
+
 mod security_antivirus;
 mod security_ca;
 mod security_cert_pinning;

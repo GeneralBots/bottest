@@ -21,7 +21,7 @@ pub struct MockRegistry {
 }
 
 impl MockRegistry {
-    #[must_use] 
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             llm: None,
@@ -31,22 +31,22 @@ impl MockRegistry {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn llm(&self) -> &MockLLM {
         self.llm.as_ref().expect("LLM mock not configured")
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn whatsapp(&self) -> &MockWhatsApp {
         self.whatsapp.as_ref().expect("WhatsApp mock not configured")
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn teams(&self) -> &MockTeams {
         self.teams.as_ref().expect("Teams mock not configured")
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn zitadel(&self) -> &MockZitadel {
         self.zitadel.as_ref().expect("Zitadel mock not configured")
     }
@@ -98,7 +98,7 @@ pub struct Expectation {
 }
 
 impl Expectation {
-    #[must_use] 
+    #[must_use]
     pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
@@ -108,7 +108,7 @@ impl Expectation {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn times(mut self, n: usize) -> Self {
         self.expected_calls = Some(n);
         self
@@ -136,7 +136,7 @@ impl Expectation {
 
 pub type ExpectationStore = Arc<Mutex<HashMap<String, Expectation>>>;
 
-#[must_use] 
+#[must_use]
 pub fn new_expectation_store() -> ExpectationStore {
     Arc::new(Mutex::new(HashMap::new()))
 }

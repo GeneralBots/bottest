@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/switch_case.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use rhai::Dynamic;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_switch_match_strings() {
         let a = Dynamic::from("hello");
         let b = Dynamic::from("hello");
@@ -23,7 +23,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_switch_match_integers() {
         let a = Dynamic::from(42_i64);
         let b = Dynamic::from(42_i64);
@@ -35,7 +35,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_switch_match_floats() {
         let a = Dynamic::from(3.14_f64);
         let b = Dynamic::from(3.14_f64);
@@ -47,7 +47,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_switch_match_mixed_numeric() {
         let int_val = Dynamic::from(42_i64);
         let float_val = Dynamic::from(42.0_f64);
@@ -57,7 +57,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_preprocess_simple_switch() {
         let input = r#"
 SWITCH role
@@ -77,7 +77,7 @@ END SWITCH
 
     #[test]
 
-    
+
     fn test_preprocess_multiple_values() {
         let input = r#"
 SWITCH day

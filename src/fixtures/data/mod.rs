@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
-#[must_use] 
+#[must_use]
 pub fn sample_config() -> HashMap<String, String> {
     let mut config = HashMap::new();
     config.insert("llm-model".to_string(), "gpt-4".to_string());
@@ -16,7 +16,7 @@ pub fn sample_config() -> HashMap<String, String> {
     config
 }
 
-#[must_use] 
+#[must_use]
 pub fn sample_bot_config() -> Value {
     json!({
         "name": "test-bot",
@@ -49,7 +49,7 @@ pub fn sample_bot_config() -> Value {
     })
 }
 
-#[must_use] 
+#[must_use]
 pub fn whatsapp_text_message(from: &str, text: &str) -> Value {
     json!({
         "object": "whatsapp_business_account",
@@ -84,7 +84,7 @@ pub fn whatsapp_text_message(from: &str, text: &str) -> Value {
     })
 }
 
-#[must_use] 
+#[must_use]
 pub fn whatsapp_button_reply(from: &str, button_id: &str, button_text: &str) -> Value {
     json!({
         "object": "whatsapp_business_account",
@@ -123,7 +123,7 @@ pub fn whatsapp_button_reply(from: &str, button_id: &str, button_text: &str) -> 
     })
 }
 
-#[must_use] 
+#[must_use]
 pub fn teams_message_activity(from_id: &str, from_name: &str, text: &str) -> Value {
     json!({
         "type": "message",
@@ -156,7 +156,7 @@ pub fn teams_message_activity(from_id: &str, from_name: &str, text: &str) -> Val
     })
 }
 
-#[must_use] 
+#[must_use]
 pub fn openai_chat_request(messages: Vec<(&str, &str)>) -> Value {
     let msgs: Vec<Value> = messages
         .into_iter()
@@ -176,7 +176,7 @@ pub fn openai_chat_request(messages: Vec<(&str, &str)>) -> Value {
     })
 }
 
-#[must_use] 
+#[must_use]
 pub fn openai_chat_response(content: &str) -> Value {
     json!({
         "id": format!("chatcmpl-{}", uuid::Uuid::new_v4()),
@@ -199,7 +199,7 @@ pub fn openai_chat_response(content: &str) -> Value {
     })
 }
 
-#[must_use] 
+#[must_use]
 pub fn openai_embedding_response(dimensions: usize) -> Value {
     let embedding: Vec<f64> = (0..dimensions)
         .map(|i| (i as f64) / (dimensions as f64))
@@ -220,7 +220,7 @@ pub fn openai_embedding_response(dimensions: usize) -> Value {
     })
 }
 
-#[must_use] 
+#[must_use]
 pub fn sample_kb_entries() -> Vec<KBEntry> {
     vec![
         KBEntry {
@@ -263,7 +263,7 @@ pub struct KBEntry {
     pub tags: Vec<String>,
 }
 
-#[must_use] 
+#[must_use]
 pub fn sample_products() -> Vec<Product> {
     vec![
         Product {
@@ -303,7 +303,7 @@ pub struct Product {
     pub category: String,
 }
 
-#[must_use] 
+#[must_use]
 pub fn sample_faqs() -> Vec<FAQ> {
     vec![
         FAQ {
@@ -344,7 +344,7 @@ pub struct FAQ {
 pub mod errors {
     use serde_json::{json, Value};
 
-    #[must_use] 
+    #[must_use]
     pub fn validation_error(field: &str, message: &str) -> Value {
         json!({
             "error": {
@@ -358,7 +358,7 @@ pub mod errors {
         })
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn not_found(resource: &str, id: &str) -> Value {
         json!({
             "error": {
@@ -368,7 +368,7 @@ pub mod errors {
         })
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn unauthorized() -> Value {
         json!({
             "error": {
@@ -378,7 +378,7 @@ pub mod errors {
         })
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn forbidden() -> Value {
         json!({
             "error": {
@@ -388,7 +388,7 @@ pub mod errors {
         })
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn rate_limited(retry_after: u32) -> Value {
         json!({
             "error": {
@@ -399,7 +399,7 @@ pub mod errors {
         })
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn internal_error() -> Value {
         json!({
             "error": {

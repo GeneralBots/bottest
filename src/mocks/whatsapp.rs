@@ -481,7 +481,7 @@ impl MockWhatsApp {
             .await;
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn expect_send_message(&self, to: &str) -> MessageExpectation {
         MessageExpectation {
             to: to.to_string(),
@@ -490,7 +490,7 @@ impl MockWhatsApp {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn expect_send_template(&self, name: &str) -> TemplateExpectation {
         TemplateExpectation {
             name: name.to_string(),
@@ -759,12 +759,12 @@ impl MockWhatsApp {
             .await;
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn sent_messages(&self) -> Vec<SentMessage> {
         self.sent_messages.lock().unwrap().clone()
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn sent_messages_to(&self, phone: &str) -> Vec<SentMessage> {
         self.sent_messages
             .lock()
@@ -775,7 +775,7 @@ impl MockWhatsApp {
             .collect()
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn last_sent_message(&self) -> Option<SentMessage> {
         self.sent_messages.lock().unwrap().last().cloned()
     }
@@ -784,32 +784,32 @@ impl MockWhatsApp {
         self.sent_messages.lock().unwrap().clear();
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn url(&self) -> String {
         format!("http://127.0.0.1:{}", self.port)
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn graph_api_url(&self) -> String {
         format!("http://127.0.0.1:{}/v17.0", self.port)
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn port(&self) -> u16 {
         self.port
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn phone_number_id(&self) -> &str {
         &self.phone_number_id
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn business_account_id(&self) -> &str {
         &self.business_account_id
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn access_token(&self) -> &str {
         &self.access_token
     }

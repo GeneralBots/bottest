@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/core/config/user_memory_config.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_default_config() {
         let config = UserMemoryConfig::default();
         assert!(config.enabled);
@@ -18,7 +18,7 @@
 
     #[test]
 
-    
+
     fn test_can_add_key() {
         let config = UserMemoryConfig::default();
         assert!(config.can_add_key(0));
@@ -29,7 +29,7 @@
 
     #[test]
 
-    
+
     fn test_can_add_key_disabled() {
         let config = UserMemoryConfig {
             enabled: false,
@@ -40,7 +40,7 @@
 
     #[test]
 
-    
+
     fn test_ttl_duration() {
         let config = UserMemoryConfig {
             default_ttl: 3600,
@@ -54,7 +54,7 @@
 
     #[test]
 
-    
+
     fn test_ttl_duration_no_expiration() {
         let config = UserMemoryConfig {
             default_ttl: 0,
@@ -66,7 +66,7 @@
 
     #[test]
 
-    
+
     fn test_has_expiration() {
         let config = UserMemoryConfig::default();
         assert!(config.has_expiration());

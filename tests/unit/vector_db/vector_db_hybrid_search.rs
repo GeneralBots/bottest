@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/vector-db/hybrid_search.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use serde_json;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_hybrid_config_default() {
         let config = HybridSearchConfig::default();
 
@@ -24,7 +24,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_hybrid_config_search_modes() {
         let config = HybridSearchConfig::default();
         assert!(config.use_sparse_search());
@@ -48,7 +48,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_reciprocal_rank_fusion() {
         let config = HybridSearchConfig::default();
         let engine = HybridSearchEngine::new(config, "http://localhost:6333", "test");
@@ -68,14 +68,14 @@ use serde_json;
         let fused = engine.reciprocal_rank_fusion(&sparse, &dense);
 
         assert!(!fused.is_empty());
-        // doc1 and doc2 appear in both, should rank high
+
         let top_ids: Vec<&str> = fused.iter().take(2).map(|(id, _)| id.as_str()).collect();
         assert!(top_ids.contains(&"doc1") || top_ids.contains(&"doc2"));
     }
 
     #[test]
 
-    
+
     fn test_query_decomposer_simple() {
         let decomposer = QueryDecomposer::new("http://localhost:8081", "none");
 
@@ -94,7 +94,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_search_result_serialization() {
         let result = SearchResult {
             doc_id: "test123".to_string(),
@@ -115,7 +115,7 @@ use serde_json;
 
     #[cfg(not(feature = "vectordb"))]
     #[test]
-    
+
     fn test_fallback_bm25_index() {
         let mut index = BM25Index::new();
 
@@ -139,7 +139,7 @@ use serde_json;
 
     #[cfg(not(feature = "vectordb"))]
     #[test]
-    
+
     fn test_fallback_bm25_disabled() {
         let mut index = BM25Index::new();
         index.set_enabled(false);

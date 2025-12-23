@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/core/oauth/mod.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_provider_from_str() {
         assert_eq!(
             OAuthProvider::from_str("google"),
@@ -28,7 +28,7 @@
 
     #[test]
 
-    
+
     fn test_oauth_state_encode_decode() {
         let state = OAuthState::new(OAuthProvider::Google, Some("/dashboard".to_string()));
         let encoded = state.encode();
@@ -41,7 +41,7 @@
 
     #[test]
 
-    
+
     fn test_oauth_config_validation() {
         let valid_config = OAuthConfig::new(
             OAuthProvider::Google,

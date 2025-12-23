@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/webhook.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use rhai::Dynamic;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_webhook_request_to_dynamic() {
         let mut headers = std::collections::HashMap::new();
         headers.insert("Content-Type".to_string(), "application/json".to_string());
@@ -33,7 +33,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_webhook_response_from_dynamic() {
         let mut map = rhai::Map::new();
         map.insert("status".into(), Dynamic::from(201_i64));
@@ -50,7 +50,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_json_to_dynamic_and_back() {
         let original = json!({
             "name": "test",
@@ -69,7 +69,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_webhook_response_default() {
         let response = WebhookResponse::default();
         assert_eq!(response.status, 200);
@@ -77,7 +77,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_webhook_response_error() {
         let response = WebhookResponse::error(404, "Not found");
         assert_eq!(response.status, 404);

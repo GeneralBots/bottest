@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/arrays/contains.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use rhai::Dynamic;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_contains_string() {
         let arr: Array = vec![
             Dynamic::from("Alice"),
@@ -25,7 +25,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_contains_integer() {
         let arr: Array = vec![
             Dynamic::from(1_i64),
@@ -39,7 +39,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_contains_float() {
         let arr: Array = vec![
             Dynamic::from(1.5_f64),
@@ -53,7 +53,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_contains_bool() {
         let arr: Array = vec![Dynamic::from(true), Dynamic::from(false)];
 
@@ -63,7 +63,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_contains_empty_array() {
         let arr = Array::new();
         assert!(!array_contains(&arr, &Dynamic::from("anything")));
@@ -71,7 +71,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_items_equal_integers() {
         assert!(items_equal(&Dynamic::from(5_i64), &Dynamic::from(5_i64)));
         assert!(!items_equal(&Dynamic::from(5_i64), &Dynamic::from(6_i64)));
@@ -79,7 +79,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_items_equal_strings() {
         assert!(items_equal(
             &Dynamic::from("hello"),

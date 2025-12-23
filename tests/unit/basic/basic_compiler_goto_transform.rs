@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/compiler/goto_transform.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_is_label_line() {
         assert!(is_label_line("start:"));
         assert!(is_label_line("  mainLoop:"));
@@ -24,7 +24,7 @@
 
     #[test]
 
-    
+
     fn test_extract_goto_target() {
         assert_eq!(extract_goto_target("GOTO start"), Some("start".to_string()));
         assert_eq!(
@@ -40,7 +40,7 @@
 
     #[test]
 
-    
+
     fn test_transform_line_simple_goto() {
         assert_eq!(
             transform_line("GOTO start"),
@@ -54,7 +54,7 @@
 
     #[test]
 
-    
+
     fn test_transform_line_if_then_goto() {
         let result = transform_line("IF x < 10 THEN GOTO start");
         assert!(result.contains("if x < 10"));
@@ -64,7 +64,7 @@
 
     #[test]
 
-    
+
     fn test_transform_line_if_goto_no_then() {
         let result = transform_line("IF x < 10 GOTO start");
         assert!(result.contains("if x < 10"));
@@ -73,7 +73,7 @@
 
     #[test]
 
-    
+
     fn test_transform_line_not_goto() {
         assert_eq!(transform_line("TALK \"Hello\""), "TALK \"Hello\"");
         assert_eq!(transform_line("x = x + 1"), "x = x + 1");
@@ -82,17 +82,17 @@
 
     #[test]
 
-    
+
     fn test_has_goto_constructs() {
         assert!(has_goto_constructs("start:\nTALK \"hi\"\nGOTO start"));
         assert!(has_goto_constructs("IF x > 0 THEN GOTO done"));
         assert!(!has_goto_constructs("TALK \"hello\"\nWAIT 1"));
-        assert!(!has_goto_constructs("ON ERROR GOTO 0")); // This is special, not regular GOTO
+        assert!(!has_goto_constructs("ON ERROR GOTO 0"));
     }
 
     #[test]
 
-    
+
     fn test_transform_goto_simple() {
         let input = r#"start:
     TALK "Hello"
@@ -110,16 +110,16 @@
 
     #[test]
 
-    
+
     fn test_transform_goto_no_goto() {
         let input = "TALK \"Hello\"\nTALK \"World\"";
         let output = transform_goto(input);
-        assert_eq!(output, input); // Unchanged
+        assert_eq!(output, input);
     }
 
     #[test]
 
-    
+
     fn test_transform_goto_multiple_labels() {
         let input = r#"start:
     TALK "Start"
@@ -139,7 +139,7 @@ done:
 
     #[test]
 
-    
+
     fn test_infinite_loop_protection() {
         let output = transform_goto("loop:\nGOTO loop");
         assert!(output.contains("__goto_max_iterations"));

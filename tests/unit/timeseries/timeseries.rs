@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/timeseries/mod.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_metric_point_line_protocol() {
         let point = MetricPoint::new("test_measurement")
             .tag("host", "server01")
@@ -26,7 +26,7 @@
 
     #[test]
 
-    
+
     fn test_metric_point_escaping() {
         let point = MetricPoint::new("test")
             .tag("key with space", "value,with=special")
@@ -39,7 +39,7 @@
 
     #[test]
 
-    
+
     fn test_predefined_metrics() {
         let msg = Metrics::message("bot-1", "whatsapp", "incoming");
         assert_eq!(msg.measurement, "messages");

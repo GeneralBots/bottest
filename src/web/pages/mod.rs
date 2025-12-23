@@ -23,7 +23,7 @@ pub struct LoginPage {
 }
 
 impl LoginPage {
-    #[must_use] 
+    #[must_use]
     pub fn new(base_url: &str) -> Self {
         Self {
             base_url: base_url.to_string(),
@@ -34,24 +34,24 @@ impl LoginPage {
         browser.goto(&format!("{}/login", self.base_url)).await
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn email_input() -> Locator {
         Locator::css("#email, input[name='email'], input[type='email']")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn password_input() -> Locator {
         Locator::css("#password, input[name='password'], input[type='password']")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn login_button() -> Locator {
         Locator::css(
             "#login-button, button[type='submit'], input[type='submit'], .login-btn, .btn-login",
         )
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn error_message() -> Locator {
         Locator::css(".error, .error-message, .alert-error, .alert-danger, [role='alert']")
     }
@@ -106,7 +106,7 @@ pub struct DashboardPage {
 }
 
 impl DashboardPage {
-    #[must_use] 
+    #[must_use]
     pub fn new(base_url: &str) -> Self {
         Self {
             base_url: base_url.to_string(),
@@ -117,22 +117,22 @@ impl DashboardPage {
         browser.goto(&format!("{}/dashboard", self.base_url)).await
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn stats_cards() -> Locator {
         Locator::css(".stats-card, .dashboard-stat, .metric-card")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn nav_menu() -> Locator {
         Locator::css("nav, .nav, .sidebar, .navigation")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn user_profile() -> Locator {
         Locator::css(".user-profile, .user-menu, .profile-dropdown, .avatar")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn logout_button() -> Locator {
         Locator::css(".logout, .logout-btn, #logout, a[href*='logout'], button:contains('Logout')")
     }
@@ -176,7 +176,7 @@ pub struct ChatPage {
 }
 
 impl ChatPage {
-    #[must_use] 
+    #[must_use]
     pub fn new(base_url: &str, bot_name: &str) -> Self {
         Self {
             base_url: base_url.to_string(),
@@ -190,44 +190,44 @@ impl ChatPage {
             .await
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn chat_input() -> Locator {
         Locator::css(
             "#chat-input, .chat-input, input[name='message'], textarea[name='message'], .message-input",
         )
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn send_button() -> Locator {
         Locator::css("#send, .send-btn, button[type='submit'], .send-message")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn message_list() -> Locator {
         Locator::css(".messages, .message-list, .chat-messages, #messages")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn bot_message() -> Locator {
         Locator::css(".bot-message, .message-bot, .assistant-message, [data-role='bot']")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn user_message() -> Locator {
         Locator::css(".user-message, .message-user, [data-role='user']")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn typing_indicator() -> Locator {
         Locator::css(".typing, .typing-indicator, .is-typing, [data-typing]")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn file_upload_button() -> Locator {
         Locator::css(".upload-btn, .file-upload, input[type='file'], .attach-file")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn quick_reply_buttons() -> Locator {
         Locator::css(".quick-replies, .quick-reply, .suggested-reply")
     }
@@ -319,7 +319,7 @@ pub struct QueuePage {
 }
 
 impl QueuePage {
-    #[must_use] 
+    #[must_use]
     pub fn new(base_url: &str) -> Self {
         Self {
             base_url: base_url.to_string(),
@@ -330,22 +330,22 @@ impl QueuePage {
         browser.goto(&format!("{}/queue", self.base_url)).await
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn queue_panel() -> Locator {
         Locator::css(".queue-panel, .queue-container, #queue-panel")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn queue_count() -> Locator {
         Locator::css(".queue-count, .waiting-count, #queue-count")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn queue_entry() -> Locator {
         Locator::css(".queue-entry, .queue-item, .waiting-customer")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn take_next_button() -> Locator {
         Locator::css(".take-next, #take-next, button:contains('Take Next')")
     }
@@ -383,7 +383,7 @@ pub struct BotManagementPage {
 }
 
 impl BotManagementPage {
-    #[must_use] 
+    #[must_use]
     pub fn new(base_url: &str) -> Self {
         Self {
             base_url: base_url.to_string(),
@@ -394,32 +394,32 @@ impl BotManagementPage {
         browser.goto(&format!("{}/admin/bots", self.base_url)).await
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn bot_list() -> Locator {
         Locator::css(".bot-list, .bots-container, #bots")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn bot_item() -> Locator {
         Locator::css(".bot-item, .bot-card, .bot-entry")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn create_bot_button() -> Locator {
         Locator::css(".create-bot, .new-bot, #create-bot, button:contains('Create')")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn bot_name_input() -> Locator {
         Locator::css("#bot-name, input[name='name'], .bot-name-input")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn bot_description_input() -> Locator {
         Locator::css("#bot-description, textarea[name='description'], .bot-description-input")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn save_button() -> Locator {
         Locator::css(".save-btn, button[type='submit'], #save, button:contains('Save')")
     }
@@ -469,7 +469,7 @@ pub struct KnowledgeBasePage {
 }
 
 impl KnowledgeBasePage {
-    #[must_use] 
+    #[must_use]
     pub fn new(base_url: &str) -> Self {
         Self {
             base_url: base_url.to_string(),
@@ -480,27 +480,27 @@ impl KnowledgeBasePage {
         browser.goto(&format!("{}/admin/kb", self.base_url)).await
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn kb_list() -> Locator {
         Locator::css(".kb-list, .knowledge-base-list, #kb-list")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn kb_entry() -> Locator {
         Locator::css(".kb-entry, .kb-item, .knowledge-entry")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn upload_button() -> Locator {
         Locator::css(".upload-btn, #upload, button:contains('Upload')")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn file_input() -> Locator {
         Locator::css("input[type='file']")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn search_input() -> Locator {
         Locator::css(".search-input, #search, input[placeholder*='search']")
     }
@@ -532,7 +532,7 @@ pub struct AnalyticsPage {
 }
 
 impl AnalyticsPage {
-    #[must_use] 
+    #[must_use]
     pub fn new(base_url: &str) -> Self {
         Self {
             base_url: base_url.to_string(),
@@ -545,17 +545,17 @@ impl AnalyticsPage {
             .await
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn charts_container() -> Locator {
         Locator::css(".charts, .analytics-charts, #charts")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn date_range_picker() -> Locator {
         Locator::css(".date-range, .date-picker, #date-range")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn metric_card() -> Locator {
         Locator::css(".metric-card, .analytics-metric, .stat-card")
     }

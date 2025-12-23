@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/whatsapp/mod.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_extract_text_message() {
         let message = WhatsAppMessage {
             id: "msg123".to_string(),
@@ -33,7 +33,7 @@
 
     #[test]
 
-    
+
     fn test_extract_interactive_button() {
         let message = WhatsAppMessage {
             id: "msg123".to_string(),

@@ -11,7 +11,7 @@ fn test_instr_finds_substring() {
             return 0;
         }
         match haystack.find(needle) {
-            Some(pos) => (pos + 1) as i64, // 1-based index
+            Some(pos) => (pos + 1) as i64,
             None => 0,
         }
     });
@@ -53,7 +53,7 @@ fn test_instr_case_sensitive() {
     });
 
     let result: i64 = engine.eval(r#"INSTR("Hello", "hello")"#).unwrap();
-    assert_eq!(result, 0); // Case sensitive, so not found
+    assert_eq!(result, 0);
 }
 
 

@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/core/oauth/providers.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_build_auth_url() {
         let config = OAuthConfig::new(
             OAuthProvider::Google,
@@ -27,7 +27,7 @@
 
     #[test]
 
-    
+
     fn test_load_oauth_config() {
         let mut bot_config = HashMap::new();
         bot_config.insert("oauth-google-enabled".to_string(), "true".to_string());
@@ -50,7 +50,7 @@
 
     #[test]
 
-    
+
     fn test_disabled_provider() {
         let mut bot_config = HashMap::new();
         bot_config.insert("oauth-google-enabled".to_string(), "false".to_string());

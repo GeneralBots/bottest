@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/use_website.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -8,11 +8,11 @@
 use rhai::Dynamic;
 use rhai::Engine;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_url_sanitization() {
         assert_eq!(
             sanitize_url_for_collection("https://docs.example.com/path"),
@@ -26,16 +26,16 @@ use rhai::Engine;
 
     #[test]
 
-    
+
     fn test_use_website_syntax() {
         let mut engine = Engine::new();
 
-        // Test USE_WEBSITE with argument
+
         assert!(engine
             .register_custom_syntax(&["USE_WEBSITE", "$expr$"], true, |_, _| Ok(Dynamic::UNIT))
             .is_ok());
 
-        // Test CLEAR_WEBSITES without argument
+
         assert!(engine
             .register_custom_syntax(&["CLEAR_WEBSITES"], true, |_, _| Ok(Dynamic::UNIT))
             .is_ok());

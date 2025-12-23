@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/console/wizard.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_default_config() {
         let config = WizardConfig::default();
         assert_eq!(config.llm_provider, LlmProvider::None);
@@ -17,7 +17,7 @@
 
     #[test]
 
-    
+
     fn test_slug_generation() {
         let mut config = WizardConfig::default();
         config.organization.name = "My Test Company".to_string();

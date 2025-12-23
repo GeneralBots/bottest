@@ -429,7 +429,7 @@ impl MockTeams {
             .await;
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn simulate_message(&self, from_id: &str, from_name: &str, text: &str) -> Activity {
         let conversation_id = format!("conv-{}", Uuid::new_v4());
 
@@ -476,7 +476,7 @@ impl MockTeams {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn simulate_mention(&self, from_id: &str, from_name: &str, text: &str) -> Activity {
         let mut activity = self.simulate_message(from_id, from_name, text);
 
@@ -498,7 +498,7 @@ impl MockTeams {
         activity
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn simulate_member_added(&self, member_id: &str, member_name: &str) -> Activity {
         let conversation_id = format!("conv-{}", Uuid::new_v4());
 
@@ -546,7 +546,7 @@ impl MockTeams {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn simulate_invoke(
         &self,
         from_id: &str,
@@ -599,7 +599,7 @@ impl MockTeams {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn simulate_adaptive_card_action(
         &self,
         from_id: &str,
@@ -620,7 +620,7 @@ impl MockTeams {
         )
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn simulate_reaction(
         &self,
         from_id: &str,
@@ -698,12 +698,12 @@ impl MockTeams {
             .await;
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn sent_activities(&self) -> Vec<Activity> {
         self.sent_activities.lock().unwrap().clone()
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn sent_activities_containing(&self, text: &str) -> Vec<Activity> {
         self.sent_activities
             .lock()
@@ -714,7 +714,7 @@ impl MockTeams {
             .collect()
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn last_sent_activity(&self) -> Option<Activity> {
         self.sent_activities.lock().unwrap().last().cloned()
     }
@@ -730,32 +730,32 @@ impl MockTeams {
             .insert(info.id.clone(), info);
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn url(&self) -> String {
         format!("http://127.0.0.1:{}", self.port)
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn service_url(&self) -> String {
         self.service_url.clone()
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn port(&self) -> u16 {
         self.port
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn bot_id(&self) -> &str {
         &self.bot_id
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn bot_name(&self) -> &str {
         &self.bot_name
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn tenant_id(&self) -> &str {
         &self.tenant_id
     }

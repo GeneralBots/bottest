@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/email/vectordb.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_email_document_creation() {
         let email = EmailDocument {
             id: "test-123".to_string(),

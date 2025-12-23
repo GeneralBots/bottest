@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/drive/vectordb.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_file_document_creation() {
         let file = FileDocument {
             id: "test-123".to_string(),
@@ -32,7 +32,7 @@
 
     #[test]
 
-    
+
     fn test_should_index() {
         assert!(FileContentExtractor::should_index("text/plain", 1024));
         assert!(FileContentExtractor::should_index("text/markdown", 5000));

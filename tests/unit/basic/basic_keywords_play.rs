@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/play.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_content_type_from_extension() {
         assert_eq!(ContentType::from_extension("mp4"), ContentType::Video);
         assert_eq!(ContentType::from_extension("MP3"), ContentType::Audio);
@@ -28,7 +28,7 @@
 
     #[test]
 
-    
+
     fn test_content_type_from_mime() {
         assert_eq!(ContentType::from_mime("video/mp4"), ContentType::Video);
         assert_eq!(ContentType::from_mime("audio/mpeg"), ContentType::Audio);
@@ -38,7 +38,7 @@
 
     #[test]
 
-    
+
     fn test_play_options_from_string() {
         let opts = PlayOptions::from_string("autoplay,loop,muted");
         assert!(opts.autoplay);
@@ -61,7 +61,7 @@
 
     #[test]
 
-    
+
     fn test_detect_content_type() {
         assert_eq!(
             detect_content_type("https://youtube.com/watch?v=123"),
@@ -85,7 +85,7 @@
 
     #[test]
 
-    
+
     fn test_extract_title_from_source() {
         assert_eq!(extract_title_from_source("documents/report.pdf"), "report");
         assert_eq!(
@@ -100,7 +100,7 @@
 
     #[test]
 
-    
+
     fn test_player_component() {
         assert_eq!(ContentType::Video.player_component(), "video-player");
         assert_eq!(ContentType::Audio.player_component(), "audio-player");

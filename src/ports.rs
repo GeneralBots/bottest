@@ -26,7 +26,7 @@ impl PortAllocator {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn allocate_range(count: usize) -> Vec<u16> {
         (0..count).map(|_| Self::allocate()).collect()
     }

@@ -35,7 +35,7 @@ impl Default for E2EConfig {
 }
 
 impl E2EConfig {
-    #[must_use] 
+    #[must_use]
     pub fn to_browser_config(&self) -> BrowserConfig {
         BrowserConfig::default()
             .with_browser(self.browser)
@@ -77,37 +77,37 @@ pub enum Locator {
 }
 
 impl Locator {
-    #[must_use] 
+    #[must_use]
     pub fn css(selector: &str) -> Self {
         Self::Css(selector.to_string())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn xpath(expr: &str) -> Self {
         Self::XPath(expr.to_string())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn id(id: &str) -> Self {
         Self::Id(id.to_string())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn name(name: &str) -> Self {
         Self::Name(name.to_string())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn link_text(text: &str) -> Self {
         Self::LinkText(text.to_string())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn class(name: &str) -> Self {
         Self::ClassName(name.to_string())
     }
-    
-    #[must_use] 
+
+    #[must_use]
     pub fn to_css_selector(&self) -> String {
         match self {
             Self::Css(s) => s.clone(),
@@ -198,86 +198,86 @@ pub enum Action {
 }
 
 impl ActionChain {
-    #[must_use] 
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             actions: Vec::new(),
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn click(mut self, locator: Locator) -> Self {
         self.actions.push(Action::Click(locator));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn double_click(mut self, locator: Locator) -> Self {
         self.actions.push(Action::DoubleClick(locator));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn right_click(mut self, locator: Locator) -> Self {
         self.actions.push(Action::RightClick(locator));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn move_to(mut self, locator: Locator) -> Self {
         self.actions.push(Action::MoveTo(locator));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn move_by(mut self, x: i32, y: i32) -> Self {
         self.actions.push(Action::MoveByOffset(x, y));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn key_down(mut self, key: Key) -> Self {
         self.actions.push(Action::KeyDown(key));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn key_up(mut self, key: Key) -> Self {
         self.actions.push(Action::KeyUp(key));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn send_keys(mut self, text: &str) -> Self {
         self.actions.push(Action::SendKeys(text.to_string()));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn pause(mut self, duration: Duration) -> Self {
         self.actions.push(Action::Pause(duration));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn drag_and_drop(mut self, source: Locator, target: Locator) -> Self {
         self.actions.push(Action::DragAndDrop(source, target));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn scroll_to(mut self, locator: Locator) -> Self {
         self.actions.push(Action::ScrollTo(locator));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn scroll_by(mut self, x: i32, y: i32) -> Self {
         self.actions.push(Action::ScrollByAmount(x, y));
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn actions(&self) -> &[Action] {
         &self.actions
     }
@@ -302,7 +302,7 @@ pub struct Cookie {
 }
 
 impl Cookie {
-    #[must_use] 
+    #[must_use]
     pub fn new(name: &str, value: &str) -> Self {
         Self {
             name: name.to_string(),
@@ -316,25 +316,25 @@ impl Cookie {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn with_domain(mut self, domain: &str) -> Self {
         self.domain = Some(domain.to_string());
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn with_path(mut self, path: &str) -> Self {
         self.path = Some(path.to_string());
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn secure(mut self) -> Self {
         self.secure = Some(true);
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn http_only(mut self) -> Self {
         self.http_only = Some(true);
         self

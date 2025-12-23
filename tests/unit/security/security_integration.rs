@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/security/integration.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_url_conversion() {
         let integration = TlsIntegration::new(true);
 
@@ -30,7 +30,7 @@
 
     #[test]
 
-    
+
     fn test_postgres_url_update() {
         let integration = TlsIntegration::new(true);
 
@@ -47,7 +47,7 @@
 
     #[test]
 
-    
+
     fn test_service_url() {
         let integration = TlsIntegration::new(true);
 
@@ -65,7 +65,7 @@
 
     #[test]
 
-    
+
     fn test_secure_port() {
         let integration = TlsIntegration::new(true);
 

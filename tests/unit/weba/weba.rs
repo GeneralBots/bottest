@@ -1,5 +1,5 @@
-//! Unit tests for botserver weba module
-//! Tests web application builder functionality
+
+
 
 use botserver::weba::{
     slugify, WebApp, WebAppConfig, WebAppStatus, WebAppTemplate, WebaState,

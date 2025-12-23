@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/vector-db/bm25_config.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_default_config() {
         let config = Bm25Config::default();
         assert!(config.enabled);
@@ -20,7 +20,7 @@
 
     #[test]
 
-    
+
     fn test_disabled_config() {
         let config = Bm25Config::disabled();
         assert!(!config.enabled);
@@ -29,7 +29,7 @@
 
     #[test]
 
-    
+
     fn test_with_params() {
         let config = Bm25Config::with_params(1.5, 0.5);
         assert!((config.k1 - 1.5).abs() < f32::EPSILON);
@@ -38,7 +38,7 @@
 
     #[test]
 
-    
+
     fn test_validation_negative_k1() {
         let mut config = Bm25Config {
             k1: -1.0,
@@ -50,7 +50,7 @@
 
     #[test]
 
-    
+
     fn test_validation_high_k1() {
         let mut config = Bm25Config {
             k1: 15.0,
@@ -62,7 +62,7 @@
 
     #[test]
 
-    
+
     fn test_validation_b_range() {
         let mut config = Bm25Config {
             b: -0.5,
@@ -81,7 +81,7 @@
 
     #[test]
 
-    
+
     fn test_has_preprocessing() {
         let config = Bm25Config::default();
         assert!(config.has_preprocessing());
@@ -96,7 +96,7 @@
 
     #[test]
 
-    
+
     fn test_describe() {
         let config = Bm25Config::default();
         let desc = config.describe();
@@ -109,7 +109,7 @@
 
     #[test]
 
-    
+
     fn test_is_stopword() {
         assert!(is_stopword("the"));
         assert!(is_stopword("THE"));
@@ -122,7 +122,7 @@
 
     #[test]
 
-    
+
     fn test_stopwords_list() {
         assert!(!DEFAULT_STOPWORDS.is_empty());
         assert!(DEFAULT_STOPWORDS.len() > 80);

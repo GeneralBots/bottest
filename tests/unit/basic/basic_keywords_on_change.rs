@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/on_change.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_parse_folder_path_account() {
         let (provider, email, path) =
             parse_folder_path("account://user@gmail.com/Documents/invoices");
@@ -19,7 +19,7 @@
 
     #[test]
 
-    
+
     fn test_parse_folder_path_gdrive() {
         let (provider, email, path) = parse_folder_path("gdrive:///shared/reports");
         assert_eq!(provider, FolderProvider::GDrive);
@@ -29,7 +29,7 @@
 
     #[test]
 
-    
+
     fn test_parse_folder_path_onedrive() {
         let (provider, email, path) = parse_folder_path("onedrive:///business/docs");
         assert_eq!(provider, FolderProvider::OneDrive);
@@ -39,7 +39,7 @@
 
     #[test]
 
-    
+
     fn test_parse_folder_path_dropbox() {
         let (provider, email, path) = parse_folder_path("dropbox:///team/assets");
         assert_eq!(provider, FolderProvider::Dropbox);
@@ -49,7 +49,7 @@
 
     #[test]
 
-    
+
     fn test_parse_folder_path_local() {
         let (provider, email, path) = parse_folder_path("/home/user/documents");
         assert_eq!(provider, FolderProvider::Local);
@@ -59,7 +59,7 @@
 
     #[test]
 
-    
+
     fn test_is_cloud_path() {
         assert!(is_cloud_path("account://user@gmail.com/docs"));
         assert!(is_cloud_path("gdrive:///shared"));
@@ -71,7 +71,7 @@
 
     #[test]
 
-    
+
     fn test_folder_provider_from_str() {
         assert_eq!(
             FolderProvider::from_str("gdrive"),
@@ -114,7 +114,7 @@
 
     #[test]
 
-    
+
     fn test_change_event_type_from_str() {
         assert_eq!(
             ChangeEventType::from_str("create"),
@@ -153,7 +153,7 @@
 
     #[test]
 
-    
+
     fn test_sanitize_path() {
         assert_eq!(
             sanitize_path_for_filename("/home/user/docs"),
@@ -171,7 +171,7 @@
 
     #[test]
 
-    
+
     fn test_folder_monitor_struct() {
         let monitor = FolderMonitor {
             id: Uuid::new_v4(),
@@ -194,7 +194,7 @@
 
     #[test]
 
-    
+
     fn test_folder_change_event_struct() {
         let event = FolderChangeEvent {
             id: Uuid::new_v4(),
@@ -214,7 +214,7 @@
 
     #[test]
 
-    
+
     fn test_detect_provider_from_email() {
         assert_eq!(
             detect_provider_from_email("user@gmail.com"),

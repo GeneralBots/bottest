@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/arrays/push_pop.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -13,7 +13,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_push() {
         let mut arr: Array = vec![Dynamic::from(1), Dynamic::from(2)];
         arr.push(Dynamic::from(3));
@@ -23,7 +23,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_pop() {
         let mut arr: Array = vec![Dynamic::from(1), Dynamic::from(2), Dynamic::from(3)];
         let popped = arr.pop();
@@ -33,7 +33,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_pop_empty() {
         let mut arr: Array = vec![];
         let popped = arr.pop();
@@ -42,7 +42,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_shift() {
         let mut arr: Array = vec![Dynamic::from(1), Dynamic::from(2), Dynamic::from(3)];
         let shifted = arr.remove(0);
@@ -53,7 +53,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_unshift() {
         let mut arr: Array = vec![Dynamic::from(2), Dynamic::from(3)];
         arr.insert(0, Dynamic::from(1));

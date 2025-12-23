@@ -279,7 +279,7 @@ impl Default for QueueStatus {
 }
 
 
-#[must_use] 
+#[must_use]
 pub fn admin_user() -> User {
     User {
         email: "admin@test.com".to_string(),
@@ -289,7 +289,7 @@ pub fn admin_user() -> User {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn attendant_user() -> User {
     User {
         email: "attendant@test.com".to_string(),
@@ -299,7 +299,7 @@ pub fn attendant_user() -> User {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn regular_user() -> User {
     User {
         email: "user@test.com".to_string(),
@@ -309,7 +309,7 @@ pub fn regular_user() -> User {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn user_with_email(email: &str) -> User {
     User {
         email: email.to_string(),
@@ -318,7 +318,7 @@ pub fn user_with_email(email: &str) -> User {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn customer(phone: &str) -> Customer {
     Customer {
         phone: Some(phone.to_string()),
@@ -327,7 +327,7 @@ pub fn customer(phone: &str) -> Customer {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn customer_on_channel(channel: Channel) -> Customer {
     Customer {
         channel,
@@ -335,7 +335,7 @@ pub fn customer_on_channel(channel: Channel) -> Customer {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn teams_customer() -> Customer {
     Customer {
         channel: Channel::Teams,
@@ -344,7 +344,7 @@ pub fn teams_customer() -> Customer {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn web_customer() -> Customer {
     Customer {
         channel: Channel::Web,
@@ -353,7 +353,7 @@ pub fn web_customer() -> Customer {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn basic_bot(name: &str) -> Bot {
     Bot {
         name: name.to_string(),
@@ -363,7 +363,7 @@ pub fn basic_bot(name: &str) -> Bot {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn bot_with_kb(name: &str) -> Bot {
     Bot {
         name: name.to_string(),
@@ -373,7 +373,7 @@ pub fn bot_with_kb(name: &str) -> Bot {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn rule_based_bot(name: &str) -> Bot {
     Bot {
         name: name.to_string(),
@@ -384,7 +384,7 @@ pub fn rule_based_bot(name: &str) -> Bot {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn session_for(bot: &Bot, customer: &Customer) -> Session {
     Session {
         bot_id: bot.id,
@@ -394,7 +394,7 @@ pub fn session_for(bot: &Bot, customer: &Customer) -> Session {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn active_session() -> Session {
     Session {
         state: SessionState::Active,
@@ -402,7 +402,7 @@ pub fn active_session() -> Session {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn incoming_message(content: &str) -> Message {
     Message {
         direction: MessageDirection::Incoming,
@@ -411,7 +411,7 @@ pub fn incoming_message(content: &str) -> Message {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn outgoing_message(content: &str) -> Message {
     Message {
         direction: MessageDirection::Outgoing,
@@ -420,7 +420,7 @@ pub fn outgoing_message(content: &str) -> Message {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn message_in_session(
     session: &Session,
     content: &str,
@@ -434,7 +434,7 @@ pub fn message_in_session(
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn queue_entry_for(customer: &Customer, session: &Session) -> QueueEntry {
     QueueEntry {
         customer_id: customer.id,
@@ -443,7 +443,7 @@ pub fn queue_entry_for(customer: &Customer, session: &Session) -> QueueEntry {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn high_priority_queue_entry() -> QueueEntry {
     QueueEntry {
         priority: Priority::High,
@@ -451,7 +451,7 @@ pub fn high_priority_queue_entry() -> QueueEntry {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn urgent_queue_entry() -> QueueEntry {
     QueueEntry {
         priority: Priority::Urgent,

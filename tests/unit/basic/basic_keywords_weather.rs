@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/weather.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_degrees_to_compass() {
         assert_eq!(degrees_to_compass(0.0), "N");
         assert_eq!(degrees_to_compass(45.0), "NE");
@@ -20,7 +20,7 @@
 
     #[test]
 
-    
+
     fn test_format_weather_response() {
         let weather = WeatherData {
             location: "London".to_string(),

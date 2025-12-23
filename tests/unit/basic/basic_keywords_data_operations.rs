@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/data_operations.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_sanitize_identifier() {
         assert_eq!(sanitize_identifier("users"), "users");
         assert_eq!(sanitize_identifier("user_name"), "user_name");
@@ -20,7 +20,7 @@
 
     #[test]
 
-    
+
     fn test_sanitize_sql() {
         assert_eq!(sanitize_sql("hello"), "hello");
         assert_eq!(sanitize_sql("it's"), "it''s");
@@ -29,7 +29,7 @@
 
     #[test]
 
-    
+
     fn test_parse_condition() {
         let (field, op, value) = parse_condition_internal("status=active").unwrap();
         assert_eq!(field, "status");
@@ -44,7 +44,7 @@
 
     #[test]
 
-    
+
     fn test_parse_filter_clause() {
         let clause = parse_filter_clause("name=John").unwrap();
         assert!(clause.contains("name"));

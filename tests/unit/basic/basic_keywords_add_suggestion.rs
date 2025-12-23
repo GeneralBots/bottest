@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/basic/keywords/add_suggestion.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_suggestion_json_context() {
         let suggestion = json!({
             "type": "context",
@@ -26,7 +26,7 @@
 
     #[test]
 
-    
+
     fn test_suggestion_json_tool_no_params() {
         let suggestion = json!({
             "type": "tool",
@@ -46,7 +46,7 @@
 
     #[test]
 
-    
+
     fn test_suggestion_json_tool_with_params() {
         let params = vec!["query".to_string(), "products".to_string()];
         let suggestion = json!({

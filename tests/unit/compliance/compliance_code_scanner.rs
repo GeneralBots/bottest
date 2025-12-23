@@ -1,18 +1,18 @@
-//! Unit tests migrated from src/compliance/code_scanner.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_pattern_matching() {
         let scanner = CodeScanner::new("/tmp/test");
 
-        // Test password detection
+
         let password_pattern = scanner
             .patterns
             .iter()
@@ -21,7 +21,7 @@
         assert!(password_pattern.regex.is_match(r#"password = "secret123""#));
         assert!(password_pattern.regex.is_match(r#"PASSWORD = 'mypass'"#));
 
-        // Test underscore keyword detection
+
         let underscore_pattern = scanner
             .patterns
             .iter()
@@ -33,7 +33,7 @@
 
     #[test]
 
-    
+
     fn test_severity_ordering() {
         assert!(IssueSeverity::Critical > IssueSeverity::High);
         assert!(IssueSeverity::High > IssueSeverity::Medium);
@@ -43,7 +43,7 @@
 
     #[test]
 
-    
+
     fn test_stats_merge() {
         let mut stats1 = ScanStats {
             critical: 1,
@@ -72,7 +72,7 @@
 
     #[test]
 
-    
+
     fn test_csv_escape() {
         assert_eq!(escape_csv("simple"), "simple");
         assert_eq!(escape_csv("with,comma"), "\"with,comma\"");
@@ -81,7 +81,7 @@
 
     #[test]
 
-    
+
     fn test_redact_sensitive() {
         let scanner = CodeScanner::new("/tmp/test");
 

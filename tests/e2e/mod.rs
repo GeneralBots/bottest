@@ -201,7 +201,7 @@ pub fn browser_config() -> BrowserConfig {
     BrowserConfig::default()
         .with_browser(BrowserType::Chrome)
         .with_debug_port(debug_port)
-        .headless(headless) // false by default = show browser
+        .headless(headless)
         .with_timeout(Duration::from_secs(30))
         .with_window_size(1920, 1080)
 }

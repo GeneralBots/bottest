@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/crm/score_lead.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use rhai::Dynamic;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_calculate_lead_score_empty() {
         let lead_data = Map::new();
         let score = calculate_lead_score(&lead_data, None);
@@ -20,7 +20,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_calculate_lead_score_basic() {
         let mut lead_data = Map::new();
         lead_data.insert("job_title".into(), Dynamic::from("CEO"));
@@ -28,12 +28,12 @@ use rhai::Dynamic;
         lead_data.insert("email".into(), Dynamic::from("ceo@company.com"));
 
         let score = calculate_lead_score(&lead_data, None);
-        assert!(score > 30); // At least CEO bonus
+        assert!(score > 30);
     }
 
     #[test]
 
-    
+
     fn test_calculate_lead_score_with_title() {
         let mut lead_data = Map::new();
         lead_data.insert("job_title".into(), Dynamic::from("CTO"));
@@ -44,7 +44,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_determine_priority() {
         assert_eq!(determine_priority(95), "CRITICAL");
         assert_eq!(determine_priority(75), "HIGH");
@@ -55,7 +55,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_score_clamping() {
         let mut lead_data = Map::new();
         lead_data.insert("budget".into(), Dynamic::from(1000000_i64));

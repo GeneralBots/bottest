@@ -30,7 +30,7 @@ impl Default for BrowserType {
 }
 
 impl BrowserType {
-    #[must_use] 
+    #[must_use]
     pub const fn browser_name(&self) -> &'static str {
         match self {
             Self::Chrome => "chrome",
@@ -40,7 +40,7 @@ impl BrowserType {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn capability_name(&self) -> &'static str {
         match self {
             Self::Chrome => "goog:chromeOptions",
@@ -130,24 +130,24 @@ impl BrowserConfig {
         None
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn with_browser(mut self, browser: BrowserType) -> Self {
         self.browser_type = browser;
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn with_debug_port(mut self, port: u16) -> Self {
         self.debug_port = port;
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn with_webdriver_url(mut self, url: &str) -> Self {
         if let Some(port_str) = url.split(':').next_back() {
             if let Ok(port) = port_str.parse() {
@@ -157,31 +157,31 @@ impl BrowserConfig {
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn headless(mut self, headless: bool) -> Self {
         self.headless = headless;
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn with_window_size(mut self, width: u32, height: u32) -> Self {
         self.window_width = width;
         self.window_height = height;
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn with_arg(self, _arg: &str) -> Self {
         self
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn with_binary(mut self, path: &str) -> Self {
         self.binary_path = Some(path.to_string());
         self
@@ -213,7 +213,7 @@ impl BrowserConfig {
             .map_err(|e| anyhow::anyhow!("Failed to build CDP browser config: {e}"))
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn build_capabilities(&self) -> serde_json::Value {
         serde_json::json!({
             "browserName": self.browser_type.browser_name(),
@@ -897,10 +897,10 @@ impl Element {
     }
 
     pub async fn size(&self) -> Result<(u64, u64)> {
-        Ok((100, 20)) // Default size
+        Ok((100, 20))
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn locator(&self) -> &Locator {
         &self.locator
     }

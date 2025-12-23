@@ -1,14 +1,14 @@
-//! Unit tests migrated from src/calendar/mod.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_event_to_ical_roundtrip() {
         let event = CalendarEvent {
             id: Uuid::new_v4(),
@@ -32,7 +32,7 @@
 
     #[test]
 
-    
+
     fn test_export_import_ical() {
         let mut engine = CalendarEngine::new();
         engine.create_event(CalendarEventInput {

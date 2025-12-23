@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/knowledge_graph.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use serde_json;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_default_config() {
         let config = KnowledgeGraphConfig::default();
         assert!(config.enabled);
@@ -21,7 +21,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_extraction_prompt() {
         let manager = KnowledgeGraphManager::new(KnowledgeGraphConfig::default());
         let prompt = manager.generate_extraction_prompt("John works at Acme Corp.");
@@ -31,7 +31,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_parse_extraction_response() {
         let manager = KnowledgeGraphManager::new(KnowledgeGraphConfig::default());
         let response = r#"{
@@ -64,7 +64,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_entity_to_dynamic() {
         let entity = KgEntity {
             id: Uuid::new_v4(),
@@ -85,7 +85,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_is_valid_entity_type() {
         let manager = KnowledgeGraphManager::new(KnowledgeGraphConfig::default());
         assert!(manager.is_valid_entity_type("person"));
@@ -96,7 +96,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_json_to_dynamic() {
         let json = serde_json::json!({
             "name": "test",

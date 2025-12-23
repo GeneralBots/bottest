@@ -193,7 +193,7 @@ pub struct TestResults {
 }
 
 impl TestResults {
-    #[must_use] 
+    #[must_use]
     pub fn new(suite: &str) -> Self {
         Self {
             suite: suite.to_string(),
@@ -205,7 +205,7 @@ impl TestResults {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn success(&self) -> bool {
         self.failed == 0 && self.errors.is_empty()
     }

@@ -563,12 +563,12 @@ impl MockLLM {
             .await;
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn url(&self) -> String {
         format!("http://127.0.0.1:{}", self.port)
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn port(&self) -> u16 {
         self.port
     }

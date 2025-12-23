@@ -154,17 +154,17 @@ impl BrowserService {
         anyhow::bail!("No supported browser found. Install Brave, Chrome, or Chromium.")
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn ws_url(&self) -> String {
         format!("ws://127.0.0.1:{}", self.port)
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn http_url(&self) -> String {
         format!("http://127.0.0.1:{}", self.port)
     }
 
-    #[must_use] 
+    #[must_use]
     pub const fn port(&self) -> u16 {
         self.port
     }

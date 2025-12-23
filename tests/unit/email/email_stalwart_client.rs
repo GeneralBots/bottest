@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/email/stalwart_client.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -15,11 +15,11 @@ use botserver::email::stalwart_client::RuleCondition;
 use botserver::email::stalwart_client::StalwartClient;
 use serde_json;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_generate_vacation_sieve_basic() {
         let client = StalwartClient::new("http://localhost", "test");
         let config = AutoResponderConfig {
@@ -42,7 +42,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_generate_vacation_sieve_with_dates() {
         let client = StalwartClient::new("http://localhost", "test");
         let config = AutoResponderConfig {
@@ -64,7 +64,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_generate_filter_sieve_move_rule() {
         let client = StalwartClient::new("http://localhost", "test");
         let rule = EmailRule {
@@ -96,7 +96,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_generate_filter_sieve_disabled() {
         let client = StalwartClient::new("http://localhost", "test");
         let rule = EmailRule {

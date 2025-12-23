@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/basic/keywords/messaging/send_template.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use rhai::Dynamic;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_send_template_valid_email() {
         let result = send_template_message("welcome", "user@example.com", "email", None);
         assert!(result.get("success").unwrap().as_bool().unwrap());
@@ -19,7 +19,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_send_template_invalid_email() {
         let result = send_template_message("welcome", "invalid-email", "email", None);
         assert!(!result.get("success").unwrap().as_bool().unwrap());
@@ -27,7 +27,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_send_template_invalid_channel() {
         let result = send_template_message("welcome", "user@example.com", "invalid", None);
         assert!(!result.get("success").unwrap().as_bool().unwrap());
@@ -35,7 +35,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_send_template_batch() {
         let mut recipients = Array::new();
         recipients.push(Dynamic::from("user1@example.com"));
@@ -48,7 +48,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_create_template() {
         let result = create_message_template("test", "email", Some("Subject"), "Hello {{name}}!");
         assert!(result.get("success").unwrap().as_bool().unwrap());
@@ -56,7 +56,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_create_template_empty_name() {
         let result = create_message_template("", "email", None, "Content");
         assert!(!result.get("success").unwrap().as_bool().unwrap());
@@ -64,7 +64,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_extract_template_variables() {
         let content = "Hello {{name}}, your order {{order_id}} is ready!";
         let vars = extract_template_variables(content);
@@ -73,7 +73,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_extract_template_variables_empty() {
         let content = "Hello, no variables here!";
         let vars = extract_template_variables(content);
@@ -82,7 +82,7 @@ use rhai::Dynamic;
 
     #[test]
 
-    
+
     fn test_generate_message_id() {
         let id = generate_message_id();
         assert!(id.starts_with("msg_"));

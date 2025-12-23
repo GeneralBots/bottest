@@ -1,5 +1,5 @@
-//! Unit tests migrated from src/core/shared/test_utils.rs
-//! These tests were originally in botserver and have been migrated to bottest.
+
+
 
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -7,11 +7,11 @@
 
 use serde_json;
 
-// Original: use super::*; - tests used internal functions from botserver
+
 
     #[test]
 
-    
+
     fn test_mock_channel_adapter_creation() {
         let adapter = MockChannelAdapter::new("test");
         assert_eq!(adapter.name(), "test");
@@ -20,7 +20,7 @@ use serde_json;
 
     #[cfg(feature = "llm")]
     #[test]
-    
+
     fn test_mock_llm_provider_creation() {
         let provider = MockLLMProvider::new();
         assert_eq!(provider.response, "Mock LLM response");
@@ -31,7 +31,7 @@ use serde_json;
 
     #[test]
 
-    
+
     fn test_builder_defaults() {
         let builder = TestAppStateBuilder::new();
         assert_eq!(builder.bucket_name, "test-bucket");
