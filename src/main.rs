@@ -262,12 +262,7 @@ fn detect_browser_version(browser_path: &str) -> Option<String> {
     let parts: Vec<&str> = version_str.split_whitespace().collect();
 
     for part in parts {
-        if part.contains('.')
-            && part
-                .chars()
-                .next()
-                .is_some_and(|c| c.is_ascii_digit())
-        {
+        if part.contains('.') && part.chars().next().is_some_and(|c| c.is_ascii_digit()) {
             let major = part.split('.').next()?;
             return Some(major.to_string());
         }
@@ -389,9 +384,8 @@ async fn setup_chromedriver(browser_path: &str) -> Result<PathBuf> {
 
     let chrome_version = get_chromedriver_version_for_browser(&major_version).await?;
 
-    let chromedriver_url = format!(
-        "{CHROMEDRIVER_URL}/{chrome_version}/linux64/chromedriver-linux64.zip"
-    );
+    let chromedriver_url =
+        format!("{CHROMEDRIVER_URL}/{chrome_version}/linux64/chromedriver-linux64.zip");
 
     let zip_path = cache_dir.join("chromedriver.zip");
     download_file(&chromedriver_url, &zip_path).await?;
@@ -440,9 +434,7 @@ async fn setup_chrome_for_testing() -> Result<PathBuf> {
         .await
         .unwrap_or_else(|_| "131.0.6778.204".to_string());
 
-    let chrome_url = format!(
-        "{CHROMEDRIVER_URL}/{chrome_version}/linux64/chrome-linux64.zip"
-    );
+    let chrome_url = format!("{CHROMEDRIVER_URL}/{chrome_version}/linux64/chrome-linux64.zip");
 
     let zip_path = cache_dir.join("chrome.zip");
     download_file(&chrome_url, &zip_path).await?;
@@ -555,7 +547,7 @@ async fn run_browser_demo() -> Result<()> {
     tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
     info!("Closing browser...");
-    let _ = browser.close().await;
+    let _ = browser.close();
     let _ = browser_service.stop().await;
 
     info!("Demo complete!");
@@ -864,9 +856,7 @@ async fn run_e2e_tests(config: &RunnerConfig) -> Result<TestResults> {
                 let _ = child.kill();
             }
             results.failed = 1;
-            results
-                .errors
-                .push(format!("Botserver start failed: {e}"));
+            results.errors.push(format!("Botserver start failed: {e}"));
             return Ok(results);
         }
     };
@@ -917,9 +907,7 @@ async fn run_e2e_tests(config: &RunnerConfig) -> Result<TestResults> {
             results.skipped = skipped;
         }
         Err(e) => {
-            results
-                .errors
-                .push(format!("Failed to run E2E tests: {e}"));
+            results.errors.push(format!("Failed to run E2E tests: {e}"));
             results.failed = 1;
         }
     }

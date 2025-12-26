@@ -1,4 +1,3 @@
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -171,45 +170,46 @@ impl DesktopApp {
         self.platform
     }
 
-    pub async fn find_window(&self, title: &str) -> Result<Option<WindowHandle>> {
+    pub fn find_window(&self, title: &str) -> Result<Option<WindowHandle>> {
         match self.platform {
-            Platform::Windows => self.find_window_windows(title).await,
-            Platform::MacOS => self.find_window_macos(title).await,
-            Platform::Linux => self.find_window_linux(title).await,
+            Platform::Windows => Self::find_window_windows(title),
+            Platform::MacOS => Self::find_window_macos(title),
+            Platform::Linux => Self::find_window_linux(title),
         }
     }
 
     #[cfg(target_os = "windows")]
-    async fn find_window_windows(&self, _title: &str) -> Result<Option<WindowHandle>> {
+    fn find_window_windows(_title: &str) -> Result<Option<WindowHandle>> {
         anyhow::bail!("Windows desktop testing not yet implemented")
     }
 
     #[cfg(not(target_os = "windows"))]
-    async fn find_window_windows(&self, _title: &str) -> Result<Option<WindowHandle>> {
+    fn find_window_windows(_title: &str) -> Result<Option<WindowHandle>> {
         anyhow::bail!("Windows desktop testing not available on this platform")
     }
 
     #[cfg(target_os = "macos")]
-    async fn find_window_macos(&self, _title: &str) -> Result<Option<WindowHandle>> {
+    fn find_window_macos(_title: &str) -> Result<Option<WindowHandle>> {
         anyhow::bail!("macOS desktop testing not yet implemented")
     }
 
     #[cfg(not(target_os = "macos"))]
-    async fn find_window_macos(&self, _title: &str) -> Result<Option<WindowHandle>> {
+    fn find_window_macos(_title: &str) -> Result<Option<WindowHandle>> {
         anyhow::bail!("macOS desktop testing not available on this platform")
     }
 
     #[cfg(target_os = "linux")]
-    async fn find_window_linux(&self, _title: &str) -> Result<Option<WindowHandle>> {
+    fn find_window_linux(_title: &str) -> Result<Option<WindowHandle>> {
         anyhow::bail!("Linux desktop testing not yet implemented")
     }
 
     #[cfg(not(target_os = "linux"))]
-    async fn find_window_linux(&self, _title: &str) -> Result<Option<WindowHandle>> {
+    fn find_window_linux(_title: &str) -> Result<Option<WindowHandle>> {
         anyhow::bail!("Linux desktop testing not available on this platform")
     }
 
-    pub async fn screenshot(&self) -> Result<Screenshot> {
+    pub fn screenshot(&self) -> Result<Screenshot> {
+        let _ = &self.platform;
         anyhow::bail!("Screenshot functionality not yet implemented")
     }
 }
@@ -255,7 +255,7 @@ pub struct Screenshot {
 impl Screenshot {
     pub fn save(&self, path: impl Into<PathBuf>) -> Result<()> {
         let path = path.into();
-        anyhow::bail!("Screenshot save not yet implemented: {path:?}")
+        anyhow::bail!("Screenshot save not yet implemented: {}", path.display())
     }
 }
 
@@ -302,23 +302,28 @@ pub struct Element {
 }
 
 impl Element {
-    pub async fn click(&self) -> Result<()> {
+    pub fn click(&self) -> Result<()> {
+        let _ = &self.locator;
         anyhow::bail!("Element click not yet implemented")
     }
 
-    pub async fn double_click(&self) -> Result<()> {
+    pub fn double_click(&self) -> Result<()> {
+        let _ = &self.locator;
         anyhow::bail!("Element double-click not yet implemented")
     }
 
-    pub async fn right_click(&self) -> Result<()> {
+    pub fn right_click(&self) -> Result<()> {
+        let _ = &self.locator;
         anyhow::bail!("Element right-click not yet implemented")
     }
 
-    pub async fn type_text(&self, _text: &str) -> Result<()> {
+    pub fn type_text(&self, _text: &str) -> Result<()> {
+        let _ = &self.locator;
         anyhow::bail!("Element type_text not yet implemented")
     }
 
-    pub async fn clear(&self) -> Result<()> {
+    pub fn clear(&self) -> Result<()> {
+        let _ = &self.locator;
         anyhow::bail!("Element clear not yet implemented")
     }
 
@@ -332,7 +337,8 @@ impl Element {
         self.bounds.width > 0 && self.bounds.height > 0
     }
 
-    pub async fn focus(&self) -> Result<()> {
+    pub fn focus(&self) -> Result<()> {
+        let _ = &self.locator;
         anyhow::bail!("Element focus not yet implemented")
     }
 }

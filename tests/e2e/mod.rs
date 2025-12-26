@@ -36,7 +36,6 @@ async fn is_service_running(url: &str) -> bool {
 
 impl E2ETestContext {
     pub async fn setup() -> anyhow::Result<Self> {
-
         let botserver_url =
             std::env::var("BOTSERVER_URL").unwrap_or_else(|_| "https://localhost:8080".to_string());
         let botui_url =
@@ -86,7 +85,6 @@ impl E2ETestContext {
     }
 
     pub async fn setup_with_browser() -> anyhow::Result<Self> {
-
         let botserver_url =
             std::env::var("BOTSERVER_URL").unwrap_or_else(|_| "https://localhost:8080".to_string());
         let botui_url =
@@ -183,7 +181,7 @@ impl E2ETestContext {
 
     pub async fn close(mut self) {
         if let Some(browser) = self.browser {
-            let _ = browser.close().await;
+            let _ = browser.close();
         }
         if let Some(mut bs) = self.browser_service.take() {
             let _ = bs.stop().await;
@@ -321,7 +319,6 @@ async fn test_full_harness_has_all_services() {
         ctx.mock_zitadel().is_some(),
         "MockZitadel should be available"
     );
-
 
     assert!(ctx.data_dir.exists());
     assert!(ctx.data_dir.to_str().unwrap().contains("bottest-"));

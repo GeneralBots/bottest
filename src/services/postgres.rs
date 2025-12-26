@@ -1,4 +1,3 @@
-
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
 use anyhow::{Context, Result};
 use nix::sys::signal::{kill, Signal};
@@ -32,7 +31,10 @@ impl PostgresService {
             let bin_dir = PathBuf::from(&stack_path).join("bin/tables/bin");
             let lib_dir = PathBuf::from(&stack_path).join("bin/tables/lib");
             if bin_dir.join("postgres").exists() || bin_dir.join("initdb").exists() {
-                log::info!("Using PostgreSQL from BOTSERVER_STACK_PATH: {bin_dir:?}");
+                log::info!(
+                    "Using PostgreSQL from BOTSERVER_STACK_PATH: {}",
+                    bin_dir.display()
+                );
                 return Ok((bin_dir, Some(lib_dir)));
             }
         }
@@ -48,7 +50,10 @@ impl PostgresService {
             let bin_dir = cwd.join(rel_path);
             if bin_dir.join("postgres").exists() || bin_dir.join("initdb").exists() {
                 let lib_dir = bin_dir.parent().unwrap().join("lib");
-                log::info!("Using PostgreSQL from botserver-stack: {bin_dir:?}");
+                log::info!(
+                    "Using PostgreSQL from botserver-stack: {}",
+                    bin_dir.display()
+                );
                 return Ok((
                     bin_dir,
                     if lib_dir.exists() {
@@ -76,14 +81,14 @@ impl PostgresService {
         for path in &system_paths {
             let bin_dir = PathBuf::from(path);
             if bin_dir.join("postgres").exists() || bin_dir.join("initdb").exists() {
-                log::info!("Using system PostgreSQL from: {bin_dir:?}");
+                log::info!("Using system PostgreSQL from: {}", bin_dir.display());
                 return Ok((bin_dir, None));
             }
         }
 
         if let Ok(initdb_path) = which::which("initdb") {
             if let Some(bin_dir) = initdb_path.parent() {
-                log::info!("Using PostgreSQL from PATH: {bin_dir:?}");
+                log::info!("Using PostgreSQL from PATH: {}", bin_dir.display());
                 return Ok((bin_dir.to_path_buf(), None));
             }
         }
@@ -114,14 +119,14 @@ impl PostgresService {
         service.connection_string = service.build_connection_string();
 
         if !data_path.join("PG_VERSION").exists() {
-            service.init_db().await?;
+            service.init_db()?;
         }
 
-        service.start_server().await?;
+        service.start_server()?;
 
         service.wait_ready().await?;
 
-        service.setup_test_database().await?;
+        service.setup_test_database()?;
 
         Ok(service)
     }
@@ -139,10 +144,10 @@ impl PostgresService {
         cmd
     }
 
-    async fn init_db(&self) -> Result<()> {
+    fn init_db(&self) -> Result<()> {
         log::info!(
-            "Initializing PostgreSQL data directory at {:?}",
-            self.data_dir
+            "Initializing PostgreSQL data directory at {}",
+            self.data_dir.display()
         );
 
         let output = self
@@ -207,15 +212,15 @@ unix_socket_directories = '{}'
         Ok(())
     }
 
-    async fn start_server(&mut self) -> Result<()> {
+    fn start_server(&mut self) -> Result<()> {
         log::info!("Starting PostgreSQL on port {}", self.port);
 
         let log_path = self.data_dir.join("postgres.log");
         let log_file = std::fs::File::create(&log_path)
-            .context(format!("Failed to create log file {log_path:?}"))?;
+            .context(format!("Failed to create log file {}", log_path.display()))?;
         let stderr_file = log_file.try_clone()?;
 
-        log::debug!("PostgreSQL log file: {log_path:?}");
+        log::debug!("PostgreSQL log file: {}", log_path.display());
 
         let mut cmd = self.build_command("postgres");
         let child = cmd
@@ -237,14 +242,14 @@ unix_socket_directories = '{}'
         })
         .await;
 
-        if result.is_err() {
+        if let Err(e) = result {
             let log_path = self.data_dir.join("postgres.log");
             if log_path.exists() {
                 if let Ok(log_content) = std::fs::read_to_string(&log_path) {
                     log::error!("PostgreSQL log:\n{log_content}");
                 }
             }
-            return Err(result.unwrap_err()).context("PostgreSQL failed to start in time");
+            return Err(e).context("PostgreSQL failed to start in time");
         }
 
         for _ in 0..30 {
@@ -262,7 +267,7 @@ unix_socket_directories = '{}'
         Ok(())
     }
 
-    async fn setup_test_database(&self) -> Result<()> {
+    fn setup_test_database(&self) -> Result<()> {
         log::info!("Setting up test database '{}'", self.database_name);
 
         let _ = self
@@ -302,7 +307,7 @@ unix_socket_directories = '{}'
         Ok(())
     }
 
-    pub async fn run_migrations(&self) -> Result<()> {
+    pub fn run_migrations(&self) -> Result<()> {
         log::info!("Running database migrations...");
 
         if let Ok(diesel) = which::which("diesel") {
@@ -324,7 +329,7 @@ unix_socket_directories = '{}'
         Ok(())
     }
 
-    pub async fn create_database(&self, name: &str) -> Result<()> {
+    pub fn create_database(&self, name: &str) -> Result<()> {
         let output = self
             .build_command("psql")
             .args([
@@ -349,7 +354,7 @@ unix_socket_directories = '{}'
         Ok(())
     }
 
-    pub async fn execute(&self, sql: &str) -> Result<()> {
+    pub fn execute(&self, sql: &str) -> Result<()> {
         let output = self
             .build_command("psql")
             .args([
@@ -374,7 +379,7 @@ unix_socket_directories = '{}'
         Ok(())
     }
 
-    pub async fn query(&self, sql: &str) -> Result<String> {
+    pub fn query(&self, sql: &str) -> Result<String> {
         let output = self
             .build_command("psql")
             .args([

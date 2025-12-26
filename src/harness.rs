@@ -133,9 +133,7 @@ impl TestContext {
             let user = std::env::var("DB_USER").unwrap_or_else(|_| "gbuser".to_string());
             let password = std::env::var("DB_PASSWORD").unwrap_or_else(|_| "gbuser".to_string());
             let database = std::env::var("DB_NAME").unwrap_or_else(|_| "botserver".to_string());
-            format!(
-                "postgres://{user}:{password}@{host}:{port}/{database}"
-            )
+            format!("postgres://{user}:{password}@{host}:{port}/{database}")
         } else {
             format!(
                 "postgres://bottest:bottest@127.0.0.1:{}/bottest",
@@ -706,7 +704,6 @@ impl BotServerInstance {
         log::info!("Botserver working directory: {botserver_dir:?}");
         log::info!("Stack path (absolute): {stack_path:?}");
 
-
         let installers_path = botserver_dir.join("botserver-installers");
         let installers_path = installers_path.canonicalize().unwrap_or(installers_path);
         log::info!("Using installers from: {installers_path:?}");
@@ -733,9 +730,7 @@ impl BotServerInstance {
 
         if process.is_some() {
             let max_wait = 600;
-            log::info!(
-                "Waiting for botserver to bootstrap and become ready... (max {max_wait}s)"
-            );
+            log::info!("Waiting for botserver to bootstrap and become ready... (max {max_wait}s)");
             for i in 0..max_wait {
                 if let Ok(resp) = reqwest::get(&format!("{url}/health")).await {
                     if resp.status().is_success() {
@@ -951,7 +946,7 @@ impl TestHarness {
             log::info!("Starting PostgreSQL on port {}...", ctx.ports.postgres);
             let pg = PostgresService::start(ctx.ports.postgres, &data_dir_str).await?;
             if config.run_migrations {
-                pg.run_migrations().await?;
+                pg.run_migrations()?;
             }
             ctx.postgres = Some(pg);
         }

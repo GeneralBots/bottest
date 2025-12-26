@@ -1,4 +1,3 @@
-
 use anyhow::{Context, Result};
 use chromiumoxide::browser::{Browser as CdpBrowser, BrowserConfig as CdpBrowserConfig};
 use chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotFormat;
@@ -31,7 +30,7 @@ impl Default for BrowserType {
 
 impl BrowserType {
     #[must_use]
-    pub const fn browser_name(&self) -> &'static str {
+    pub const fn browser_name(self) -> &'static str {
         match self {
             Self::Chrome => "chrome",
             Self::Firefox => "firefox",
@@ -41,7 +40,7 @@ impl BrowserType {
     }
 
     #[must_use]
-    pub const fn capability_name(&self) -> &'static str {
+    pub const fn capability_name(self) -> &'static str {
         match self {
             Self::Chrome => "goog:chromeOptions",
             Self::Firefox => "moz:firefoxOptions",
@@ -223,7 +222,7 @@ impl BrowserConfig {
 }
 
 pub struct Browser {
-    browser: Arc<CdpBrowser>,
+    cdp: Arc<CdpBrowser>,
     page: Arc<Mutex<Page>>,
     config: BrowserConfig,
     _handle: tokio::task::JoinHandle<()>,
@@ -241,7 +240,11 @@ impl Browser {
                     .await
                     .context("Failed to parse CDP JSON response")?;
                 json.get("webSocketDebuggerUrl")
-                    .and_then(|v| v.as_str()).map_or_else(|| format!("ws://127.0.0.1:{}", config.debug_port), std::string::ToString::to_string)
+                    .and_then(|v| v.as_str())
+                    .map_or_else(
+                        || format!("ws://127.0.0.1:{}", config.debug_port),
+                        std::string::ToString::to_string,
+                    )
             }
             _ => format!("ws://127.0.0.1:{}", config.debug_port),
         };
@@ -255,8 +258,7 @@ impl Browser {
         let handle = tokio::spawn(async move {
             loop {
                 match handler.next().await {
-                    Some(Ok(())) => {
-                    }
+                    Some(Ok(())) => {}
                     Some(Err(e)) => {
                         let err_str = format!("{e:?}");
                         if err_str.contains("did not match any variant") {
@@ -315,7 +317,7 @@ impl Browser {
         log::info!("Successfully connected to browser via CDP");
 
         Ok(Self {
-            browser: Arc::new(browser),
+            cdp: Arc::new(browser),
             page: Arc::new(Mutex::new(page)),
             config,
             _handle: handle,
@@ -334,8 +336,7 @@ impl Browser {
         let handle = tokio::spawn(async move {
             loop {
                 match handler.next().await {
-                    Some(Ok(())) => {
-                    }
+                    Some(Ok(())) => {}
                     Some(Err(e)) => {
                         let err_str = format!("{e:?}");
                         if err_str.contains("did not match any variant") {
@@ -375,7 +376,7 @@ impl Browser {
         log::info!("Browser launched successfully");
 
         Ok(Self {
-            browser: Arc::new(browser),
+            cdp: Arc::new(browser),
             page: Arc::new(Mutex::new(page)),
             config,
             _handle: handle,
@@ -391,77 +392,93 @@ impl Browser {
     }
 
     pub async fn goto(&self, url: &str) -> Result<()> {
-        let page = self.page.lock().await;
-
-        let _ = page.bring_to_front().await;
-
         if url.starts_with("https://") {
             log::info!("Using JavaScript navigation for HTTPS URL: {url}");
 
-            let _ = page.goto("about:blank").await;
+            {
+                let page = self.page.lock().await;
+                let _ = page.bring_to_front().await;
+                let _ = page.goto("about:blank").await;
+            }
             sleep(Duration::from_millis(100)).await;
 
-            let nav_script = format!("window.location.href = '{url}';");
-            let _ = page.evaluate(nav_script.as_str()).await;
+            {
+                let page = self.page.lock().await;
+                let nav_script = format!("window.location.href = '{url}';");
+                let _ = page.evaluate(nav_script.as_str()).await;
+            }
 
             sleep(Duration::from_millis(1500)).await;
 
-            if let Ok(Some(current)) = page.url().await {
-                if current.as_str() != "about:blank" {
-                    log::info!("Navigation successful: {current}");
+            {
+                let page = self.page.lock().await;
+                if let Ok(Some(current)) = page.url().await {
+                    if current.as_str() != "about:blank" {
+                        log::info!("Navigation successful: {current}");
+                    }
                 }
             }
         } else {
-            page.goto(url)
-                .await
-                .context(format!("Failed to navigate to {url}"))?;
+            {
+                let page = self.page.lock().await;
+                let _ = page.bring_to_front().await;
+                page.goto(url)
+                    .await
+                    .context(format!("Failed to navigate to {url}"))?;
+            }
 
             sleep(Duration::from_millis(300)).await;
         }
 
-        let _ = page.bring_to_front().await;
-
-        let _ = page
-            .evaluate("window.focus(); document.body.style.visibility = 'visible';")
-            .await;
+        {
+            let page = self.page.lock().await;
+            let _ = page.bring_to_front().await;
+            let _ = page
+                .evaluate("window.focus(); document.body.style.visibility = 'visible';")
+                .await;
+        }
 
         Ok(())
     }
 
     pub async fn current_url(&self) -> Result<String> {
-        let page = self.page.lock().await;
-        let url = page
-            .url()
-            .await
-            .context("Failed to get current URL")?
-            .unwrap_or_default();
+        let url = {
+            let page = self.page.lock().await;
+            page.url()
+                .await
+                .context("Failed to get current URL")?
+                .unwrap_or_default()
+        };
         Ok(url)
     }
 
     pub async fn title(&self) -> Result<String> {
-        let page = self.page.lock().await;
-        let title = page
-            .get_title()
-            .await
-            .context("Failed to get page title")?
-            .unwrap_or_default();
+        let title = {
+            let page = self.page.lock().await;
+            page.get_title()
+                .await
+                .context("Failed to get page title")?
+                .unwrap_or_default()
+        };
         Ok(title)
     }
 
     pub async fn page_source(&self) -> Result<String> {
-        let page = self.page.lock().await;
-        let content = page.content().await.context("Failed to get page source")?;
+        let content = {
+            let page = self.page.lock().await;
+            page.content().await.context("Failed to get page source")?
+        };
         Ok(content)
     }
 
     pub async fn find(&self, locator: Locator) -> Result<Element> {
-        let page = self.page.lock().await;
-        let selector = locator.to_css_selector();
-
-        let element = page
-            .find_element(&selector)
-            .await
-            .context(format!("Failed to find element: {locator:?}"))?;
+        let element = {
+            let page = self.page.lock().await;
+            let selector = locator.to_css_selector();
+            page.find_element(&selector)
+                .await
+                .context(format!("Failed to find element: {locator:?}"))?
+        };
 
         Ok(Element {
             inner: element,
@@ -470,13 +487,13 @@ impl Browser {
     }
 
     pub async fn find_all(&self, locator: Locator) -> Result<Vec<Element>> {
-        let page = self.page.lock().await;
-        let selector = locator.to_css_selector();
-
-        let elements = page
-            .find_elements(&selector)
-            .await
-            .context(format!("Failed to find elements: {locator:?}"))?;
+        let elements = {
+            let page = self.page.lock().await;
+            let selector = locator.to_css_selector();
+            page.find_elements(&selector)
+                .await
+                .context(format!("Failed to find elements: {locator:?}"))?
+        };
 
         Ok(elements
             .into_iter()
@@ -504,16 +521,7 @@ impl Browser {
             match &condition {
                 WaitCondition::Present | WaitCondition::Visible | WaitCondition::Clickable => {
                     if let Ok(elem) = self.find(locator.clone()).await {
-                        match &condition {
-                            WaitCondition::Present => return Ok(elem),
-                            WaitCondition::Visible => {
-                                return Ok(elem);
-                            }
-                            WaitCondition::Clickable => {
-                                return Ok(elem);
-                            }
-                            _ => {}
-                        }
+                        return Ok(elem);
                     }
                 }
                 WaitCondition::NotPresent => {
@@ -556,9 +564,7 @@ impl Browser {
             sleep(Duration::from_millis(100)).await;
         }
 
-        anyhow::bail!(
-            "Timeout waiting for element {locator:?} with condition {condition:?}"
-        )
+        anyhow::bail!("Timeout waiting for element {locator:?} with condition {condition:?}")
     }
 
     pub async fn click(&self, locator: Locator) -> Result<()> {
@@ -586,11 +592,12 @@ impl Browser {
     }
 
     pub async fn execute_script(&self, script: &str) -> Result<serde_json::Value> {
-        let page = self.page.lock().await;
-        let result = page
-            .evaluate(script)
-            .await
-            .context("Failed to execute script")?;
+        let result = {
+            let page = self.page.lock().await;
+            page.evaluate(script)
+                .await
+                .context("Failed to execute script")?
+        };
         Ok(result.value().cloned().unwrap_or(serde_json::Value::Null))
     }
 
@@ -603,27 +610,31 @@ impl Browser {
     }
 
     pub async fn screenshot(&self) -> Result<Vec<u8>> {
-        let page = self.page.lock().await;
-        let screenshot = page
-            .screenshot(
+        let screenshot = {
+            let page = self.page.lock().await;
+            page.screenshot(
                 chromiumoxide::page::ScreenshotParams::builder()
                     .format(CaptureScreenshotFormat::Png)
                     .build(),
             )
             .await
-            .context("Failed to take screenshot")?;
+            .context("Failed to take screenshot")?
+        };
         Ok(screenshot)
     }
 
     pub async fn screenshot_to_file(&self, path: impl Into<PathBuf>) -> Result<()> {
         let data = self.screenshot().await?;
         let path = path.into();
-        std::fs::write(&path, data).context(format!("Failed to write screenshot to {path:?}"))
+        std::fs::write(&path, &data)
+            .context(format!("Failed to write screenshot to {}", path.display()))
     }
 
     pub async fn refresh(&self) -> Result<()> {
-        let page = self.page.lock().await;
-        page.reload().await.context("Failed to refresh page")?;
+        {
+            let page = self.page.lock().await;
+            page.reload().await.context("Failed to refresh page")?;
+        }
         Ok(())
     }
 
@@ -638,17 +649,19 @@ impl Browser {
     }
 
     pub async fn set_window_size(&self, width: u32, height: u32) -> Result<()> {
-        let page = self.page.lock().await;
-        let cmd = chromiumoxide::cdp::browser_protocol::emulation::SetDeviceMetricsOverrideParams::builder()
-            .width(width)
-            .height(height)
-            .device_scale_factor(1.0)
-            .mobile(false)
-            .build()
-            .map_err(|e| anyhow::anyhow!("Failed to build set window size params: {e}"))?;
-        page.execute(cmd)
-            .await
-            .context("Failed to set window size")?;
+        {
+            let page = self.page.lock().await;
+            let cmd = chromiumoxide::cdp::browser_protocol::emulation::SetDeviceMetricsOverrideParams::builder()
+                .width(width)
+                .height(height)
+                .device_scale_factor(1.0)
+                .mobile(false)
+                .build()
+                .map_err(|e| anyhow::anyhow!("Failed to build set window size params: {e}"))?;
+            page.execute(cmd)
+                .await
+                .context("Failed to set window size")?;
+        }
         Ok(())
     }
 
@@ -657,8 +670,10 @@ impl Browser {
     }
 
     pub async fn get_cookies(&self) -> Result<Vec<Cookie>> {
-        let page = self.page.lock().await;
-        let cookies = page.get_cookies().await.context("Failed to get cookies")?;
+        let cookies = {
+            let page = self.page.lock().await;
+            page.get_cookies().await.context("Failed to get cookies")?
+        };
 
         Ok(cookies
             .into_iter()
@@ -676,44 +691,45 @@ impl Browser {
     }
 
     pub async fn set_cookie(&self, cookie: Cookie) -> Result<()> {
-        let page = self.page.lock().await;
-        page.set_cookie(
-            chromiumoxide::cdp::browser_protocol::network::CookieParam::builder()
-                .name(cookie.name)
-                .value(cookie.value)
-                .build()
-                .map_err(|e| anyhow::anyhow!("Failed to build cookie: {e}"))?,
-        )
-        .await
-        .context("Failed to set cookie")?;
+        {
+            let page = self.page.lock().await;
+            page.set_cookie(
+                chromiumoxide::cdp::browser_protocol::network::CookieParam::builder()
+                    .name(cookie.name)
+                    .value(cookie.value)
+                    .build()
+                    .map_err(|e| anyhow::anyhow!("Failed to build cookie: {e}"))?,
+            )
+            .await
+            .context("Failed to set cookie")?;
+        }
         Ok(())
     }
 
     pub async fn delete_cookie(&self, name: &str) -> Result<()> {
-        let page = self.page.lock().await;
-        page.delete_cookie(
-            chromiumoxide::cdp::browser_protocol::network::DeleteCookiesParams::builder()
+        {
+            let page = self.page.lock().await;
+            let cmd = chromiumoxide::cdp::browser_protocol::network::DeleteCookiesParams::builder()
                 .name(name)
                 .build()
-                .map_err(|e| anyhow::anyhow!("Failed to build delete cookie params: {e}"))?,
-        )
-        .await
-        .context("Failed to delete cookie")?;
+                .map_err(|e| anyhow::anyhow!("Failed to build delete cookie params: {e}"))?;
+            page.execute(cmd).await.context("Failed to delete cookie")?;
+        }
         Ok(())
     }
 
     pub async fn delete_all_cookies(&self) -> Result<()> {
-        let page = self.page.lock().await;
-        let cookies = page.get_cookies().await?;
+        let cookies = {
+            let page = self.page.lock().await;
+            page.get_cookies().await?
+        };
         for c in cookies {
-            page.delete_cookie(
-                chromiumoxide::cdp::browser_protocol::network::DeleteCookiesParams::builder()
-                    .name(&c.name)
-                    .build()
-                    .map_err(|e| anyhow::anyhow!("Failed to build delete cookie params: {e}"))?,
-            )
-            .await
-            .ok();
+            let page = self.page.lock().await;
+            let cmd = chromiumoxide::cdp::browser_protocol::network::DeleteCookiesParams::builder()
+                .name(&c.name)
+                .build()
+                .map_err(|e| anyhow::anyhow!("Failed to build delete cookie params: {e}"))?;
+            page.execute(cmd).await.ok();
         }
         Ok(())
     }
@@ -745,20 +761,25 @@ impl Browser {
         elem.is_displayed().await
     }
 
-    pub async fn close(self) -> Result<()> {
+    pub fn close(self) -> Result<()> {
+        let _ = self.cdp;
         Ok(())
     }
 
     pub async fn send_key(&self, key: Key) -> Result<()> {
-        let page = self.page.lock().await;
         let key_str = Self::key_to_cdp_key(key);
-        if let Ok(cmd) =
-            chromiumoxide::cdp::browser_protocol::input::DispatchKeyEventParams::builder()
-                .r#type(chromiumoxide::cdp::browser_protocol::input::DispatchKeyEventType::KeyDown)
-                .text(key_str)
-                .build()
         {
-            let _ = page.execute(cmd).await;
+            let page = self.page.lock().await;
+            if let Ok(cmd) =
+                chromiumoxide::cdp::browser_protocol::input::DispatchKeyEventParams::builder()
+                    .r#type(
+                        chromiumoxide::cdp::browser_protocol::input::DispatchKeyEventType::KeyDown,
+                    )
+                    .text(key_str)
+                    .build()
+            {
+                let _ = page.execute(cmd).await;
+            }
         }
         Ok(())
     }
@@ -767,42 +788,63 @@ impl Browser {
         match key {
             Key::Enter => "\r",
             Key::Tab => "\t",
-            Key::Escape => "",
-            Key::Backspace => "",
-            Key::Delete => "",
-            Key::ArrowUp => "",
-            Key::ArrowDown => "",
-            Key::ArrowLeft => "",
-            Key::ArrowRight => "",
-            Key::Home => "",
-            Key::End => "",
-            Key::PageUp => "",
-            Key::PageDown => "",
-            _ => "",
+            Key::Escape
+            | Key::Backspace
+            | Key::Delete
+            | Key::ArrowUp
+            | Key::ArrowDown
+            | Key::ArrowLeft
+            | Key::ArrowRight
+            | Key::Home
+            | Key::End
+            | Key::PageUp
+            | Key::PageDown
+            | Key::F1
+            | Key::F2
+            | Key::F3
+            | Key::F4
+            | Key::F5
+            | Key::F6
+            | Key::F7
+            | Key::F8
+            | Key::F9
+            | Key::F10
+            | Key::F11
+            | Key::F12
+            | Key::Shift
+            | Key::Control
+            | Key::Alt
+            | Key::Meta => "",
         }
     }
 
-    pub async fn switch_to_frame(&self, _locator: Locator) -> Result<()> {
+    pub fn switch_to_frame(&self, _locator: Locator) -> Result<()> {
+        let _ = &self.page;
         Ok(())
     }
 
-    pub async fn switch_to_frame_by_index(&self, _index: u16) -> Result<()> {
+    pub fn switch_to_frame_by_index(&self, _index: u16) -> Result<()> {
+        let _ = &self.page;
         Ok(())
     }
 
-    pub async fn switch_to_parent_frame(&self) -> Result<()> {
+    pub fn switch_to_parent_frame(&self) -> Result<()> {
+        let _ = &self.page;
         Ok(())
     }
 
-    pub async fn switch_to_default_content(&self) -> Result<()> {
+    pub fn switch_to_default_content(&self) -> Result<()> {
+        let _ = &self.page;
         Ok(())
     }
 
-    pub async fn current_window_handle(&self) -> Result<String> {
+    pub fn current_window_handle(&self) -> Result<String> {
+        let _ = &self.page;
         Ok("main".to_string())
     }
 
-    pub async fn window_handles(&self) -> Result<Vec<String>> {
+    pub fn window_handles(&self) -> Result<Vec<String>> {
+        let _ = &self.page;
         Ok(vec!["main".to_string()])
     }
 }
@@ -869,7 +911,8 @@ impl Element {
             .context(format!("Failed to get attribute {name}"))
     }
 
-    pub async fn css_value(&self, _name: &str) -> Result<String> {
+    pub fn css_value(&self, _name: &str) -> Result<String> {
+        let _ = &self.inner;
         Ok(String::new())
     }
 
@@ -887,7 +930,8 @@ impl Element {
         Ok(checked.is_some())
     }
 
-    pub async fn tag_name(&self) -> Result<String> {
+    pub fn tag_name(&self) -> Result<String> {
+        let _ = &self.inner;
         Ok("element".to_string())
     }
 
@@ -896,7 +940,8 @@ impl Element {
         Ok((point.x as i64, point.y as i64))
     }
 
-    pub async fn size(&self) -> Result<(u64, u64)> {
+    pub fn size(&self) -> Result<(u64, u64)> {
+        let _ = &self.inner;
         Ok((100, 20))
     }
 

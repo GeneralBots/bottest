@@ -1,4 +1,3 @@
-
 use super::{BotResponse, ConversationState, ResponseContentType};
 use crate::fixtures::{Bot, Channel, Customer, Session};
 use crate::harness::TestContext;
@@ -137,7 +136,7 @@ impl BotRunner {
         self
     }
 
-    pub fn load_script(&mut self, name: &str, content: &str) -> &mut Self {
+    pub fn load_script(&self, name: &str, content: &str) -> &Self {
         self.script_cache
             .lock()
             .unwrap()
@@ -145,9 +144,9 @@ impl BotRunner {
         self
     }
 
-    pub fn load_script_file(&mut self, name: &str, path: &PathBuf) -> Result<&mut Self> {
+    pub fn load_script_file(&self, name: &str, path: &PathBuf) -> Result<&Self> {
         let content = std::fs::read_to_string(path)
-            .with_context(|| format!("Failed to read script file: {path:?}"))?;
+            .with_context(|| format!("Failed to read script file: {}", path.display()))?;
         self.script_cache
             .lock()
             .unwrap()
@@ -155,7 +154,7 @@ impl BotRunner {
         Ok(self)
     }
 
-    pub fn start_session(&mut self, customer: Customer) -> Result<Uuid> {
+    pub fn start_session(&self, customer: Customer) -> Result<Uuid> {
         let session_id = Uuid::new_v4();
         let bot_id = self.bot.as_ref().map_or_else(Uuid::new_v4, |b| b.id);
 
@@ -182,13 +181,13 @@ impl BotRunner {
         Ok(session_id)
     }
 
-    pub fn end_session(&mut self, session_id: Uuid) -> Result<()> {
+    pub fn end_session(&self, session_id: Uuid) -> Result<()> {
         self.sessions.lock().unwrap().remove(&session_id);
         Ok(())
     }
 
     pub async fn process_message(
-        &mut self,
+        &self,
         session_id: Uuid,
         message: &str,
     ) -> Result<ExecutionResult> {
@@ -205,18 +204,15 @@ impl BotRunner {
             sessions.get(&session_id).cloned()
         };
 
-        let state = match state {
-            Some(s) => s,
-            None => {
-                return Ok(ExecutionResult {
-                    session_id,
-                    response: None,
-                    state: ConversationState::Error,
-                    execution_time: start.elapsed(),
-                    logs,
-                    error: Some("Session not found".to_string()),
-                });
-            }
+        let Some(state) = state else {
+            return Ok(ExecutionResult {
+                session_id,
+                response: None,
+                state: ConversationState::Error,
+                execution_time: start.elapsed(),
+                logs,
+                error: Some("Session not found".to_string()),
+            });
         };
 
         if self.config.capture_logs {
@@ -308,17 +304,18 @@ impl BotRunner {
         let response_content = if script_content.is_empty() {
             format!("Received: {message}")
         } else {
-            self.evaluate_basic_script(&script_content, message, &state.context)
-                .await
+            Self::evaluate_basic_script(&script_content, message, &state.context)
                 .unwrap_or_else(|e| format!("Error: {e}"))
         };
 
         let latency = start.elapsed().as_millis() as u64;
 
-        let mut metrics = self.metrics.lock().unwrap();
-        metrics.total_requests += 1;
-        metrics.successful_requests += 1;
-        metrics.total_latency_ms += latency;
+        {
+            let mut metrics = self.metrics.lock().unwrap();
+            metrics.total_requests += 1;
+            metrics.successful_requests += 1;
+            metrics.total_latency_ms += latency;
+        }
 
         Ok(BotResponse {
             id: Uuid::new_v4(),
@@ -338,8 +335,7 @@ impl BotRunner {
         })
     }
 
-    async fn evaluate_basic_script(
-        &self,
+    fn evaluate_basic_script(
         script: &str,
         input: &str,
         context: &HashMap<String, serde_json::Value>,
@@ -360,7 +356,7 @@ impl BotRunner {
 
             if line.to_uppercase().starts_with("TALK") {
                 let content = line[4..].trim().trim_matches('"');
-                let expanded = self.expand_variables(content, &variables);
+                let expanded = Self::expand_variables(content, &variables);
                 if !output.is_empty() {
                     output.push('\n');
                 }
@@ -372,7 +368,7 @@ impl BotRunner {
                 if parts.len() == 2 {
                     let var_name = parts[0].trim().to_uppercase();
                     let var_value = parts[1].trim().trim_matches('"').to_string();
-                    let expanded = self.expand_variables(&var_value, &variables);
+                    let expanded = Self::expand_variables(&var_value, &variables);
                     variables.insert(var_name, expanded);
                 }
             }
@@ -385,7 +381,7 @@ impl BotRunner {
         Ok(output)
     }
 
-    fn expand_variables(&self, text: &str, variables: &HashMap<String, String>) -> String {
+    fn expand_variables(text: &str, variables: &HashMap<String, String>) -> String {
         let mut result = text.to_string();
         for (key, value) in variables {
             result = result.replace(&format!("{{{key}}}"), value);
@@ -395,11 +391,7 @@ impl BotRunner {
         result
     }
 
-    pub async fn execute_script(
-        &mut self,
-        script_name: &str,
-        input: &str,
-    ) -> Result<ExecutionResult> {
+    pub fn execute_script(&self, script_name: &str, input: &str) -> Result<ExecutionResult> {
         let session_id = Uuid::new_v4();
         let start = Instant::now();
         let mut logs = Vec::new();
@@ -409,18 +401,15 @@ impl BotRunner {
             cache.get(script_name).cloned()
         };
 
-        let script = match script {
-            Some(s) => s,
-            None => {
-                return Ok(ExecutionResult {
-                    session_id,
-                    response: None,
-                    state: ConversationState::Error,
-                    execution_time: start.elapsed(),
-                    logs,
-                    error: Some(format!("Script '{script_name}' not found")),
-                });
-            }
+        let Some(script) = script else {
+            return Ok(ExecutionResult {
+                session_id,
+                response: None,
+                state: ConversationState::Error,
+                execution_time: start.elapsed(),
+                logs,
+                error: Some(format!("Script '{script_name}' not found")),
+            });
         };
 
         if self.config.capture_logs {
@@ -437,7 +426,7 @@ impl BotRunner {
             metrics.script_executions += 1;
         }
 
-        let result = self.execute_script_internal(&script, input).await;
+        let result = Self::execute_script_internal(&script, input);
 
         let execution_time = start.elapsed();
 
@@ -467,16 +456,16 @@ impl BotRunner {
         }
     }
 
-    async fn execute_script_internal(&self, script: &str, input: &str) -> Result<String> {
+    fn execute_script_internal(script: &str, input: &str) -> Result<String> {
         let context = HashMap::new();
-        self.evaluate_basic_script(script, input, &context).await
+        Self::evaluate_basic_script(script, input, &context)
     }
 
     pub fn metrics(&self) -> RunnerMetrics {
         self.metrics.lock().unwrap().clone()
     }
 
-    pub fn reset_metrics(&mut self) {
+    pub fn reset_metrics(&self) {
         *self.metrics.lock().unwrap() = RunnerMetrics::default();
     }
 
@@ -486,14 +475,16 @@ impl BotRunner {
 
     pub fn get_session_info(&self, session_id: Uuid) -> Option<SessionInfo> {
         let sessions = self.sessions.lock().unwrap();
-        sessions.get(&session_id).map(|s| SessionInfo {
+        let info = sessions.get(&session_id).map(|s| SessionInfo {
             session_id: s.session.id,
             customer_id: s.customer.id,
             channel: s.channel,
             message_count: s.message_count,
             state: s.conversation_state,
             duration: s.started_at.elapsed(),
-        })
+        });
+        drop(sessions);
+        info
     }
 
     pub fn set_env(&mut self, key: &str, value: &str) -> &mut Self {
@@ -553,27 +544,31 @@ mod tests {
 
     #[test]
     fn test_runner_metrics_avg_latency() {
-        let mut metrics = RunnerMetrics::default();
-        metrics.total_requests = 10;
-        metrics.total_latency_ms = 1000;
+        let metrics = RunnerMetrics {
+            total_requests: 10,
+            total_latency_ms: 1000,
+            ..Default::default()
+        };
 
         assert_eq!(metrics.avg_latency_ms(), 100);
     }
 
     #[test]
     fn test_runner_metrics_success_rate() {
-        let mut metrics = RunnerMetrics::default();
-        metrics.total_requests = 100;
-        metrics.successful_requests = 95;
+        let metrics = RunnerMetrics {
+            total_requests: 100,
+            successful_requests: 95,
+            ..Default::default()
+        };
 
-        assert_eq!(metrics.success_rate(), 95.0);
+        assert!((metrics.success_rate() - 95.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_runner_metrics_zero_requests() {
         let metrics = RunnerMetrics::default();
         assert_eq!(metrics.avg_latency_ms(), 0);
-        assert_eq!(metrics.success_rate(), 0.0);
+        assert!(metrics.success_rate().abs() < f64::EPSILON);
     }
 
     #[test]
@@ -584,16 +579,17 @@ mod tests {
 
     #[test]
     fn test_load_script() {
-        let mut runner = BotRunner::new();
+        let runner = BotRunner::new();
         runner.load_script("test", "TALK \"Hello\"");
 
         let cache = runner.script_cache.lock().unwrap();
         assert!(cache.contains_key("test"));
+        drop(cache);
     }
 
     #[test]
     fn test_start_session() {
-        let mut runner = BotRunner::new();
+        let runner = BotRunner::new();
         let customer = Customer::default();
 
         let session_id = runner.start_session(customer).unwrap();
@@ -604,7 +600,7 @@ mod tests {
 
     #[test]
     fn test_end_session() {
-        let mut runner = BotRunner::new();
+        let runner = BotRunner::new();
         let customer = Customer::default();
 
         let session_id = runner.start_session(customer).unwrap();
@@ -616,7 +612,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_process_message() {
-        let mut runner = BotRunner::new();
+        let runner = BotRunner::new();
         let customer = Customer::default();
 
         let session_id = runner.start_session(customer).unwrap();
@@ -629,7 +625,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_process_message_invalid_session() {
-        let mut runner = BotRunner::new();
+        let runner = BotRunner::new();
         let invalid_session_id = Uuid::new_v4();
 
         let result = runner
@@ -642,22 +638,22 @@ mod tests {
         assert_eq!(result.state, ConversationState::Error);
     }
 
-    #[tokio::test]
-    async fn test_execute_script() {
-        let mut runner = BotRunner::new();
+    #[test]
+    fn test_execute_script() {
+        let runner = BotRunner::new();
         runner.load_script("greeting", "TALK \"Hello\"");
 
-        let result = runner.execute_script("greeting", "Hi").await.unwrap();
+        let result = runner.execute_script("greeting", "Hi").unwrap();
 
         assert!(result.response.is_some());
         assert!(result.error.is_none());
     }
 
-    #[tokio::test]
-    async fn test_execute_script_not_found() {
-        let mut runner = BotRunner::new();
+    #[test]
+    fn test_execute_script_not_found() {
+        let runner = BotRunner::new();
 
-        let result = runner.execute_script("nonexistent", "Hi").await.unwrap();
+        let result = runner.execute_script("nonexistent", "Hi").unwrap();
 
         assert!(result.response.is_none());
         assert!(result.error.is_some());
@@ -675,7 +671,7 @@ mod tests {
 
     #[test]
     fn test_reset_metrics() {
-        let mut runner = BotRunner::new();
+        let runner = BotRunner::new();
 
         {
             let mut metrics = runner.metrics.lock().unwrap();
@@ -709,7 +705,7 @@ mod tests {
 
     #[test]
     fn test_session_info() {
-        let mut runner = BotRunner::new();
+        let runner = BotRunner::new();
         let customer = Customer::default();
         let customer_id = customer.id;
 
