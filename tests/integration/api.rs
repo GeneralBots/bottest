@@ -36,25 +36,6 @@ async fn get_test_server() -> Option<(Option<TestContext>, String)> {
     }
 }
 
-fn is_server_available_sync() -> bool {
-    if std::env::var("SKIP_INTEGRATION_TESTS").is_ok() {
-        return false;
-    }
-
-    if let Some(url) = external_server_url() {
-        let client = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(2))
-            .build()
-            .ok();
-
-        if let Some(client) = client {
-            return client.get(&url).send().is_ok();
-        }
-    }
-
-    false
-}
-
 macro_rules! skip_if_no_server {
     ($base_url:expr) => {
         if $base_url.is_none() {
@@ -658,7 +639,7 @@ async fn test_mock_llm_assertions() {
 
         let client = reqwest::Client::new();
         let _ = client
-            .post(&format!("{}/v1/chat/completions", mock_llm.url()))
+            .post(format!("{}/v1/chat/completions", mock_llm.url()))
             .json(&serde_json::json!({
                 "model": "gpt-4",
                 "messages": [{"role": "user", "content": "test"}]
@@ -685,7 +666,7 @@ async fn test_mock_llm_error_simulation() {
 
         let client = reqwest::Client::new();
         let response = client
-            .post(&format!("{}/v1/chat/completions", mock_llm.url()))
+            .post(format!("{}/v1/chat/completions", mock_llm.url()))
             .json(&serde_json::json!({
                 "model": "gpt-4",
                 "messages": [{"role": "user", "content": "test"}]

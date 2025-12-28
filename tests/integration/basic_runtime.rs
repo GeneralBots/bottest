@@ -1,7 +1,6 @@
 use rhai::Engine;
 use std::sync::{Arc, Mutex};
 
-
 fn create_basic_engine() -> Engine {
     let mut engine = Engine::new();
 
@@ -135,16 +134,14 @@ impl InputProvider {
 fn create_conversation_engine(output: OutputCollector, input: InputProvider) -> Engine {
     let mut engine = create_basic_engine();
 
-    let output_clone = output.clone();
     engine.register_fn("TALK", move |msg: &str| {
-        output_clone.add_message(msg.to_string());
+        output.add_message(msg.to_string());
     });
 
     engine.register_fn("HEAR", move || -> String { input.next_input() });
 
     engine
 }
-
 
 #[test]
 fn test_string_concatenation_in_engine() {
@@ -208,7 +205,6 @@ fn test_replace_function() {
     assert_eq!(result, "bbb");
 }
 
-
 #[test]
 fn test_math_operations_chain() {
     let engine = create_basic_engine();
@@ -264,13 +260,12 @@ fn test_val_function() {
     let result: f64 = engine.eval(r#"VAL("42")"#).unwrap();
     assert!((result - 42.0).abs() < f64::EPSILON);
 
-    let result: f64 = engine.eval(r#"VAL("3.14")"#).unwrap();
-    assert!((result - 3.14).abs() < f64::EPSILON);
+    let result: f64 = engine.eval(r#"VAL("3.5")"#).unwrap();
+    assert!((result - 3.5).abs() < f64::EPSILON);
 
     let result: f64 = engine.eval(r#"VAL("invalid")"#).unwrap();
     assert!((result - 0.0).abs() < f64::EPSILON);
 }
-
 
 #[test]
 fn test_talk_output() {
@@ -393,19 +388,18 @@ fn test_keyword_detection() {
     assert_eq!(messages[0], "I can help you! What do you need?");
 }
 
-
 #[test]
 fn test_variable_assignment() {
     let engine = create_basic_engine();
 
     let result: i64 = engine
         .eval(
-            r#"
+            r"
         let x = 10;
         let y = 20;
         let z = x + y;
         z
-    "#,
+    ",
         )
         .unwrap();
     assert_eq!(result, 30);
@@ -442,7 +436,6 @@ fn test_numeric_expressions() {
     assert_eq!(result, 12);
 }
 
-
 #[test]
 fn test_for_loop() {
     let output = OutputCollector::new();
@@ -472,7 +465,7 @@ fn test_while_loop() {
 
     let result: i64 = engine
         .eval(
-            r#"
+            r"
         let count = 0;
         let sum = 0;
         while count < 5 {
@@ -480,21 +473,19 @@ fn test_while_loop() {
             count = count + 1;
         }
         sum
-    "#,
+    ",
         )
         .unwrap();
     assert_eq!(result, 10);
 }
-
 
 #[test]
 fn test_division_by_zero() {
     let engine = create_basic_engine();
 
     let result = engine.eval::<f64>("10.0 / 0.0");
-    match result {
-        Ok(val) => assert!(val.is_infinite() || val.is_nan()),
-        Err(_) => (),
+    if let Ok(val) = result {
+        assert!(val.is_infinite() || val.is_nan());
     }
 }
 
@@ -513,7 +504,6 @@ fn test_type_mismatch() {
     let result = engine.eval::<i64>(r#"ABS("not a number")"#);
     assert!(result.is_err());
 }
-
 
 #[test]
 fn test_greeting_script_logic() {
@@ -607,7 +597,6 @@ fn test_echo_bot_logic() {
     assert_eq!(messages[1], "You said: Hello");
     assert_eq!(messages[2], "You said: How are you?");
 }
-
 
 #[test]
 fn test_order_lookup_simulation() {

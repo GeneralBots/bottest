@@ -773,7 +773,10 @@ async fn test_with_fixtures() {
 
     match ctx.ctx.insert_user(&user).await {
         Ok(_) => println!("Inserted test user: {}", user.email),
-        Err(e) => eprintln!("Could not insert user (DB may not be directly accessible): {}", e),
+        Err(e) => eprintln!(
+            "Could not insert user (DB may not be directly accessible): {}",
+            e
+        ),
     }
 
     match ctx.ctx.insert_bot(&bot).await {
@@ -822,12 +825,10 @@ async fn test_mock_services_available() {
             Ok(_pool) => println!("✓ Connected to existing PostgreSQL"),
             Err(e) => eprintln!("Could not connect to existing PostgreSQL: {}", e),
         }
+    } else if ctx.ctx.postgres().is_some() {
+        println!("✓ PostgreSQL is managed by harness");
     } else {
-        if ctx.ctx.postgres().is_some() {
-            println!("✓ PostgreSQL is managed by harness");
-        } else {
-            eprintln!("PostgreSQL should be started in fresh stack mode");
-        }
+        eprintln!("PostgreSQL should be started in fresh stack mode");
     }
 
     ctx.close().await;

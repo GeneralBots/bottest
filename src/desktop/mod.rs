@@ -254,6 +254,7 @@ pub struct Screenshot {
 
 impl Screenshot {
     pub fn save(&self, path: impl Into<PathBuf>) -> Result<()> {
+        let _ = (&self.data, self.width, self.height);
         let path = path.into();
         anyhow::bail!("Screenshot save not yet implemented: {}", path.display())
     }

@@ -1,4 +1,3 @@
-
 pub mod browser;
 pub mod pages;
 
@@ -108,6 +107,7 @@ impl Locator {
     }
 
     #[must_use]
+    #[allow(clippy::match_same_arms)]
     pub fn to_css_selector(&self) -> String {
         match self {
             Self::Css(s) => s.clone(),

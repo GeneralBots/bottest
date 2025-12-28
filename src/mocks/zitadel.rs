@@ -1,4 +1,3 @@
-
 use super::{new_expectation_store, ExpectationStore};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -405,10 +404,7 @@ impl MockZitadel {
 
         Mock::given(method("GET"))
             .and(path("/oidc/v1/userinfo"))
-            .and(header(
-                "authorization",
-                format!("Bearer {token}").as_str(),
-            ))
+            .and(header("authorization", format!("Bearer {token}").as_str()))
             .respond_with(ResponseTemplate::new(200).set_body_json(&response))
             .mount(&self.server)
             .await;
@@ -663,8 +659,8 @@ mod tests {
             client_id: Some("client".to_string()),
             username: Some("user@test.com".to_string()),
             token_type: Some("Bearer".to_string()),
-            exp: Some(1234567890),
-            iat: Some(1234567800),
+            exp: Some(1_234_567_890),
+            iat: Some(1_234_567_800),
             sub: Some("user-id".to_string()),
             aud: Some("audience".to_string()),
             iss: Some("issuer".to_string()),

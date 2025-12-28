@@ -1,4 +1,3 @@
-
 pub mod data;
 pub mod scripts;
 
@@ -6,7 +5,6 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
@@ -79,6 +77,7 @@ impl Default for Customer {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[allow(clippy::upper_case_acronyms)]
 pub enum Channel {
     WhatsApp,
     Teams,
@@ -277,7 +276,6 @@ impl Default for QueueStatus {
         Self::Waiting
     }
 }
-
 
 #[must_use]
 pub fn admin_user() -> User {

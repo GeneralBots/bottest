@@ -156,11 +156,9 @@ async fn perform_logout(browser: &Browser, base_url: &str) -> Result<bool, Strin
 
     for selector in &logout_selectors {
         let locator = Locator::css(selector);
-        if browser.exists(locator.clone()).await {
-            if browser.click(locator).await.is_ok() {
-                tokio::time::sleep(Duration::from_secs(1)).await;
-                break;
-            }
+        if browser.exists(locator.clone()).await && browser.click(locator).await.is_ok() {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            break;
         }
     }
 
@@ -171,20 +169,19 @@ async fn perform_logout(browser: &Browser, base_url: &str) -> Result<bool, Strin
 
         for selector in &logout_selectors {
             let locator = Locator::css(selector);
-            if browser.exists(locator.clone()).await {
-                if browser.click(locator).await.is_ok() {
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                    break;
-                }
+            if browser.exists(locator.clone()).await && browser.click(locator).await.is_ok() {
+                tokio::time::sleep(Duration::from_secs(1)).await;
+                break;
             }
         }
     }
 
     let current_url = browser.current_url().await.unwrap_or_default();
+    let base_url_with_slash = format!("{base_url}/");
     let logged_out = current_url.contains("/login")
         || current_url.contains("/logout")
-        || current_url == format!("{}/", base_url)
-        || current_url == base_url.to_string();
+        || current_url == base_url_with_slash
+        || current_url == base_url;
 
     if logged_out {
         return Ok(true);
@@ -442,10 +439,10 @@ async fn test_session_persistence() {
             tokio::time::sleep(Duration::from_secs(1)).await;
             let current_url = browser.current_url().await.unwrap_or_default();
 
-            if !current_url.contains("/login") {
-                println!("✓ Session persisted after page refresh");
-            } else {
+            if current_url.contains("/login") {
                 eprintln!("✗ Session lost after refresh");
+            } else {
+                println!("✓ Session persisted after page refresh");
             }
         }
 
@@ -454,10 +451,10 @@ async fn test_session_persistence() {
             tokio::time::sleep(Duration::from_secs(1)).await;
             let current_url = browser.current_url().await.unwrap_or_default();
 
-            if !current_url.contains("/login") {
-                println!("✓ Session maintained across navigation");
-            } else {
+            if current_url.contains("/login") {
                 eprintln!("✗ Session lost during navigation");
+            } else {
+                println!("✓ Session maintained across navigation");
             }
         }
     } else {

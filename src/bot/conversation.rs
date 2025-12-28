@@ -131,7 +131,7 @@ impl ConversationTest {
         ConversationBuilder::new(bot_name).build()
     }
 
-    pub async fn with_context(ctx: &TestContext, bot_name: &str) -> Result<Self> {
+    pub fn with_context(ctx: &TestContext, bot_name: &str) -> Result<Self> {
         let mut conv = ConversationBuilder::new(bot_name).build();
         conv.llm_url = Some(ctx.llm_url());
         Ok(conv)
@@ -306,7 +306,7 @@ impl ConversationTest {
         metadata
     }
 
-    pub async fn assert_response_contains(&mut self, text: &str) -> &mut Self {
+    pub fn assert_response_contains(&mut self, text: &str) -> &mut Self {
         let result = if let Some(ref response) = self.last_response {
             if response.content.contains(text) {
                 AssertionResult::pass(&format!("Response contains '{text}'"))
@@ -325,7 +325,7 @@ impl ConversationTest {
         self
     }
 
-    pub async fn assert_response_equals(&mut self, text: &str) -> &mut Self {
+    pub fn assert_response_equals(&mut self, text: &str) -> &mut Self {
         let result = if let Some(ref response) = self.last_response {
             if response.content == text {
                 AssertionResult::pass(&format!("Response equals '{text}'"))
@@ -344,7 +344,7 @@ impl ConversationTest {
         self
     }
 
-    pub async fn assert_response_matches(&mut self, pattern: &str) -> &mut Self {
+    pub fn assert_response_matches(&mut self, pattern: &str) -> &mut Self {
         let result = if let Some(ref response) = self.last_response {
             match regex::Regex::new(pattern) {
                 Ok(re) => {
@@ -372,7 +372,7 @@ impl ConversationTest {
         self
     }
 
-    pub async fn assert_response_not_contains(&mut self, text: &str) -> &mut Self {
+    pub fn assert_response_not_contains(&mut self, text: &str) -> &mut Self {
         let result = if let Some(ref response) = self.last_response {
             if response.content.contains(text) {
                 AssertionResult::fail(
@@ -391,16 +391,13 @@ impl ConversationTest {
         self
     }
 
-    pub async fn assert_transferred_to_human(&mut self) -> &mut Self {
+    pub fn assert_transferred_to_human(&mut self) -> &mut Self {
         let is_transferred = self.state == ConversationState::Transferred
-            || self
-                .last_response
-                .as_ref()
-                .is_some_and(|r| {
-                    r.content.to_lowercase().contains("transfer")
-                        || r.content.to_lowercase().contains("human")
-                        || r.content.to_lowercase().contains("agent")
-                });
+            || self.last_response.as_ref().is_some_and(|r| {
+                r.content.to_lowercase().contains("transfer")
+                    || r.content.to_lowercase().contains("human")
+                    || r.content.to_lowercase().contains("agent")
+            });
 
         let result = if is_transferred {
             self.state = ConversationState::Transferred;
@@ -417,7 +414,7 @@ impl ConversationTest {
         self
     }
 
-    pub async fn assert_queue_position(&mut self, expected: usize) -> &mut Self {
+    pub fn assert_queue_position(&mut self, expected: usize) -> &mut Self {
         let actual = self
             .context
             .get("queue_position")
@@ -438,7 +435,7 @@ impl ConversationTest {
         self
     }
 
-    pub async fn assert_response_within(&mut self, max_duration: Duration) -> &mut Self {
+    pub fn assert_response_within(&mut self, max_duration: Duration) -> &mut Self {
         let result = if let Some(latency) = self.last_latency {
             if latency <= max_duration {
                 AssertionResult::pass(&format!("Response within {max_duration:?}"))
@@ -461,7 +458,7 @@ impl ConversationTest {
         self
     }
 
-    pub async fn assert_response_count(&mut self, expected: usize) -> &mut Self {
+    pub fn assert_response_count(&mut self, expected: usize) -> &mut Self {
         let actual = self.responses.len();
 
         let result = if actual == expected {
@@ -478,7 +475,7 @@ impl ConversationTest {
         self
     }
 
-    pub async fn assert_response_type(&mut self, expected: ResponseContentType) -> &mut Self {
+    pub fn assert_response_type(&mut self, expected: ResponseContentType) -> &mut Self {
         let result = if let Some(ref response) = self.last_response {
             if response.content_type == expected {
                 AssertionResult::pass(&format!("Response type is {expected:?}"))
@@ -510,7 +507,7 @@ impl ConversationTest {
         self.context.get(key)
     }
 
-    pub async fn end(&mut self) -> &mut Self {
+    pub fn end(&mut self) -> &mut Self {
         self.state = ConversationState::Ended;
         self.record.ended_at = Some(Utc::now());
         self
@@ -583,7 +580,7 @@ mod tests {
     async fn test_assert_response_contains() {
         let mut conv = ConversationTest::new("test-bot");
         conv.user_says("test").await;
-        conv.assert_response_contains("Response").await;
+        conv.assert_response_contains("Response");
 
         assert!(conv.all_passed());
     }
@@ -592,7 +589,7 @@ mod tests {
     async fn test_assert_response_not_contains() {
         let mut conv = ConversationTest::new("test-bot");
         conv.user_says("test").await;
-        conv.assert_response_not_contains("nonexistent").await;
+        conv.assert_response_not_contains("nonexistent");
 
         assert!(conv.all_passed());
     }
@@ -632,7 +629,7 @@ mod tests {
     async fn test_end_conversation() {
         let mut conv = ConversationTest::new("test-bot");
         conv.user_says("bye").await;
-        conv.end().await;
+        conv.end();
 
         assert_eq!(conv.state(), ConversationState::Ended);
         assert!(conv.record().ended_at.is_some());
@@ -642,7 +639,7 @@ mod tests {
     async fn test_failed_assertions() {
         let mut conv = ConversationTest::new("test-bot");
         conv.user_says("test").await;
-        conv.assert_response_equals("this will not match").await;
+        conv.assert_response_equals("this will not match");
 
         assert!(!conv.all_passed());
         assert_eq!(conv.failed_assertions().len(), 1);
@@ -672,13 +669,13 @@ mod tests {
         let mut conv = ConversationTest::new("support-bot");
 
         conv.user_says("Hi").await;
-        conv.assert_response_contains("Response").await;
+        conv.assert_response_contains("Response");
 
         conv.user_says("I need help").await;
-        conv.assert_response_contains("Response").await;
+        conv.assert_response_contains("Response");
 
         conv.user_says("Thanks, bye").await;
-        conv.end().await;
+        conv.end();
 
         assert_eq!(conv.sent_messages().len(), 3);
         assert_eq!(conv.responses().len(), 3);
@@ -689,7 +686,7 @@ mod tests {
     async fn test_response_time_assertion() {
         let mut conv = ConversationTest::new("test-bot");
         conv.user_says("quick test").await;
-        conv.assert_response_within(Duration::from_secs(5)).await;
+        conv.assert_response_within(Duration::from_secs(5));
 
         assert!(conv.all_passed());
     }
@@ -699,7 +696,7 @@ mod tests {
         let mut conv = ConversationTest::new("test-bot");
         conv.user_says("one").await;
         conv.user_says("two").await;
-        conv.assert_response_count(2).await;
+        conv.assert_response_count(2);
 
         assert!(conv.all_passed());
     }

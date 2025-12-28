@@ -1,4 +1,3 @@
-
 use super::{new_expectation_store, ExpectationStore};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -22,6 +21,7 @@ pub struct MockTeams {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(clippy::struct_field_names)]
 pub struct Activity {
     #[serde(rename = "type")]
     pub activity_type: String,
@@ -124,6 +124,7 @@ pub struct Attachment {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(clippy::struct_field_names)]
 pub struct Entity {
     #[serde(rename = "type")]
     pub entity_type: String,
@@ -318,9 +319,7 @@ impl MockTeams {
 
                 sent_activities.lock().unwrap().push(activity.clone());
 
-                let response = ResourceResponse {
-                    id: activity.id,
-                };
+                let response = ResourceResponse { id: activity.id };
 
                 ResponseTemplate::new(200).set_body_json(&response)
             })

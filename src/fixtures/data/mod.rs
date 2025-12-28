@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -334,6 +333,7 @@ pub fn sample_faqs() -> Vec<FAQ> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct FAQ {
     pub id: u32,
     pub question: String,
@@ -425,10 +425,12 @@ mod tests {
     fn test_whatsapp_text_message() {
         let payload = whatsapp_text_message("15551234567", "Hello");
         assert_eq!(payload["object"], "whatsapp_business_account");
-        assert!(payload["entry"][0]["changes"][0]["value"]["messages"][0]["text"]["body"]
-            .as_str()
-            .unwrap()
-            .contains("Hello"));
+        assert!(
+            payload["entry"][0]["changes"][0]["value"]["messages"][0]["text"]["body"]
+                .as_str()
+                .unwrap()
+                .contains("Hello")
+        );
     }
 
     #[test]
@@ -453,7 +455,9 @@ mod tests {
     fn test_sample_kb_entries() {
         let entries = sample_kb_entries();
         assert!(!entries.is_empty());
-        assert!(entries.iter().any(|e| e.category == Some("products".to_string())));
+        assert!(entries
+            .iter()
+            .any(|e| e.category == Some("products".to_string())));
     }
 
     #[test]

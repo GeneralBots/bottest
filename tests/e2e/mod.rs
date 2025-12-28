@@ -23,7 +23,7 @@ async fn is_service_running(url: &str) -> bool {
         .build()
         .unwrap_or_default();
 
-    if let Ok(resp) = client.get(&format!("{}/health", url)).send().await {
+    if let Ok(resp) = client.get(format!("{url}/health")).send().await {
         if resp.status().is_success() {
             return true;
         }

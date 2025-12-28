@@ -308,7 +308,7 @@ async fn download_file(url: &str, dest: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-async fn extract_zip(zip_path: &PathBuf, dest_dir: &PathBuf) -> Result<()> {
+fn extract_zip(zip_path: &PathBuf, dest_dir: &PathBuf) -> Result<()> {
     info!("Extracting: {:?} to {:?}", zip_path, dest_dir);
 
     let file = std::fs::File::open(zip_path)?;
@@ -390,7 +390,7 @@ async fn setup_chromedriver(browser_path: &str) -> Result<PathBuf> {
     let zip_path = cache_dir.join("chromedriver.zip");
     download_file(&chromedriver_url, &zip_path).await?;
 
-    extract_zip(&zip_path, &cache_dir).await?;
+    extract_zip(&zip_path, &cache_dir)?;
 
     let extracted_driver = cache_dir.join("chromedriver-linux64").join("chromedriver");
     let final_path = get_chromedriver_path(&major_version);
@@ -439,7 +439,7 @@ async fn setup_chrome_for_testing() -> Result<PathBuf> {
     let zip_path = cache_dir.join("chrome.zip");
     download_file(&chrome_url, &zip_path).await?;
 
-    extract_zip(&zip_path, &cache_dir).await?;
+    extract_zip(&zip_path, &cache_dir)?;
 
     std::fs::remove_file(&zip_path).ok();
 
@@ -494,12 +494,11 @@ async fn start_chromedriver(chromedriver_path: &PathBuf, port: u16) -> Result<st
 async fn check_webdriver_available(port: u16) -> bool {
     let url = format!("http://localhost:{port}/status");
 
-    let client = match reqwest::Client::builder()
+    let Ok(client) = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(2))
         .build()
-    {
-        Ok(c) => c,
-        Err(_) => return false,
+    else {
+        return false;
     };
 
     client.get(&url).send().await.is_ok()
@@ -641,7 +640,7 @@ fn run_cargo_test(
     Ok((passed, failed, skipped))
 }
 
-async fn run_unit_tests(config: &RunnerConfig) -> Result<TestResults> {
+fn run_unit_tests(config: &RunnerConfig) -> Result<TestResults> {
     info!("Running unit tests...");
 
     let mut results = TestResults::new("unit");
@@ -998,8 +997,8 @@ async fn main() -> ExitCode {
         match setup_test_dependencies().await {
             Ok((chromedriver, chrome)) => {
                 println!("\n✅ Dependencies installed successfully!");
-                println!("  ChromeDriver: {chromedriver:?}");
-                println!("  Browser: {chrome:?}");
+                println!("  ChromeDriver: {}", chromedriver.display());
+                println!("  Browser: {}", chrome.display());
                 return ExitCode::SUCCESS;
             }
             Err(e) => {
@@ -1029,11 +1028,11 @@ async fn main() -> ExitCode {
     let mut all_results = Vec::new();
 
     let result = match config.suite {
-        TestSuite::Unit => run_unit_tests(&config).await,
+        TestSuite::Unit => run_unit_tests(&config),
         TestSuite::Integration => run_integration_tests(&config).await,
         TestSuite::E2E => run_e2e_tests(&config).await,
         TestSuite::All => {
-            let unit = run_unit_tests(&config).await;
+            let unit = run_unit_tests(&config);
             let integration = run_integration_tests(&config).await;
             let e2e = run_e2e_tests(&config).await;
 

@@ -1,4 +1,3 @@
-
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
 use anyhow::{Context, Result};
 use nix::sys::signal::{kill, Signal};
@@ -28,7 +27,10 @@ impl MinioService {
         if let Ok(stack_path) = std::env::var("BOTSERVER_STACK_PATH") {
             let minio_path = PathBuf::from(&stack_path).join("bin/drive/minio");
             if minio_path.exists() {
-                log::info!("Using MinIO from BOTSERVER_STACK_PATH: {minio_path:?}");
+                log::info!(
+                    "Using MinIO from BOTSERVER_STACK_PATH: {}",
+                    minio_path.display()
+                );
                 return Ok(minio_path);
             }
         }
@@ -43,7 +45,7 @@ impl MinioService {
         for rel_path in &relative_paths {
             let minio_path = cwd.join(rel_path);
             if minio_path.exists() {
-                log::info!("Using MinIO from botserver-stack: {minio_path:?}");
+                log::info!("Using MinIO from botserver-stack: {}", minio_path.display());
                 return Ok(minio_path);
             }
         }
@@ -58,13 +60,13 @@ impl MinioService {
         for path in &system_paths {
             let minio_path = PathBuf::from(path);
             if minio_path.exists() {
-                log::info!("Using system MinIO from: {minio_path:?}");
+                log::info!("Using system MinIO from: {}", minio_path.display());
                 return Ok(minio_path);
             }
         }
 
         if let Ok(minio_path) = which::which("minio") {
-            log::info!("Using MinIO from PATH: {minio_path:?}");
+            log::info!("Using MinIO from PATH: {}", minio_path.display());
             return Ok(minio_path);
         }
 
@@ -73,7 +75,7 @@ impl MinioService {
 
     pub async fn start(api_port: u16, data_dir: &str) -> Result<Self> {
         let bin_path = Self::find_minio_binary()?;
-        log::info!("Using MinIO from: {bin_path:?}");
+        log::info!("Using MinIO from: {}", bin_path.display());
 
         let data_path = PathBuf::from(data_dir).join("minio");
         ensure_dir(&data_path)?;
@@ -90,7 +92,7 @@ impl MinioService {
             secret_key: Self::DEFAULT_SECRET_KEY.to_string(),
         };
 
-        service.start_server().await?;
+        service.start_server()?;
         service.wait_ready().await?;
 
         Ok(service)
@@ -103,7 +105,7 @@ impl MinioService {
         secret_key: &str,
     ) -> Result<Self> {
         let bin_path = Self::find_minio_binary()?;
-        log::info!("Using MinIO from: {bin_path:?}");
+        log::info!("Using MinIO from: {}", bin_path.display());
 
         let data_path = PathBuf::from(data_dir).join("minio");
         ensure_dir(&data_path)?;
@@ -120,13 +122,13 @@ impl MinioService {
             secret_key: secret_key.to_string(),
         };
 
-        service.start_server().await?;
+        service.start_server()?;
         service.wait_ready().await?;
 
         Ok(service)
     }
 
-    async fn start_server(&mut self) -> Result<()> {
+    fn start_server(&mut self) -> Result<()> {
         log::info!(
             "Starting MinIO on port {} (console: {})",
             self.api_port,
@@ -192,11 +194,7 @@ impl MinioService {
                 .output();
 
             let output = Command::new(&mc)
-                .args([
-                    "mb",
-                    "--ignore-existing",
-                    &format!("{alias_name}/{name}"),
-                ])
+                .args(["mb", "--ignore-existing", &format!("{alias_name}/{name}")])
                 .output()?;
 
             if !output.status.success() {

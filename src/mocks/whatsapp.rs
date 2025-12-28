@@ -1,4 +1,3 @@
-
 use super::{new_expectation_store, ExpectationStore};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -213,7 +212,8 @@ pub struct ConversationOrigin {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pricing {
     pub billable: bool,
-    pub pricing_model: String,
+    #[serde(alias = "pricing_model")]
+    pub model: String,
     pub category: String,
 }
 
@@ -354,7 +354,6 @@ impl MockWhatsApp {
 
     async fn setup_default_routes(&self) {
         let sent_messages = self.sent_messages.clone();
-        let _phone_id = self.phone_number_id.clone();
 
         Mock::given(method("POST"))
             .and(path_regex(r"/v\d+\.\d+/\d+/messages"))
@@ -413,7 +412,6 @@ impl MockWhatsApp {
                     id: message_id.clone(),
                     to: to.to_string(),
                     message_type: match msg_type {
-                        "text" => MessageType::Text,
                         "template" => MessageType::Template,
                         "image" => MessageType::Image,
                         "document" => MessageType::Document,
@@ -483,6 +481,7 @@ impl MockWhatsApp {
 
     #[must_use]
     pub fn expect_send_message(&self, to: &str) -> MessageExpectation {
+        let _ = self;
         MessageExpectation {
             to: to.to_string(),
             message_type: None,
@@ -492,6 +491,7 @@ impl MockWhatsApp {
 
     #[must_use]
     pub fn expect_send_template(&self, name: &str) -> TemplateExpectation {
+        let _ = self;
         TemplateExpectation {
             name: name.to_string(),
             to: None,
@@ -707,7 +707,7 @@ impl MockWhatsApp {
                             }),
                             pricing: Some(Pricing {
                                 billable: true,
-                                pricing_model: "CBP".to_string(),
+                                model: "CBP".to_string(),
                                 category: "business_initiated".to_string(),
                             }),
                         }]),

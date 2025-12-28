@@ -1,4 +1,3 @@
-
 use anyhow::{Context, Result};
 use log::{info, warn};
 use std::process::{Child, Command, Stdio};
@@ -169,6 +168,7 @@ impl BrowserService {
         self.port
     }
 
+    #[allow(clippy::unused_async)]
     pub async fn stop(&mut self) -> Result<()> {
         if let Some(mut process) = self.process.take() {
             info!("Stopping browser");

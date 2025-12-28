@@ -1,6 +1,7 @@
 use super::{new_expectation_store, Expectation, ExpectationStore};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::fmt::Write;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -89,6 +90,7 @@ struct ChatChoice {
 }
 
 #[derive(Serialize)]
+#[allow(clippy::struct_field_names)]
 struct Usage {
     prompt_tokens: u32,
     completion_tokens: u32,
@@ -219,11 +221,13 @@ impl MockLLM {
             .unwrap()
             .push(expectation.clone());
 
-        let mut store = self.expectations.lock().unwrap();
-        store.insert(
-            format!("completion:{prompt_contains}"),
-            Expectation::new(&format!("completion containing '{prompt_contains}'")),
-        );
+        {
+            let mut store = self.expectations.lock().unwrap();
+            store.insert(
+                format!("completion:{prompt_contains}"),
+                Expectation::new(&format!("completion containing '{prompt_contains}'")),
+            );
+        }
 
         let response_text = response.to_string();
         let model = self.default_model.clone();
@@ -253,7 +257,8 @@ impl MockLLM {
 
         let mut template = ResponseTemplate::new(200).set_body_json(&response_body);
 
-        if let Some(delay) = *latency.lock().unwrap() {
+        let latency_value = *latency.lock().unwrap();
+        if let Some(delay) = latency_value {
             template = template.set_delay(delay);
         }
 
@@ -303,10 +308,11 @@ impl MockLLM {
                 finish_reason: None,
             }],
         };
-        sse_body.push_str(&format!(
-            "data: {}\n\n",
+        let _ = writeln!(
+            sse_body,
+            "data: {}\n",
             serde_json::to_string(&first_chunk).unwrap()
-        ));
+        );
 
         for chunk_text in &chunks {
             let chunk = StreamChunk {
@@ -323,10 +329,11 @@ impl MockLLM {
                     finish_reason: None,
                 }],
             };
-            sse_body.push_str(&format!(
-                "data: {}\n\n",
+            let _ = writeln!(
+                sse_body,
+                "data: {}\n",
                 serde_json::to_string(&chunk).unwrap()
-            ));
+            );
         }
 
         let final_chunk = StreamChunk {
@@ -343,10 +350,11 @@ impl MockLLM {
                 finish_reason: Some("stop".to_string()),
             }],
         };
-        sse_body.push_str(&format!(
-            "data: {}\n\n",
+        let _ = writeln!(
+            sse_body,
+            "data: {}\n",
             serde_json::to_string(&final_chunk).unwrap()
-        ));
+        );
         sse_body.push_str("data: [DONE]\n\n");
 
         let template = ResponseTemplate::new(200)
@@ -596,10 +604,7 @@ impl MockLLM {
     }
 
     pub async fn call_count(&self) -> usize {
-        self.server
-            .received_requests()
-            .await
-            .map_or(0, |r| r.len())
+        self.server.received_requests().await.map_or(0, |r| r.len())
     }
 
     pub async fn assert_called_times(&self, expected: usize) {
@@ -649,7 +654,7 @@ mod tests {
         let response = ChatCompletionResponse {
             id: "test-id".to_string(),
             object: "chat.completion".to_string(),
-            created: 1234567890,
+            created: 1_234_567_890,
             model: "gpt-4".to_string(),
             choices: vec![ChatChoice {
                 index: 0,

@@ -1,41 +1,36 @@
 use super::{should_run_e2e_tests, E2ETestContext};
+use anyhow::{bail, Result};
 use bottest::prelude::*;
 use bottest::web::Locator;
 
 #[tokio::test]
-async fn test_chat_hi() {
+async fn test_chat_hi() -> Result<()> {
     if !should_run_e2e_tests() {
         eprintln!("Skipping: E2E tests disabled");
-        return;
+        return Ok(());
     }
 
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            eprintln!("Test failed: {}", e);
-            panic!("Failed to setup E2E context: {}", e);
-        }
-    };
+    let ctx = E2ETestContext::setup_with_browser().await?;
 
     if !ctx.has_browser() {
         ctx.close().await;
-        panic!("Browser not available - cannot run E2E test");
+        bail!("Browser not available - cannot run E2E test");
     }
 
     if ctx.ui.is_none() {
         ctx.close().await;
-        panic!("BotUI not available - chat tests require botui running on port 3000");
+        bail!("BotUI not available - chat tests require botui running on port 3000");
     }
 
     let browser = ctx.browser.as_ref().unwrap();
     let ui_url = ctx.ui.as_ref().unwrap().url.clone();
     let chat_url = format!("{}/#chat", ui_url);
 
-    println!("🌐 Navigating to: {}", chat_url);
+    println!("🌐 Navigating to: {chat_url}");
 
     if let Err(e) = browser.goto(&chat_url).await {
         ctx.close().await;
-        panic!("Failed to navigate to chat: {}", e);
+        bail!("Failed to navigate to chat: {e}");
     }
 
     println!("⏳ Waiting for page to load...");
@@ -47,10 +42,10 @@ async fn test_chat_hi() {
     for attempt in 1..=10 {
         if browser.exists(input.clone()).await {
             found_input = true;
-            println!("✓ Chat input found (attempt {})", attempt);
+            println!("✓ Chat input found (attempt {attempt})");
             break;
         }
-        println!("  ... waiting for chat input (attempt {}/10)", attempt);
+        println!("  ... waiting for chat input (attempt {attempt}/10)");
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     }
 
@@ -61,27 +56,25 @@ async fn test_chat_hi() {
         }
         if let Ok(source) = browser.page_source().await {
             let preview: String = source.chars().take(2000).collect();
-            println!("Page source preview:\n{}", preview);
+            println!("Page source preview:\n{preview}");
         }
         ctx.close().await;
-        panic!("Chat input not found after 10 attempts");
+        bail!("Chat input not found after 10 attempts");
     }
 
     println!("⌨️ Typing 'hi'...");
     if let Err(e) = browser.type_text(input.clone(), "hi").await {
         ctx.close().await;
-        panic!("Failed to type: {}", e);
+        bail!("Failed to type: {e}");
     }
 
     let send_btn = Locator::css("#sendBtn, #ai-send, .ai-send, button[type='submit']");
     match browser.click(send_btn).await {
-        Ok(_) => println!("✓ Message sent (click)"),
-        Err(_) => {
-            match browser.press_key(input, "Enter").await {
-                Ok(_) => println!("✓ Message sent (Enter key)"),
-                Err(e) => println!("⚠ Send may have failed: {}", e),
-            }
-        }
+        Ok(()) => println!("✓ Message sent (click)"),
+        Err(_) => match browser.press_key(input, "Enter").await {
+            Ok(()) => println!("✓ Message sent (Enter key)"),
+            Err(e) => println!("⚠ Send may have failed: {e}"),
+        },
     }
 
     println!("⏳ Waiting for bot response...");
@@ -105,29 +98,25 @@ async fn test_chat_hi() {
 
     ctx.close().await;
     println!("✅ Chat test complete!");
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_chat_page_loads() {
+async fn test_chat_page_loads() -> Result<()> {
     if !should_run_e2e_tests() {
-        return;
+        return Ok(());
     }
 
-    let ctx = match E2ETestContext::setup_with_browser().await {
-        Ok(ctx) => ctx,
-        Err(e) => {
-            panic!("Setup failed: {}", e);
-        }
-    };
+    let ctx = E2ETestContext::setup_with_browser().await?;
 
     if !ctx.has_browser() {
         ctx.close().await;
-        panic!("Browser not available");
+        bail!("Browser not available");
     }
 
     if ctx.ui.is_none() {
         ctx.close().await;
-        panic!("BotUI not available - chat tests require botui. Start it with: cd ../botui && cargo run");
+        bail!("BotUI not available - chat tests require botui. Start it with: cd ../botui && cargo run");
     }
 
     let browser = ctx.browser.as_ref().unwrap();
@@ -136,7 +125,7 @@ async fn test_chat_page_loads() {
 
     if let Err(e) = browser.goto(&chat_url).await {
         ctx.close().await;
-        panic!("Navigation failed: {}", e);
+        bail!("Navigation failed: {e}");
     }
 
     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
@@ -149,9 +138,10 @@ async fn test_chat_page_loads() {
                 let _ = std::fs::write("/tmp/bottest-fail.png", &s);
             }
             ctx.close().await;
-            panic!("Chat not loaded: {}", e);
+            bail!("Chat not loaded: {e}");
         }
     }
 
     ctx.close().await;
+    Ok(())
 }

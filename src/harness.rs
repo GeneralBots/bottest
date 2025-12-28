@@ -493,14 +493,18 @@ impl BotServerInstance {
 
         if !stack_path.exists() {
             anyhow::bail!(
-                "Main botserver-stack not found at {stack_path:?}.\n\
-                 Run botserver once to initialize: cd ../botserver && cargo run"
+                "Main botserver-stack not found at {}.\n\
+                 Run botserver once to initialize: cd ../botserver && cargo run",
+                stack_path.display()
             );
         }
 
-        log::info!("Starting botserver with MAIN stack at {stack_path:?}");
+        log::info!(
+            "Starting botserver with MAIN stack at {}",
+            stack_path.display()
+        );
         println!("🚀 Starting BotServer with main stack...");
-        println!("   Stack: {stack_path:?}");
+        println!("   Stack: {}", stack_path.display());
 
         let process = std::process::Command::new(&botserver_bin_path)
             .current_dir(&botserver_dir)
@@ -606,7 +610,7 @@ impl BotUIInstance {
         log::info!("Starting botui from: {botui_bin} on port {port}");
         log::info!("  BOTUI_PORT={port}");
         log::info!("  BOTSERVER_URL={botserver_url}");
-        log::info!("  Working directory: {botui_dir:?}");
+        log::info!("  Working directory: {}", botui_dir.display());
 
         let process = std::process::Command::new(&botui_bin_path)
             .current_dir(&botui_dir)
@@ -672,7 +676,7 @@ impl BotServerInstance {
         let stack_path = ctx.data_dir.join("botserver-stack");
         std::fs::create_dir_all(&stack_path)?;
         let stack_path = stack_path.canonicalize().unwrap_or(stack_path);
-        log::info!("Created clean test stack at: {stack_path:?}");
+        log::info!("Created clean test stack at: {}", stack_path.display());
 
         let botserver_bin = std::env::var("BOTSERVER_BIN")
             .unwrap_or_else(|_| "../botserver/target/debug/botserver".to_string());
@@ -701,12 +705,12 @@ impl BotServerInstance {
                     .unwrap_or_else(|_| PathBuf::from("../botserver"))
             });
 
-        log::info!("Botserver working directory: {botserver_dir:?}");
-        log::info!("Stack path (absolute): {stack_path:?}");
+        log::info!("Botserver working directory: {}", botserver_dir.display());
+        log::info!("Stack path (absolute): {}", stack_path.display());
 
         let installers_path = botserver_dir.join("botserver-installers");
         let installers_path = installers_path.canonicalize().unwrap_or(installers_path);
-        log::info!("Using installers from: {installers_path:?}");
+        log::info!("Using installers from: {}", installers_path.display());
 
         let process = std::process::Command::new(&botserver_bin_path)
             .current_dir(&botserver_dir)
@@ -764,7 +768,7 @@ impl BotServerInstance {
         self.process.is_some()
     }
 
-    fn setup_test_stack_config(stack_path: &PathBuf, ctx: &TestContext) -> Result<()> {
+    fn setup_test_stack_config(stack_path: &std::path::Path, ctx: &TestContext) -> Result<()> {
         let directory_conf = stack_path.join("conf/directory");
         std::fs::create_dir_all(&directory_conf)?;
 
@@ -800,7 +804,7 @@ ExternalPort: {}
         Ok(())
     }
 
-    fn generate_test_certificates(certs_dir: &PathBuf) -> Result<()> {
+    fn generate_test_certificates(certs_dir: &std::path::Path) -> Result<()> {
         use std::process::Command;
 
         let api_dir = certs_dir.join("api");
@@ -922,7 +926,8 @@ impl TestHarness {
         };
 
         log::info!(
-            "Test {test_id} allocated ports: {ports:?}, data_dir: {data_dir:?}, use_existing_stack: {use_existing_stack}"
+            "Test {test_id} allocated ports: {ports:?}, data_dir: {}, use_existing_stack: {use_existing_stack}",
+            data_dir.display()
         );
 
         let data_dir_str = data_dir.to_str().unwrap().to_string();

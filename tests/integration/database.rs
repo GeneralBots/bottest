@@ -154,37 +154,37 @@ async fn test_query_result_types() {
     use diesel::sql_query;
 
     #[derive(QueryableByName)]
-    struct TypeTestResult {
+    struct TypeTestRow {
         #[diesel(sql_type = diesel::sql_types::Integer)]
-        int_val: i32,
+        integer: i32,
         #[diesel(sql_type = diesel::sql_types::BigInt)]
-        bigint_val: i64,
+        bigint: i64,
         #[diesel(sql_type = diesel::sql_types::Text)]
-        text_val: String,
+        text: String,
         #[diesel(sql_type = diesel::sql_types::Bool)]
-        bool_val: bool,
+        flag: bool,
         #[diesel(sql_type = diesel::sql_types::Double)]
-        float_val: f64,
+        decimal: f64,
     }
 
     let mut conn = pool.get().expect("Failed to get connection");
-    let result: Vec<TypeTestResult> = sql_query(
+    let result: Vec<TypeTestRow> = sql_query(
         "SELECT
-            42 as int_val,
-            9223372036854775807::bigint as bigint_val,
-            'hello' as text_val,
-            true as bool_val,
-            3.125 as float_val",
+            42 as integer,
+            9223372036854775807::bigint as bigint,
+            'hello' as text,
+            true as flag,
+            3.125 as decimal",
     )
     .load(&mut conn)
     .expect("Query failed");
 
     assert_eq!(result.len(), 1);
-    assert_eq!(result[0].int_val, 42);
-    assert_eq!(result[0].bigint_val, 9223372036854775807_i64);
-    assert_eq!(result[0].text_val, "hello");
-    assert!(result[0].bool_val);
-    assert!((result[0].float_val - 3.125).abs() < 0.0001);
+    assert_eq!(result[0].integer, 42);
+    assert_eq!(result[0].bigint, 9_223_372_036_854_775_807_i64);
+    assert_eq!(result[0].text, "hello");
+    assert!(result[0].flag);
+    assert!((result[0].decimal - 3.125).abs() < 0.0001);
 }
 
 #[tokio::test]

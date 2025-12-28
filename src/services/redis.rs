@@ -1,4 +1,3 @@
-
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
 use anyhow::{Context, Result};
 use nix::sys::signal::{kill, Signal};
@@ -50,6 +49,7 @@ impl RedisService {
         Ok(service)
     }
 
+    #[allow(clippy::unused_async)]
     async fn start_server(&mut self) -> Result<()> {
         log::info!("Starting Redis on port {}", self.port);
 
@@ -125,6 +125,7 @@ impl RedisService {
         Ok(())
     }
 
+    #[allow(clippy::unused_async)]
     pub async fn execute(&self, args: &[&str]) -> Result<String> {
         let redis_cli = Self::find_cli_binary()?;
 
@@ -182,7 +183,10 @@ impl RedisService {
         if result.is_empty() || result == "(empty list or set)" {
             Ok(Vec::new())
         } else {
-            Ok(result.lines().map(std::string::ToString::to_string).collect())
+            Ok(result
+                .lines()
+                .map(std::string::ToString::to_string)
+                .collect())
         }
     }
 
@@ -193,10 +197,7 @@ impl RedisService {
 
     pub async fn publish(&self, channel: &str, message: &str) -> Result<i64> {
         let result = self.execute(&["PUBLISH", channel, message]).await?;
-        let count = result
-            .replace("(integer) ", "")
-            .parse::<i64>()
-            .unwrap_or(0);
+        let count = result.replace("(integer) ", "").parse::<i64>().unwrap_or(0);
         Ok(count)
     }
 
@@ -230,10 +231,7 @@ impl RedisService {
 
     pub async fn llen(&self, key: &str) -> Result<i64> {
         let result = self.execute(&["LLEN", key]).await?;
-        let len = result
-            .replace("(integer) ", "")
-            .parse::<i64>()
-            .unwrap_or(0);
+        let len = result.replace("(integer) ", "").parse::<i64>().unwrap_or(0);
         Ok(len)
     }
 
@@ -271,19 +269,13 @@ impl RedisService {
 
     pub async fn incr(&self, key: &str) -> Result<i64> {
         let result = self.execute(&["INCR", key]).await?;
-        let val = result
-            .replace("(integer) ", "")
-            .parse::<i64>()
-            .unwrap_or(0);
+        let val = result.replace("(integer) ", "").parse::<i64>().unwrap_or(0);
         Ok(val)
     }
 
     pub async fn decr(&self, key: &str) -> Result<i64> {
         let result = self.execute(&["DECR", key]).await?;
-        let val = result
-            .replace("(integer) ", "")
-            .parse::<i64>()
-            .unwrap_or(0);
+        let val = result.replace("(integer) ", "").parse::<i64>().unwrap_or(0);
         Ok(val)
     }
 

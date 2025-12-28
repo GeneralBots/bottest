@@ -29,16 +29,6 @@ pub fn should_run_integration_tests() -> bool {
     true
 }
 
-#[macro_export]
-macro_rules! skip_if_no_services {
-    () => {
-        if !crate::integration::should_run_integration_tests() {
-            eprintln!("Skipping integration test: SKIP_INTEGRATION_TESTS is set");
-            return;
-        }
-    };
-}
-
 #[tokio::test]
 async fn test_harness_database_only() {
     if !should_run_integration_tests() {
