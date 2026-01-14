@@ -10,9 +10,7 @@ keywords = ["testing", "bot", "integration-testing", "e2e", "general-bots"]
 categories = ["development-tools::testing"]
 
 [dependencies]
-# The server we're testing - enable all working features for testing
-# NOTE: vectordb, compliance, timeseries have compilation issues in botserver
-botserver = { path = "../botserver", features = ["full"] }
+# Common library for shared types
 botlib = { path = "../botlib", features = ["database"] }
 
 # Async runtime
