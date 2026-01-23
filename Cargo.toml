@@ -11,78 +11,78 @@ categories = ["development-tools::testing"]
 
 [dependencies]
 # Common library for shared types
-botlib = { path = "../botlib", features = ["database"] }
+botlib = { workspace = true, features = ["database"] }
 
 # Async runtime
-tokio = { version = "1.41", features = ["full", "test-util", "macros"] }
-async-trait = "0.1"
-futures = "0.3"
-futures-util = "0.3"
+tokio = { workspace = true, features = ["full", "test-util", "macros"] }
+async-trait = { workspace = true }
+futures = { workspace = true }
+futures-util = { workspace = true }
 
 # Database
-diesel = { version = "2.1", features = ["postgres", "uuid", "chrono", "serde_json", "r2d2"] }
-diesel_migrations = "2.1.0"
+diesel = { workspace = true, features = ["postgres", "uuid", "chrono", "serde_json", "r2d2"] }
+diesel_migrations = { workspace = true }
 
 # HTTP mocking and testing
-wiremock = "0.6"
-cookie = "0.18"
-mockito = "1.7"
-reqwest = { version = "0.12", features = ["json", "cookies", "blocking"] }
+wiremock = { workspace = true }
+cookie = { workspace = true }
+mockito = { workspace = true }
+reqwest = { workspace = true, features = ["json", "cookies", "blocking"] }
 
 # Web/E2E testing - using Chrome DevTools Protocol directly (no chromedriver)
-chromiumoxide = { version = "0.7", features = ["tokio-runtime"], default-features = false }
+chromiumoxide = { workspace = true }
 
 # Web framework for test server
-axum = { version = "0.7.5", features = ["ws", "multipart", "macros"] }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true, features = ["cors", "trace"] }
 hyper = { version = "0.14", features = ["full"] }
 
 # Serialization
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 
 # Utilities
-uuid = { version = "1.11", features = ["serde", "v4"] }
-chrono = { version = "0.4", features = ["serde"] }
-rand = "0.9"
-tempfile = "3"
-which = "7"
-regex = "1.11"
-base64 = "0.22"
-url = "2.5"
-dirs = "5.0"
+uuid = { workspace = true, features = ["serde", "v4"] }
+chrono = { workspace = true, features = ["serde"] }
+rand = { workspace = true }
+tempfile = { workspace = true }
+which = { workspace = true }
+regex = { workspace = true }
+base64 = { workspace = true }
+url = { workspace = true }
+dirs = { workspace = true }
 
 # Process management for services
-nix = { version = "0.29", features = ["signal", "process"] }
+nix = { workspace = true }
 
 # Archive extraction
-zip = "2.2"
+zip = { workspace = true }
 
 # Logging and tracing
-log = "0.4"
-env_logger = "0.11"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+log = { workspace = true }
+env_logger = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt", "env-filter"] }
 
 # Error handling
-anyhow = "1.0"
-thiserror = "2.0"
+anyhow = { workspace = true }
+thiserror = { workspace = true }
 
 # Test framework enhancements
-pretty_assertions = "1.4"
+pretty_assertions = { workspace = true }
 
 # Async testing
-tokio-test = "0.4"
+tokio-test = { workspace = true }
 
 # Rhai for BASIC function testing
 rhai = { git = "https://github.com/therealprof/rhai.git", branch = "features/use-web-time", features = ["sync"] }
 
 # Configuration
-dotenvy = "0.15"
+dotenvy = { workspace = true }
 
 [dev-dependencies]
-insta = { version = "1.40", features = ["json", "yaml"] }
+insta = { workspace = true }
 
 [features]
 default = ["full"]
