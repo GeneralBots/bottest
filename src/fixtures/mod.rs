@@ -33,18 +33,15 @@ impl Default for User {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum Role {
     Admin,
     Attendant,
+    #[default]
     User,
     Guest,
 }
 
-impl Default for Role {
-    fn default() -> Self {
-        Self::User
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Customer {
@@ -78,7 +75,9 @@ impl Default for Customer {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 #[allow(clippy::upper_case_acronyms)]
+#[derive(Default)]
 pub enum Channel {
+    #[default]
     WhatsApp,
     Teams,
     Web,
@@ -87,11 +86,6 @@ pub enum Channel {
     API,
 }
 
-impl Default for Channel {
-    fn default() -> Self {
-        Self::WhatsApp
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bot {
@@ -155,18 +149,15 @@ impl Default for Session {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum SessionState {
+    #[default]
     Active,
     Waiting,
     Transferred,
     Ended,
 }
 
-impl Default for SessionState {
-    fn default() -> Self {
-        Self::Active
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
@@ -202,7 +193,9 @@ pub enum MessageDirection {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum ContentType {
+    #[default]
     Text,
     Image,
     Audio,
@@ -213,11 +206,6 @@ pub enum ContentType {
     Interactive,
 }
 
-impl Default for ContentType {
-    fn default() -> Self {
-        Self::Text
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueueEntry {
@@ -248,22 +236,21 @@ impl Default for QueueEntry {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum Priority {
     Low = 0,
+    #[default]
     Normal = 1,
     High = 2,
     Urgent = 3,
 }
 
-impl Default for Priority {
-    fn default() -> Self {
-        Self::Normal
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum QueueStatus {
+    #[default]
     Waiting,
     Assigned,
     InProgress,
@@ -271,11 +258,6 @@ pub enum QueueStatus {
     Cancelled,
 }
 
-impl Default for QueueStatus {
-    fn default() -> Self {
-        Self::Waiting
-    }
-}
 
 #[must_use]
 pub fn admin_user() -> User {

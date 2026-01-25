@@ -27,7 +27,7 @@ diesel_migrations = { workspace = true }
 wiremock = { workspace = true }
 cookie = { workspace = true }
 mockito = { workspace = true }
-reqwest = { workspace = true, features = ["json", "cookies", "blocking"] }
+reqwest = { workspace = true, features = ["json", "cookies", "blocking", "rustls-tls"] }
 
 # Web/E2E testing - using Chrome DevTools Protocol directly (no chromedriver)
 chromiumoxide = { workspace = true }

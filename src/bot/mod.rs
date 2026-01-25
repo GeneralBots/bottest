@@ -19,7 +19,9 @@ pub struct BotResponse {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum ResponseContentType {
+    #[default]
     Text,
     Image,
     Audio,
@@ -31,11 +33,6 @@ pub enum ResponseContentType {
     Contact,
 }
 
-impl Default for ResponseContentType {
-    fn default() -> Self {
-        Self::Text
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct AssertionResult {
@@ -114,7 +111,9 @@ pub struct AssertionRecord {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default)]
 pub enum ConversationState {
+    #[default]
     Initial,
     WaitingForUser,
     WaitingForBot,
@@ -123,11 +122,6 @@ pub enum ConversationState {
     Error,
 }
 
-impl Default for ConversationState {
-    fn default() -> Self {
-        Self::Initial
-    }
-}
 
 #[cfg(test)]
 mod tests {

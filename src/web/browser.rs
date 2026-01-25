@@ -15,18 +15,15 @@ use super::{Cookie, Key, Locator, WaitCondition};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum BrowserType {
+    #[default]
     Chrome,
     Firefox,
     Safari,
     Edge,
 }
 
-impl Default for BrowserType {
-    fn default() -> Self {
-        Self::Chrome
-    }
-}
 
 impl BrowserType {
     #[must_use]
