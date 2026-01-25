@@ -10,33 +10,21 @@ keywords = ["testing", "bot", "integration-testing", "e2e", "general-bots"]
 categories = ["development-tools::testing"]
 
 [dependencies]
-# Common library for shared types
-botlib = { workspace = true, features = ["database"] }
-
 # Async runtime
 tokio = { workspace = true, features = ["full", "test-util", "macros"] }
 async-trait = { workspace = true }
 futures = { workspace = true }
-futures-util = { workspace = true }
 
 # Database
 diesel = { workspace = true, features = ["postgres", "uuid", "chrono", "serde_json", "r2d2"] }
-diesel_migrations = { workspace = true }
 
 # HTTP mocking and testing
 wiremock = { workspace = true }
 cookie = { workspace = true }
-mockito = { workspace = true }
 reqwest = { workspace = true, features = ["json", "cookies", "blocking", "rustls-tls"] }
 
 # Web/E2E testing - using Chrome DevTools Protocol directly (no chromedriver)
 chromiumoxide = { workspace = true }
-
-# Web framework for test server
-axum = { workspace = true }
-tower = { workspace = true }
-tower-http = { workspace = true, features = ["cors", "trace"] }
-hyper = { version = "0.14", features = ["full"] }
 
 # Serialization
 serde = { workspace = true, features = ["derive"] }
@@ -45,13 +33,8 @@ serde_json = { workspace = true }
 # Utilities
 uuid = { workspace = true, features = ["serde", "v4"] }
 chrono = { workspace = true, features = ["serde"] }
-rand = { workspace = true }
-tempfile = { workspace = true }
 which = { workspace = true }
 regex = { workspace = true }
-base64 = { workspace = true }
-url = { workspace = true }
-dirs = { workspace = true }
 
 # Process management for services
 nix = { workspace = true }
@@ -67,19 +50,10 @@ tracing-subscriber = { workspace = true, features = ["fmt", "env-filter"] }
 
 # Error handling
 anyhow = { workspace = true }
-thiserror = { workspace = true }
 
 # Test framework enhancements
-pretty_assertions = { workspace = true }
-
-# Async testing
-tokio-test = { workspace = true }
-
 # Rhai for BASIC function testing
-rhai = { git = "https://github.com/therealprof/rhai.git", branch = "features/use-web-time", features = ["sync"] }
-
-# Configuration
-dotenvy = { workspace = true }
+rhai = { workspace = true, features = ["sync"] }
 
 [dev-dependencies]
 insta = { workspace = true }
