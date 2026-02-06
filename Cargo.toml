@@ -7,8 +7,7 @@ license = "AGPL-3.0"
 repository = "https://github.com/GeneralBots/BotServer"
 
 [dependencies]
-# The server we're testing - include drive and cache for required deps
-botserver = { path = "../botserver", default-features = false, features = ["chat", "llm", "automation", "tasks", "directory", "drive", "cache"] }
+# Note: botserver is a binary-only crate, tested by spawning the process
 botlib = { path = "../botlib", features = ["database"] }
 
 # Async runtime
