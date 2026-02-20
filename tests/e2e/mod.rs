@@ -37,7 +37,7 @@ async fn is_service_running(url: &str) -> bool {
 impl E2ETestContext {
     pub async fn setup() -> anyhow::Result<Self> {
         let botserver_url =
-            std::env::var("BOTSERVER_URL").unwrap_or_else(|_| "https://localhost:8080".to_string());
+            std::env::var("BOTSERVER_URL").unwrap_or_else(|_| "https://localhost:9000".to_string());
         let botui_url =
             std::env::var("BOTUI_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
@@ -86,7 +86,7 @@ impl E2ETestContext {
 
     pub async fn setup_with_browser() -> anyhow::Result<Self> {
         let botserver_url =
-            std::env::var("BOTSERVER_URL").unwrap_or_else(|_| "https://localhost:8080".to_string());
+            std::env::var("BOTSERVER_URL").unwrap_or_else(|_| "https://localhost:9000".to_string());
         let botui_url =
             std::env::var("BOTUI_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 

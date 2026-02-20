@@ -465,7 +465,7 @@ impl BotServerInstance {
 
     pub async fn start_with_main_stack() -> Result<Self> {
         let port = 8080;
-        let url = "https://localhost:8080".to_string();
+        let url = "https://localhost:9000".to_string();
 
         let botserver_bin = std::env::var("BOTSERVER_BIN")
             .unwrap_or_else(|_| "../botserver/target/debug/botserver".to_string());
