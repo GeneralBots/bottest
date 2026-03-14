@@ -1,6 +1,8 @@
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
 use anyhow::{Context, Result};
+#[cfg(unix)]
 use nix::sys::signal::{kill, Signal};
+#[cfg(unix)]
 use nix::unistd::Pid;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -368,8 +370,13 @@ impl RedisService {
                 }
             }
 
-            let pid = Pid::from_raw(child.id() as i32);
-            let _ = kill(pid, Signal::SIGTERM);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGTERM);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
 
             for _ in 0..20 {
                 match child.try_wait() {
@@ -382,7 +389,13 @@ impl RedisService {
                 }
             }
 
-            let _ = kill(pid, Signal::SIGKILL);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGKILL);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
             let _ = child.wait();
             self.process = None;
         }
@@ -415,12 +428,23 @@ impl Drop for RedisService {
                 std::thread::sleep(Duration::from_millis(200));
             }
 
-            let pid = Pid::from_raw(child.id() as i32);
-            let _ = kill(pid, Signal::SIGTERM);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGTERM);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
 
             std::thread::sleep(Duration::from_millis(300));
 
-            let _ = kill(pid, Signal::SIGKILL);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGKILL);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
             let _ = child.wait();
         }
     }

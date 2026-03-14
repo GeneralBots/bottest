@@ -1,6 +1,8 @@
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
 use anyhow::{Context, Result};
+#[cfg(unix)]
 use nix::sys::signal::{kill, Signal};
+#[cfg(unix)]
 use nix::unistd::Pid;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -427,8 +429,13 @@ unix_socket_directories = '{}'
         if let Some(ref mut child) = self.process {
             log::info!("Stopping PostgreSQL...");
 
-            let pid = Pid::from_raw(child.id() as i32);
-            let _ = kill(pid, Signal::SIGTERM);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGTERM);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
 
             for _ in 0..50 {
                 match child.try_wait() {
@@ -441,7 +448,13 @@ unix_socket_directories = '{}'
                 }
             }
 
-            let _ = kill(pid, Signal::SIGKILL);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGKILL);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
             let _ = child.wait();
             self.process = None;
         }
@@ -460,12 +473,23 @@ unix_socket_directories = '{}'
 impl Drop for PostgresService {
     fn drop(&mut self) {
         if let Some(ref mut child) = self.process {
-            let pid = Pid::from_raw(child.id() as i32);
-            let _ = kill(pid, Signal::SIGTERM);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGTERM);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
 
             std::thread::sleep(Duration::from_millis(500));
 
-            let _ = kill(pid, Signal::SIGKILL);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGKILL);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
             let _ = child.wait();
         }
     }

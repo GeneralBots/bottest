@@ -1,6 +1,8 @@
 use super::{check_tcp_port, ensure_dir, wait_for, HEALTH_CHECK_INTERVAL, HEALTH_CHECK_TIMEOUT};
 use anyhow::{Context, Result};
+#[cfg(unix)]
 use nix::sys::signal::{kill, Signal};
+#[cfg(unix)]
 use nix::unistd::Pid;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -394,8 +396,13 @@ impl MinioService {
         if let Some(ref mut child) = self.process {
             log::info!("Stopping MinIO...");
 
-            let pid = Pid::from_raw(child.id() as i32);
-            let _ = kill(pid, Signal::SIGTERM);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGTERM);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
 
             for _ in 0..50 {
                 match child.try_wait() {
@@ -408,7 +415,13 @@ impl MinioService {
                 }
             }
 
-            let _ = kill(pid, Signal::SIGKILL);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGKILL);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
             let _ = child.wait();
             self.process = None;
         }
@@ -427,12 +440,23 @@ impl MinioService {
 impl Drop for MinioService {
     fn drop(&mut self) {
         if let Some(ref mut child) = self.process {
-            let pid = Pid::from_raw(child.id() as i32);
-            let _ = kill(pid, Signal::SIGTERM);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGTERM);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
 
             std::thread::sleep(Duration::from_millis(500));
 
-            let _ = kill(pid, Signal::SIGKILL);
+            #[cfg(unix)]
+            {
+                let pid = Pid::from_raw(child.id() as i32);
+                let _ = kill(pid, Signal::SIGKILL);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
             let _ = child.wait();
         }
     }
