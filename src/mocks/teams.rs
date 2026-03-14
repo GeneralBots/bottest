@@ -21,10 +21,9 @@ pub struct MockTeams {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[allow(clippy::struct_field_names)]
 pub struct Activity {
     #[serde(rename = "type")]
-    pub activity_type: String,
+    pub kind: String,
     pub id: String,
     pub timestamp: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -59,7 +58,7 @@ pub struct Activity {
 impl Default for Activity {
     fn default() -> Self {
         Self {
-            activity_type: "message".to_string(),
+            kind: "message".to_string(),
             id: Uuid::new_v4().to_string(),
             timestamp: chrono::Utc::now().to_rfc3339(),
             local_timestamp: None,
@@ -124,10 +123,9 @@ pub struct Attachment {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[allow(clippy::struct_field_names)]
 pub struct Entity {
     #[serde(rename = "type")]
-    pub entity_type: String,
+    pub kind: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mentioned: Option<ChannelAccount>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -292,7 +290,7 @@ impl MockTeams {
                 let body: serde_json::Value = req.body_json().unwrap_or_default();
 
                 let activity = Activity {
-                    activity_type: body
+                    kind: body
                         .get("type")
                         .and_then(|v| v.as_str())
                         .unwrap_or("message")
@@ -433,7 +431,7 @@ impl MockTeams {
         let conversation_id = format!("conv-{}", Uuid::new_v4());
 
         Activity {
-            activity_type: "message".to_string(),
+            kind: "message".to_string(),
             id: Uuid::new_v4().to_string(),
             timestamp: chrono::Utc::now().to_rfc3339(),
             local_timestamp: Some(chrono::Utc::now().to_rfc3339()),
@@ -483,7 +481,7 @@ impl MockTeams {
         activity.text = Some(format!("{mention_text} {text}"));
 
         activity.entities = Some(vec![Entity {
-            entity_type: "mention".to_string(),
+            kind: "mention".to_string(),
             mentioned: Some(ChannelAccount {
                 id: self.bot_id.clone(),
                 name: Some(self.bot_name.clone()),
@@ -502,7 +500,7 @@ impl MockTeams {
         let conversation_id = format!("conv-{}", Uuid::new_v4());
 
         Activity {
-            activity_type: "conversationUpdate".to_string(),
+            kind: "conversationUpdate".to_string(),
             id: Uuid::new_v4().to_string(),
             timestamp: chrono::Utc::now().to_rfc3339(),
             local_timestamp: None,
@@ -556,7 +554,7 @@ impl MockTeams {
         let conversation_id = format!("conv-{}", Uuid::new_v4());
 
         Activity {
-            activity_type: "invoke".to_string(),
+            kind: "invoke".to_string(),
             id: Uuid::new_v4().to_string(),
             timestamp: chrono::Utc::now().to_rfc3339(),
             local_timestamp: None,
@@ -630,7 +628,7 @@ impl MockTeams {
         let conversation_id = format!("conv-{}", Uuid::new_v4());
 
         Activity {
-            activity_type: "messageReaction".to_string(),
+            kind: "messageReaction".to_string(),
             id: Uuid::new_v4().to_string(),
             timestamp: chrono::Utc::now().to_rfc3339(),
             local_timestamp: None,
@@ -831,7 +829,7 @@ mod tests {
     #[test]
     fn test_activity_default() {
         let activity = Activity::default();
-        assert_eq!(activity.activity_type, "message");
+        assert_eq!(activity.kind, "message");
         assert_eq!(activity.channel_id, "msteams");
         assert!(!activity.id.is_empty());
     }
@@ -839,7 +837,7 @@ mod tests {
     #[test]
     fn test_activity_serialization() {
         let activity = Activity {
-            activity_type: "message".to_string(),
+            kind: "message".to_string(),
             id: "test-id".to_string(),
             timestamp: "2024-01-01T00:00:00Z".to_string(),
             local_timestamp: None,
@@ -910,7 +908,7 @@ mod tests {
     #[test]
     fn test_entity_mention() {
         let entity = Entity {
-            entity_type: "mention".to_string(),
+            kind: "mention".to_string(),
             mentioned: Some(ChannelAccount {
                 id: "bot-id".to_string(),
                 name: Some("Bot".to_string()),

@@ -168,8 +168,8 @@ impl BrowserService {
         self.port
     }
 
-    #[allow(clippy::unused_async)]
     pub async fn stop(&mut self) -> Result<()> {
+        tokio::task::yield_now().await;
         if let Some(mut process) = self.process.take() {
             info!("Stopping browser");
             process.kill().ok();

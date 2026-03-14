@@ -74,16 +74,15 @@ impl Default for Customer {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-#[allow(clippy::upper_case_acronyms)]
 #[derive(Default)]
 pub enum Channel {
     #[default]
     WhatsApp,
     Teams,
     Web,
-    SMS,
+    Sms,
     Email,
-    API,
+    Api,
 }
 
 

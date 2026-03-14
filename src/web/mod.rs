@@ -107,10 +107,9 @@ impl Locator {
     }
 
     #[must_use]
-    #[allow(clippy::match_same_arms)]
     pub fn to_css_selector(&self) -> String {
         match self {
-            Self::Css(s) => s.clone(),
+            Self::Css(s) | Self::TagName(s) => s.clone(),
             Self::XPath(_) => {
                 log::warn!("XPath locators not directly supported in CDP, use CSS selectors");
                 "*".to_string()
@@ -119,7 +118,6 @@ impl Locator {
             Self::Name(s) => format!("[name='{s}']"),
             Self::LinkText(s) => format!("a:contains('{s}')"),
             Self::PartialLinkText(s) => format!("a[href*='{s}']"),
-            Self::TagName(s) => s.clone(),
             Self::ClassName(s) => format!(".{s}"),
         }
     }

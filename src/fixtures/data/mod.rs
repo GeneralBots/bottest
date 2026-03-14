@@ -220,30 +220,30 @@ pub fn openai_embedding_response(dimensions: usize) -> Value {
 }
 
 #[must_use]
-pub fn sample_kb_entries() -> Vec<KBEntry> {
+pub fn sample_kb_entries() -> Vec<KbEntry> {
     vec![
-        KBEntry {
+        KbEntry {
             id: "kb-001".to_string(),
             title: "Product Overview".to_string(),
             content: "Our product is a comprehensive solution for business automation.".to_string(),
             category: Some("products".to_string()),
             tags: vec!["product".to_string(), "overview".to_string()],
         },
-        KBEntry {
+        KbEntry {
             id: "kb-002".to_string(),
             title: "Pricing Plans".to_string(),
             content: "We offer three pricing plans: Basic ($29/mo), Pro ($79/mo), and Enterprise (custom).".to_string(),
             category: Some("pricing".to_string()),
             tags: vec!["pricing".to_string(), "plans".to_string()],
         },
-        KBEntry {
+        KbEntry {
             id: "kb-003".to_string(),
             title: "Support Hours".to_string(),
             content: "Our support team is available 24/7 for Enterprise customers and 9-5 EST for other plans.".to_string(),
             category: Some("support".to_string()),
             tags: vec!["support".to_string(), "hours".to_string()],
         },
-        KBEntry {
+        KbEntry {
             id: "kb-004".to_string(),
             title: "Return Policy".to_string(),
             content: "We offer a 30-day money-back guarantee on all plans. No questions asked.".to_string(),
@@ -254,7 +254,7 @@ pub fn sample_kb_entries() -> Vec<KBEntry> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct KBEntry {
+pub struct KbEntry {
     pub id: String,
     pub title: String,
     pub content: String,
@@ -303,27 +303,27 @@ pub struct Product {
 }
 
 #[must_use]
-pub fn sample_faqs() -> Vec<FAQ> {
+pub fn sample_faqs() -> Vec<Faq> {
     vec![
-        FAQ {
+        Faq {
             id: 1,
             question: "How do I reset my password?".to_string(),
             answer: "You can reset your password by clicking 'Forgot Password' on the login page.".to_string(),
             category: "account".to_string(),
         },
-        FAQ {
+        Faq {
             id: 2,
             question: "What payment methods do you accept?".to_string(),
             answer: "We accept all major credit cards, PayPal, and bank transfers.".to_string(),
             category: "billing".to_string(),
         },
-        FAQ {
+        Faq {
             id: 3,
             question: "How do I contact support?".to_string(),
             answer: "You can reach our support team via email at support@example.com or through live chat.".to_string(),
             category: "support".to_string(),
         },
-        FAQ {
+        Faq {
             id: 4,
             question: "Can I cancel my subscription?".to_string(),
             answer: "Yes, you can cancel your subscription at any time from your account settings.".to_string(),
@@ -333,8 +333,7 @@ pub fn sample_faqs() -> Vec<FAQ> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(clippy::upper_case_acronyms)]
-pub struct FAQ {
+pub struct Faq {
     pub id: u32,
     pub question: String,
     pub answer: String,

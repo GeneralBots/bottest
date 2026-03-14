@@ -51,8 +51,8 @@ impl RedisService {
         Ok(service)
     }
 
-    #[allow(clippy::unused_async)]
     async fn start_server(&mut self) -> Result<()> {
+        tokio::task::yield_now().await;
         log::info!("Starting Redis on port {}", self.port);
 
         let redis = Self::find_binary()?;
@@ -127,8 +127,8 @@ impl RedisService {
         Ok(())
     }
 
-    #[allow(clippy::unused_async)]
     pub async fn execute(&self, args: &[&str]) -> Result<String> {
+        tokio::task::yield_now().await;
         let redis_cli = Self::find_cli_binary()?;
 
         let mut cmd = Command::new(&redis_cli);

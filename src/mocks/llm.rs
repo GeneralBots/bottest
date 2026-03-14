@@ -90,11 +90,13 @@ struct ChatChoice {
 }
 
 #[derive(Serialize)]
-#[allow(clippy::struct_field_names)]
 struct Usage {
-    prompt_tokens: u32,
-    completion_tokens: u32,
-    total_tokens: u32,
+    #[serde(rename = "prompt_tokens")]
+    pub prompt: u32,
+    #[serde(rename = "completion_tokens")]
+    pub completion: u32,
+    #[serde(rename = "total_tokens")]
+    pub total: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -127,8 +129,10 @@ struct EmbeddingData {
 
 #[derive(Serialize)]
 struct EmbeddingUsage {
-    prompt_tokens: u32,
-    total_tokens: u32,
+    #[serde(rename = "prompt_tokens")]
+    pub prompt: u32,
+    #[serde(rename = "total_tokens")]
+    pub total: u32,
 }
 
 #[derive(Serialize)]
@@ -249,9 +253,9 @@ impl MockLLM {
                 finish_reason: "stop".to_string(),
             }],
             usage: Usage {
-                prompt_tokens: 10,
-                completion_tokens: 20,
-                total_tokens: 30,
+                prompt: 10,
+                completion: 20,
+                total: 30,
             },
         };
 
@@ -399,9 +403,9 @@ impl MockLLM {
                 finish_reason: "tool_calls".to_string(),
             }],
             usage: Usage {
-                prompt_tokens: 10,
-                completion_tokens: 20,
-                total_tokens: 30,
+                prompt: 10,
+                completion: 20,
+                total: 30,
             },
         };
 
@@ -426,8 +430,8 @@ impl MockLLM {
             }],
             model: "text-embedding-ada-002".to_string(),
             usage: EmbeddingUsage {
-                prompt_tokens: 5,
-                total_tokens: 5,
+                prompt: 5,
+                total: 5,
             },
         };
 
@@ -448,8 +452,8 @@ impl MockLLM {
             }],
             model: "text-embedding-ada-002".to_string(),
             usage: EmbeddingUsage {
-                prompt_tokens: 5,
-                total_tokens: 5,
+                prompt: 5,
+                total: 5,
             },
         };
 
@@ -558,9 +562,9 @@ impl MockLLM {
                 finish_reason: "stop".to_string(),
             }],
             usage: Usage {
-                prompt_tokens: 10,
-                completion_tokens: 20,
-                total_tokens: 30,
+                prompt: 10,
+                completion: 20,
+                total: 30,
             },
         };
 
@@ -666,9 +670,9 @@ mod tests {
                 finish_reason: "stop".to_string(),
             }],
             usage: Usage {
-                prompt_tokens: 10,
-                completion_tokens: 5,
-                total_tokens: 15,
+                prompt: 10,
+                completion: 5,
+                total: 15,
             },
         };
 
