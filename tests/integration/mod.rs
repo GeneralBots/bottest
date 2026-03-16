@@ -1,6 +1,11 @@
 mod api;
 mod basic_runtime;
 mod database;
+mod security;
+mod performance;
+mod compliance;
+mod accessibility;
+mod internationalization;
 
 use bottest::prelude::*;
 
